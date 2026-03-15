@@ -5,13 +5,14 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "openapi-ts": "openapi-ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.12.2",
   "devDependencies": {
+    "@hey-api/openapi-ts": "^0.94.1",
     "@types/node": "^25.5.0",
     "openapi-types": "^12.1.3",
     "prettier": "^3.8.1",
