@@ -1,5 +1,6 @@
-import type z from "zod";
+import z from "zod";
 import { paths } from "./path-list";
+import type { ZodType } from "zod";
 
 type Paths = typeof paths;
 
@@ -17,27 +18,47 @@ type RequestOptions = {
   skipValidation?: boolean;
 }
 
+function formatZodError(error: z.ZodError) {
+  const errors: Record<string, Record<string, string[]>> = {};
+
+  for (const issue of error.issues) {
+    const [root, ...path] = issue.path.map(String);
+    if (!root) continue;
+
+    if (!(root in errors)) {
+      errors[root] = {};
+    }
+
+    const pathKey = path.length > 0 ? path.join(".") : "_";
+    if (!(pathKey in errors[root]!)) {
+      errors[root]![pathKey] = [];
+    }
+    errors[root]![pathKey]!.push(issue.message);
+  }
+
+  return errors;
+}
+
+
 function validateRequestOptions(options: RequestOptions) {
   if (options.skipValidation) {
     return;
   }
 
   const methods = (paths as any)[options.path];
-  if (!methods) return;
 
-  const schemas = methods[options.method.toLowerCase()];
+  const schemas = methods[options.method.toLowerCase()] as ZodType | undefined;
   if (!schemas) return;
 
-  if (schemas.params) {
-    schemas.params.parse(options.params);
-  }
+  const { error } = schemas.safeParse({
+    query: options.query,
+    params: options.params,
+    body: options.body,
+  })
 
-  if (schemas.query) {
-    schemas.query.parse(options.query);
-  }
-
-  if (schemas.body) {
-    schemas.body.parse(options.body);
+  if (error) {
+    console.error("Validation failed:", formatZodError(error));
+    throw new Error("Request validation failed");
   }
 }
 
@@ -71,7 +92,7 @@ async function request(options: RequestOptions) {
   //   body: options.body && options.method.toLowerCase() !== "get" ? JSON.stringify(options.body) : null,
   // })
 
-  return new Promise<Response>(resolve => setTimeout(() => resolve(new Response()), 1000));
+  return new Promise<Response>(resolve => resolve(new Response()));
 }
 
 function fortnox<TPath extends keyof Paths>(path: TPath): { [TMethod in keyof Paths[TPath]]: (options: z.infer<Paths[TPath][TMethod]>) => void } {
@@ -84,6 +105,6 @@ function fortnox<TPath extends keyof Paths>(path: TPath): { [TMethod in keyof Pa
 }
 
 const v = fortnox("/3/invoices/{DocumentNumber}").put({
-  params: { DocumentNumber: "sa" },
+  params: { DocumentNumber: "123" },
   body: {}
 })
