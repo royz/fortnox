@@ -1,7 +1,12 @@
 import { writeFile } from "node:fs/promises";
+import prettier from "prettier";
 import { getParamsAsZodObject, getSpecFromFile } from "./utils";
+import path from "node:path";
 
 const spec = await getSpecFromFile();
+
+const pathListFile = path.join(import.meta.dirname, "path-list.ts");
+
 
 // Raw expression support: store Zod expression strings and replace them after JSON.stringify
 const rawExprs: string[] = [];
@@ -41,4 +46,6 @@ Object.entries(spec.paths).forEach(([path, methods]: [string, any]) => {
 });
 
 const tsContent = injectRawExprs(JSON.stringify(paths, null, 2));
-await writeFile("path-list.ts", `import z from "zod";\nexport const paths = ${tsContent} as const;`, "utf-8");
+const rawTs = `import z from "zod";\nexport const paths = ${tsContent} as const;`;
+const formatted = await prettier.format(rawTs, { parser: "typescript" });
+await writeFile(pathListFile, formatted, "utf-8");

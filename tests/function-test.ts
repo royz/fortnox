@@ -1,51 +1,89 @@
 import type z from "zod";
-import type { paths } from "./path-list";
+import { paths } from "./path-list";
 
 type Paths = typeof paths;
 
-async function request(options: {
+const METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"] as const;
+
+type RequestMethod = typeof METHODS[number];
+
+type RequestOptions = {
   path: string;
-  method: string;
-  queryParams?: Record<string, any>;
-  pathParams?: Record<string, any>;
-  requestBody?: any;
-}) {
+  method: RequestMethod;
+  query?: Record<string, any>;
+  params?: Record<string, any>;
+  body?: any;
+  /** if true, skip zod validation of request parameters */
+  skipValidation?: boolean;
+}
+
+function validateRequestOptions(options: RequestOptions) {
+  if (options.skipValidation) {
+    return;
+  }
+
+  const methods = (paths as any)[options.path];
+  if (!methods) return;
+
+  const schemas = methods[options.method.toLowerCase()];
+  if (!schemas) return;
+
+  if (schemas.params) {
+    schemas.params.parse(options.params);
+  }
+
+  if (schemas.query) {
+    schemas.query.parse(options.query);
+  }
+
+  if (schemas.body) {
+    schemas.body.parse(options.body);
+  }
+}
+
+async function request(options: RequestOptions) {
+  validateRequestOptions(options);
+
   let url = `https://api.fortnox.se${options.path}`;
-  if (options.pathParams) {
-    Object.entries(options.pathParams).forEach(([key, value]) => {
+  if (options.params) {
+    Object.entries(options.params).forEach(([key, value]) => {
       url = url.replace(`{${key}}`, encodeURIComponent(value));
     });
   }
 
-  if (options.queryParams && Object.keys(options.queryParams).length > 0) {
-    const flattenedQueryParams = Object.entries(options.queryParams).map(([k, v]) => [k, String(v)])
+  if (options.query && Object.keys(options.query).length > 0) {
+    const flattenedQueryParams = Object.entries(options.query).map(([k, v]) => [k, String(v)])
     url = `${url}?${new URLSearchParams(flattenedQueryParams).toString()}`;
   }
 
-  return fetch(url, {
+  console.log({
+    url,
     method: options.method,
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-    },
-    body: options.requestBody && options.method.toLowerCase() !== "get" ? JSON.stringify(options.requestBody) : null,
-  })
-}
+    body: options.body,
+  });
 
-type MethodSchema = { pathParams: z.ZodTypeAny; queryParams: z.ZodTypeAny; requestBody: any };
+  // return fetch(url, {
+  //   method: options.method,
+  //   headers: {
+  //     "Content-Type": "application/json",
+  //     "Accept": "application/json",
+  //   },
+  //   body: options.body && options.method.toLowerCase() !== "get" ? JSON.stringify(options.body) : null,
+  // })
+
+  return new Promise<Response>(resolve => setTimeout(() => resolve(new Response()), 1000));
+}
 
 function fortnox<TPath extends keyof Paths>(path: TPath): { [TMethod in keyof Paths[TPath]]: (options: z.infer<Paths[TPath][TMethod]>) => void } {
-  return {} as any;
+  return Object.fromEntries(
+    METHODS.map(method => [
+      method.toLowerCase(),
+      (options: any) => request({ path, method, ...options }),
+    ])
+  ) as { [TMethod in keyof Paths[TPath]]: (options: z.infer<Paths[TPath][TMethod]>) => Promise<Response> };
 }
-// function fortnox<TPath extends keyof Paths>(path: TPath): { [TMethod in keyof Paths[TPath]]: Paths[TPath][TMethod] extends MethodSchema ? (options: {
-//   pathParams: z.infer<Paths[TPath][TMethod]["pathParams"]>;
-//   queryParams: z.infer<Paths[TPath][TMethod]["queryParams"]>;
-//   requestBody?: any;
-// }) => void : never } {
-//   return {} as any;
-// }
 
-fortnox("/3/invoices/{DocumentNumber}").put({
+const v = fortnox("/3/invoices/{DocumentNumber}").put({
   params: { DocumentNumber: "sa" },
   body: {}
 })
