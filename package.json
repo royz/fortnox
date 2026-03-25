@@ -1,5 +1,5 @@
 {
-  "name": "fortnox",
+  "name": "fortnox-ts",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,6 +10,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "files": [
+    "dist"
+  ],
   "packageManager": "pnpm@10.12.2",
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.94.1",
