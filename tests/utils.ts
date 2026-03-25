@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 import type { OpenAPIV3 } from "openapi-types";
-import z from "zod";
 
 export async function getSpecFromFile(): Promise<OpenAPIV3.Document> {
-  return JSON.parse(await readFile("./openapi.json", "utf-8"));
+  return JSON.parse(await readFile(path.join(import.meta.dirname, "../openapi.json"), "utf-8"));
 }
 
 function getZodTypeForParameter(schema: OpenAPIV3.SchemaObject, required: boolean) {

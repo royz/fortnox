@@ -1,11 +1,12 @@
 {
-  "name": "fortnox-ts",
+  "name": "@unifetch/fortnox",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "openapi-ts": "openapi-ts"
+    "pretypegen": "tsx scripts/preprocess-spec.ts",
+    "typegen": "openapi-ts"
   },
   "keywords": [],
   "author": "",

@@ -2,6 +2,7 @@ import { writeFile } from "node:fs/promises";
 import prettier from "prettier";
 import { getParamsAsZodObject, getSpecFromFile } from "./utils";
 import path from "node:path";
+import z from "zod";
 
 const spec = await getSpecFromFile();
 
@@ -18,7 +19,7 @@ function injectRawExprs(json: string): string {
   return rawExprs.reduce((s, expr, i) => s.replace(`"__RAW_${i}__"`, expr), json);
 }
 
-const paths: Record<string, Record<string, string>> = {};
+const paths: Record<string, Record<string, { input: string, output: string }>> = {};
 
 Object.entries(spec.paths).forEach(([path, methods]: [string, any]) => {
   Object.entries(methods).forEach(([method, operation]: [string, any]) => {
@@ -41,9 +42,11 @@ Object.entries(spec.paths).forEach(([path, methods]: [string, any]) => {
     }
     options += `})`;
 
-    paths[path]![method] = raw(options);
+    // TODO" replace with the actual output schema if available in the spec
+    paths[path]![method] = { input: raw(options), output: raw(`z.object({endpoint: z.literal("${path}")})`) };
   });
 });
+
 
 const tsContent = injectRawExprs(JSON.stringify(paths, null, 2));
 const rawTs = `import z from "zod";\nexport const paths = ${tsContent} as const;`;

@@ -1,8 +1,8 @@
-import { defineConfig } from '@hey-api/openapi-ts';
 import path from 'node:path';
+import { defineConfig } from '@hey-api/openapi-ts';
 
 export default defineConfig({
-  input: path.join(import.meta.dirname, "openapi.json"),
+  input: path.join(import.meta.dirname, "./spec/openapi-patched.json"),
   output: {
     path: './hey-api',
     postProcess: ['prettier', 'eslint'],

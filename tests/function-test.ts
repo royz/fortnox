@@ -18,6 +18,16 @@ type RequestOptions = {
   skipValidation?: boolean;
 }
 
+type FortnoxErrorRespose = {
+  "ErrorInformation": {
+    "error": number,
+    "message": string,
+    "code": number,
+  }
+}
+
+type InitFortnoxOptions = { accessToken: string } | { proxyUrl: string; apiKey: string; tenantId: string; };
+
 function formatZodError(error: z.ZodError) {
   const errors: Record<string, Record<string, string[]>> = {};
 
@@ -40,20 +50,20 @@ function formatZodError(error: z.ZodError) {
 }
 
 
-function validateRequestOptions(options: RequestOptions) {
-  if (options.skipValidation) {
+function validateRequestOptions(reqOptions: RequestOptions) {
+  if (reqOptions.skipValidation) {
     return;
   }
 
-  const methods = (paths as any)[options.path];
+  const methods = (paths as any)[reqOptions.path];
 
-  const schemas = methods[options.method.toLowerCase()] as ZodType | undefined;
+  const schemas = methods[reqOptions.method.toLowerCase()] as ZodType | undefined;
   if (!schemas) return;
 
   const { error } = schemas.safeParse({
-    query: options.query,
-    params: options.params,
-    body: options.body,
+    query: reqOptions.query,
+    params: reqOptions.params,
+    body: reqOptions.body,
   })
 
   if (error) {
@@ -62,49 +72,74 @@ function validateRequestOptions(options: RequestOptions) {
   }
 }
 
-async function request(options: RequestOptions) {
-  validateRequestOptions(options);
+async function request(reqOptions: RequestOptions, initOptions: InitFortnoxOptions) {
+  validateRequestOptions(reqOptions);
 
-  let url = `https://api.fortnox.se${options.path}`;
-  if (options.params) {
-    Object.entries(options.params).forEach(([key, value]) => {
-      url = url.replace(`{${key}}`, encodeURIComponent(value));
+  let headers: Record<string, string>;
+  let baseUrl: string;
+
+  if ("accessToken" in initOptions) {
+    headers = {
+      "Authorization": `Bearer ${initOptions.accessToken}`,
+    };
+    baseUrl = "https://api.fortnox.se";
+  } else {
+    headers = {
+      "x-api-key": initOptions.apiKey,
+      "x-tenant-id": initOptions.tenantId,
+    };
+    baseUrl = initOptions.proxyUrl;
+  }
+
+  const searchParams = new URLSearchParams();
+  if (reqOptions.query) {
+    Object.entries(reqOptions.query).forEach(([key, value]) => {
+      searchParams.append(key, String(value));
     });
   }
 
-  if (options.query && Object.keys(options.query).length > 0) {
-    const flattenedQueryParams = Object.entries(options.query).map(([k, v]) => [k, String(v)])
-    url = `${url}?${new URLSearchParams(flattenedQueryParams).toString()}`;
+  let path = reqOptions.path;
+  if (reqOptions.params) {
+    Object.entries(reqOptions.params).forEach(([key, value]) => {
+      path = path.replace(`{${key}}`, encodeURIComponent(String(value)));
+    });
   }
+
+  const url = `${baseUrl}${path}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`;
 
   console.log({
     url,
-    method: options.method,
-    body: options.body,
+    method: reqOptions.method,
+    body: reqOptions.body,
+    headers,
   });
 
-  // return fetch(url, {
-  //   method: options.method,
-  //   headers: {
-  //     "Content-Type": "application/json",
-  //     "Accept": "application/json",
-  //   },
-  //   body: options.body && options.method.toLowerCase() !== "get" ? JSON.stringify(options.body) : null,
-  // })
-
-  return new Promise<Response>(resolve => resolve(new Response()));
+  return {} as any;
+  // return new Promise<Response>(resolve => resolve(new Response()));
 }
 
-function fortnox<TPath extends keyof Paths>(path: TPath): { [TMethod in keyof Paths[TPath]]: (options: z.infer<Paths[TPath][TMethod]>) => void } {
-  return Object.fromEntries(
-    METHODS.map(method => [
-      method.toLowerCase(),
-      (options: any) => request({ path, method, ...options }),
-    ])
-  ) as { [TMethod in keyof Paths[TPath]]: (options: z.infer<Paths[TPath][TMethod]>) => Promise<Response> };
+type InferInput<T> = T extends { input: infer TInput extends ZodType } ? z.infer<TInput> : never;
+type InferOutput<T> = T extends { output: infer TOutput extends ZodType } ? z.infer<TOutput> : never;
+
+function initFortnox(initOptions: InitFortnoxOptions) {
+  return function fortnox<TPath extends keyof Paths>(path: TPath): { [TMethod in keyof Paths[TPath]]: (options: InferInput<Paths[TPath][TMethod]>) => Promise<{ error: FortnoxErrorRespose, data: null } | { error: null, data: InferOutput<Paths[TPath][TMethod]> }> } {
+    return Object.fromEntries(
+      METHODS.map(method => [
+        method.toLowerCase(),
+        (options: any) => request({ path, method, ...options }, initOptions),
+      ])
+    ) as unknown as { [TMethod in keyof Paths[TPath]]: (options: InferInput<Paths[TPath][TMethod]>) => Promise<{ error: FortnoxErrorRespose, data: null } | { error: null, data: InferOutput<Paths[TPath][TMethod]> }> };
+  }
 }
 
-const v = fortnox("/3/invoices/{DocumentNumber}").put({
+
+const fx = initFortnox({ accessToken: 'text-access-token' });
+const fx2 = initFortnox({ proxyUrl: "https://test.test", apiKey: "xxyyxx", tenantId: "12345678" });
+
+const res = await fx("/3/invoices/{DocumentNumber}").get({
   params: { DocumentNumber: "123" },
-  body: {}
-})
+});
+
+if (res.error) throw "";
+
+res.data;
