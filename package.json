@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "pretypegen": "pnpm run patch",
-    "patch": "tsx scripts/preprocess-spec.ts",
-    "typegen": "openapi-ts"
+    "typegen": "openapi-ts",
+    "download": "tsx scripts/download-official-spec.ts",
+    "patch": "tsx scripts/preprocess-spec.ts"
   },
   "keywords": [],
   "author": "",
