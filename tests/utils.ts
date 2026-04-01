@@ -2,8 +2,9 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { OpenAPIV3 } from "openapi-types";
 
-export async function getSpecFromFile(): Promise<OpenAPIV3.Document> {
-  return JSON.parse(await readFile(path.join(import.meta.dirname, "../openapi.json"), "utf-8"));
+export async function getSpecFromFile(type: "original" | "patched"): Promise<OpenAPIV3.Document> {
+  const fileName = type === "original" ? "openapi.json" : "openapi-patched.json";
+  return JSON.parse(await readFile(path.join(import.meta.dirname, "../spec", fileName), "utf-8"));
 }
 
 function getZodTypeForParameter(schema: OpenAPIV3.SchemaObject, required: boolean) {
@@ -94,12 +95,7 @@ export function getParamsAsZodObject(parameters: OpenAPIV3.ParameterObject[]) {
 
   return {
     pathParams: count.path.total > 0 ? pathParams : null,
-    queryParams: count.query.total > 0 ? queryParams : null
+    queryParams: count.query.total > 0 ? queryParams : null,
+    fullyOptional: count.path.total === 0 && count.query.required === 0
   };
-}
-
-async function main() {
-  const spec = await getSpecFromFile();
-
-  spec.paths[0]?.get?.parameters
 }
