@@ -1,7 +1,7 @@
 import z from "zod";
 import { paths } from "./path-list";
 import type { ZodError, ZodType } from "zod";
-import { env } from "../env";
+import { env } from "./env";
 import { writeFile } from "node:fs/promises";
 
 type Paths = typeof paths;
