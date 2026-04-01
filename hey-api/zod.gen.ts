@@ -2178,7 +2178,7 @@ export const zFortnoxAbsenceTransactionListItem = z.object({
 });
 
 export const zFortnoxAbsenceTransactionListItemWrap = z.object({
-  AbsenceTransactions: z.array(zFortnoxAbsenceTransactionListItem).optional(),
+  AbsenceTransactions: z.array(zFortnoxAbsenceTransactionListItem),
 });
 
 export const zFortnoxAbsenceTransactionPayload = z.object({
@@ -2216,7 +2216,7 @@ export const zFortnoxAbsenceTransactionPayload = z.object({
 });
 
 export const zFortnoxAbsenceTransactionPayloadWrap = z.object({
-  AbsenceTransaction: zFortnoxAbsenceTransactionPayload.optional(),
+  AbsenceTransaction: zFortnoxAbsenceTransactionPayload,
 });
 
 export const zFortnoxAbsenceTransactionSingleItem = z.object({
@@ -2256,7 +2256,7 @@ export const zFortnoxAbsenceTransactionSingleItem = z.object({
 });
 
 export const zFortnoxAbsenceTransactionSingleItemWrap = z.object({
-  AbsenceTransaction: zFortnoxAbsenceTransactionSingleItem.optional(),
+  AbsenceTransaction: zFortnoxAbsenceTransactionSingleItem,
 });
 
 export const zFortnoxAccountChart = z.object({
@@ -2264,7 +2264,7 @@ export const zFortnoxAccountChart = z.object({
 });
 
 export const zFortnoxAccountChartWrap = z.object({
-  AccountCharts: z.array(zFortnoxAccountChart).optional(),
+  AccountCharts: z.array(zFortnoxAccountChart),
 });
 
 export const zFortnoxAccountListItem = z.object({
@@ -2299,7 +2299,7 @@ export const zFortnoxAccountListItem = z.object({
 });
 
 export const zFortnoxAccountListItemWrap = z.object({
-  Accounts: z.array(zFortnoxAccountListItem).optional(),
+  Accounts: z.array(zFortnoxAccountListItem),
 });
 
 export const zFortnoxAccountPayloadOpeningQuantities = z.object({
@@ -2344,7 +2344,7 @@ export const zFortnoxAccountPayload = z.object({
 });
 
 export const zFortnoxAccountPayloadWrap = z.object({
-  Account: zFortnoxAccountPayload.optional(),
+  Account: zFortnoxAccountPayload,
 });
 
 export const zFortnoxAccountSingleItemOpeningQuantities = z.object({
@@ -2402,7 +2402,7 @@ export const zFortnoxAccountSingleItem = z.object({
 });
 
 export const zFortnoxAccountSingleItemWrap = z.object({
-  Account: zFortnoxAccountSingleItem.optional(),
+  Account: zFortnoxAccountSingleItem,
 });
 
 export const zFortnoxArticle = z.object({
@@ -2509,9 +2509,7 @@ export const zFortnoxArticleFileConnectionListItem = z.object({
 });
 
 export const zFortnoxArticleFileConnectionListItemWrap = z.object({
-  ArticleFileConnections: z
-    .array(zFortnoxArticleFileConnectionListItem)
-    .optional(),
+  ArticleFileConnections: z.array(zFortnoxArticleFileConnectionListItem),
 });
 
 export const zFortnoxArticleFileConnectionWrap = z.object({
@@ -2555,11 +2553,11 @@ export const zFortnoxArticleListItemV2 = z.object({
 });
 
 export const zFortnoxArticleListItemV2List = z.object({
-  Articles: z.array(zFortnoxArticleListItemV2).optional(),
+  Articles: z.array(zFortnoxArticleListItemV2),
 });
 
 export const zFortnoxArticleListItemList = z.object({
-  Articles: z.array(zFortnoxArticleListItem).optional(),
+  Articles: z.array(zFortnoxArticleListItem),
 });
 
 export const zFortnoxArticleUrlConnection = z.object({
@@ -2593,9 +2591,7 @@ export const zFortnoxArticleUrlConnectionListItem = z.object({
 });
 
 export const zFortnoxArticleUrlConnectionListItemList = z.object({
-  ArticleUrlConnections: z
-    .array(zFortnoxArticleUrlConnectionListItem)
-    .optional(),
+  ArticleUrlConnections: z.array(zFortnoxArticleUrlConnectionListItem),
 });
 
 export const zFortnoxArticleUrlConnectionWrap = z.object({
@@ -2716,11 +2712,11 @@ export const zFortnoxArticleV2 = z.object({
 });
 
 export const zFortnoxArticleV2Wrap = z.object({
-  Article: zFortnoxArticleV2.optional(),
+  Article: zFortnoxArticleV2,
 });
 
 export const zFortnoxArticleWrap = z.object({
-  Article: zFortnoxArticle.optional(),
+  Article: zFortnoxArticle,
 });
 
 export const zFortnoxAssetFileConnection = z.object({
@@ -2979,13 +2975,11 @@ export const zFortnoxAttendanceTransactionListItem = z.object({
 });
 
 export const zFortnoxAttendanceTransactionListItemList = z.object({
-  AttendanceTransactions: z
-    .array(zFortnoxAttendanceTransactionListItem)
-    .optional(),
+  AttendanceTransactions: z.array(zFortnoxAttendanceTransactionListItem),
 });
 
 export const zFortnoxAttendanceTransactionWrap = z.object({
-  AttendanceTransaction: zFortnoxAttendanceTransaction.optional(),
+  AttendanceTransaction: zFortnoxAttendanceTransaction,
 });
 
 export const zFortnoxAuthorizationCode = z.object({
@@ -3026,7 +3020,7 @@ export const zFortnoxBundlePriceCalculation = z.object({
 });
 
 export const zFortnoxBundlePriceCalculationWrap = z.object({
-  BundlePriceCalculation: zFortnoxBundlePriceCalculation.optional(),
+  BundlePriceCalculation: zFortnoxBundlePriceCalculation,
 });
 
 export const zFortnoxBundleSubItem = z.object({
@@ -3066,7 +3060,7 @@ export const zFortnoxCompanyInfo = z.object({
 });
 
 export const zFortnoxCompanyInfoWrap = z.object({
-  CompanyInformation: zFortnoxCompanyInfo.optional(),
+  CompanyInformation: zFortnoxCompanyInfo,
 });
 
 export const zFortnoxCompanySettings = z.object({
@@ -3102,7 +3096,7 @@ export const zFortnoxCompanySettings = z.object({
 });
 
 export const zFortnoxCompanySettingsWrap = z.object({
-  CompanySettings: zFortnoxCompanySettings.optional(),
+  CompanySettings: zFortnoxCompanySettings,
 });
 
 export const zFortnoxContractAccrualListItem = z.object({
@@ -3122,7 +3116,7 @@ export const zFortnoxContractAccrualListItem = z.object({
 });
 
 export const zFortnoxContractAccrualListItemList = z.object({
-  ContractAccruals: z.array(zFortnoxContractAccrualListItem).optional(),
+  ContractAccruals: z.array(zFortnoxContractAccrualListItem),
 });
 
 export const zFortnoxContractAccrualAccrualRow = z.object({
@@ -3175,7 +3169,7 @@ export const zFortnoxContractAccrual = z.object({
 });
 
 export const zFortnoxContractAccrualWrap = z.object({
-  ContractAccrual: zFortnoxContractAccrual.optional(),
+  ContractAccrual: zFortnoxContractAccrual,
 });
 
 export const zFortnoxContractListItem = z.object({
@@ -3229,12 +3223,12 @@ export const zFortnoxContractListItem = z.object({
 });
 
 export const zFortnoxContractListItemList = z.object({
-  Contracts: z.array(zFortnoxContractListItem).optional(),
+  Contracts: z.array(zFortnoxContractListItem),
 });
 
 export const zFortnoxContractTemplateListItem = z.object({
-  "@url": z.string().optional(),
-  ContractLength: z.int().gte(1).lte(9999).optional(),
+  "@url": z.string(),
+  ContractLength: z.int().gte(1).lte(9999),
   ContractTemplate: z
     .int()
     .min(-2147483648, {
@@ -3242,14 +3236,13 @@ export const zFortnoxContractTemplateListItem = z.object({
     })
     .max(2147483647, {
       error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ContractTemplateName: z.string().optional(),
-  InvoiceInterval: z.int().gte(1).lte(9999).optional(),
+    }),
+  ContractTemplateName: z.string(),
+  InvoiceInterval: z.int().gte(1).lte(9999),
 });
 
 export const zFortnoxContractTemplateListItemList = z.object({
-  ContractTemplates: z.array(zFortnoxContractTemplateListItem).optional(),
+  ContractTemplates: z.array(zFortnoxContractTemplateListItem),
 });
 
 export const zFortnoxContractTemplateInvoiceRow = z.object({
@@ -3300,7 +3293,7 @@ export const zFortnoxContractTemplate = z.object({
 });
 
 export const zFortnoxContractTemplateWrap = z.object({
-  ContractTemplate: zFortnoxContractTemplate.optional(),
+  ContractTemplate: zFortnoxContractTemplate,
 });
 
 export const zFortnoxContractEmailInformation = z.object({
@@ -3429,7 +3422,7 @@ export const zFortnoxContract = z.object({
 });
 
 export const zFortnoxContractWrap = z.object({
-  Contract: zFortnoxContract.optional(),
+  Contract: zFortnoxContract,
 });
 
 export const zFortnoxCostCenter = z.object({
@@ -3441,11 +3434,11 @@ export const zFortnoxCostCenter = z.object({
 });
 
 export const zFortnoxCostCenterList = z.object({
-  CostCenters: z.array(zFortnoxCostCenter).optional(),
+  CostCenters: z.array(zFortnoxCostCenter),
 });
 
 export const zFortnoxCostCenterWrap = z.object({
-  CostCenter: zFortnoxCostCenter.optional(),
+  CostCenter: zFortnoxCostCenter,
 });
 
 export const zFortnoxCreateAsset = z.object({
@@ -3496,7 +3489,7 @@ export const zFortnoxCreateAssetFileConnection = z.object({
 });
 
 export const zFortnoxCreateAssetWrap = z.object({
-  AssetType: zFortnoxCreateAsset.optional(),
+  AssetType: zFortnoxCreateAsset,
 });
 
 export const zFortnoxCreatePayload = z.object({
@@ -3506,7 +3499,7 @@ export const zFortnoxCreatePayload = z.object({
 });
 
 export const zFortnoxCreatePayloadWrap = z.object({
-  NoxFinansInvoice: zFortnoxCreatePayload.optional(),
+  NoxFinansInvoice: zFortnoxCreatePayload,
 });
 
 export const zFortnoxCurrency = z.object({
@@ -3538,7 +3531,7 @@ export const zFortnoxCustomerListItem = z.object({
 });
 
 export const zFortnoxCustomerListItemList = z.object({
-  Customers: z.array(zFortnoxCustomerListItem).optional(),
+  Customers: z.array(zFortnoxCustomerListItem),
 });
 
 export const zFortnoxCustomerReferenceCustomerReferenceRow = z.object({
@@ -3562,12 +3555,11 @@ export const zFortnoxCustomerReference = z.object({
 });
 
 export const zFortnoxCustomerReferenceCustomerReferenceRowWrap = z.object({
-  CustomerReferenceRow:
-    zFortnoxCustomerReferenceCustomerReferenceRow.optional(),
+  CustomerReferenceRow: zFortnoxCustomerReferenceCustomerReferenceRow,
 });
 
 export const zFortnoxCustomerReferenceWrap = z.object({
-  CustomerReference: zFortnoxCustomerReference.optional(),
+  CustomerReference: zFortnoxCustomerReference,
 });
 
 export const zFortnoxCustomerDefaultDeliveryTypes = z.object({
@@ -3653,7 +3645,7 @@ export const zFortnoxCustomer = z.object({
 });
 
 export const zFortnoxCustomerWrap = z.object({
-  Customer: zFortnoxCustomer.optional(),
+  Customer: zFortnoxCustomer,
 });
 
 export const zFortnoxDelete = z.object({
@@ -3661,7 +3653,7 @@ export const zFortnoxDelete = z.object({
 });
 
 export const zFortnoxDeleteWrap = z.object({
-  Asset: zFortnoxDelete.optional(),
+  Asset: zFortnoxDelete,
 });
 
 export const zFortnoxDepreciation = z.object({
@@ -3704,11 +3696,11 @@ export const zFortnoxDepreciationResponse = z.object({
 });
 
 export const zFortnoxDepreciationResponseWrap = z.object({
-  AssetsDepreciation: z.array(zFortnoxDepreciationResponse).optional(),
+  AssetsDepreciation: z.array(zFortnoxDepreciationResponse),
 });
 
 export const zFortnoxDepreciationWrap = z.object({
-  Asset: zFortnoxDepreciation.optional(),
+  Asset: zFortnoxDepreciation,
 });
 
 export const zFortnoxEuVatLimitRegulation = z.object({
@@ -3727,7 +3719,7 @@ export const zFortnoxEuVatLimitRegulation = z.object({
 });
 
 export const zFortnoxEuVatLimitRegulationWrap = z.object({
-  EUVatLimitRegulation: zFortnoxEuVatLimitRegulation.optional(),
+  EUVatLimitRegulation: zFortnoxEuVatLimitRegulation,
 });
 
 export const zFortnoxEmployeeDatedSchedule = z.object({
@@ -4169,11 +4161,11 @@ export const zFortnoxEmployeeListItem = z.object({
 });
 
 export const zFortnoxEmployeeListItemWrap = z.object({
-  Employees: z.array(zFortnoxEmployeeListItem).optional(),
+  Employees: z.array(zFortnoxEmployeeListItem),
 });
 
 export const zFortnoxEmployeeWrap = z.object({
-  Employee: zFortnoxEmployee.optional(),
+  Employee: zFortnoxEmployee,
 });
 
 export const zFortnoxErrorInformationWrapErrorInformation = z.object({
@@ -4199,7 +4191,7 @@ export const zFortnoxErrorInformationWrapErrorInformation = z.object({
 });
 
 export const zFortnoxErrorInformationWrap = z.object({
-  ErrorInformation: zFortnoxErrorInformationWrapErrorInformation.optional(),
+  ErrorInformation: zFortnoxErrorInformationWrapErrorInformation,
 });
 
 export const zFortnoxExpense = z.object({
@@ -4230,11 +4222,11 @@ export const zFortnoxExpenseListItem = z.object({
 });
 
 export const zFortnoxExpenseListItemWrap = z.object({
-  Expenses: z.array(zFortnoxExpenseListItem).optional(),
+  Expenses: z.array(zFortnoxExpenseListItem),
 });
 
 export const zFortnoxExpenseWrap = z.object({
-  Expense: zFortnoxExpense.optional(),
+  Expense: zFortnoxExpense,
 });
 
 export const zFortnoxFinancialYear = z.object({
@@ -4259,7 +4251,7 @@ export const zFortnoxFinancialYearWrap = z.object({
 });
 
 export const zFortnoxFinancialYearWrapList = z.object({
-  FinancialYears: z.array(zFortnoxFinancialYear).optional(),
+  FinancialYears: z.array(zFortnoxFinancialYear),
 });
 
 export const zFortnoxFolderFileRow = z.object({
@@ -4281,7 +4273,7 @@ export const zFortnoxFolderFileRow = z.object({
 });
 
 export const zFortnoxFolderFileRowWrap = z.object({
-  File: zFortnoxFolderFileRow.optional(),
+  File: zFortnoxFolderFileRow,
 });
 
 export const zFortnoxFolderFolderRow = z.object({
@@ -4300,7 +4292,7 @@ export const zFortnoxFolder = z.object({
 });
 
 export const zFortnoxFolderWrap = z.object({
-  Folder: zFortnoxFolder.optional(),
+  Folder: zFortnoxFolder,
 });
 
 export const zFortnoxHistory = z.object({
@@ -4476,7 +4468,7 @@ export const zFortnoxInvoiceAccrualListItem = z.object({
 });
 
 export const zFortnoxInvoiceAccrualListItemList = z.object({
-  InvoiceAccruals: z.array(zFortnoxInvoiceAccrualListItem).optional(),
+  InvoiceAccruals: z.array(zFortnoxInvoiceAccrualListItem),
 });
 
 export const zFortnoxInvoiceAccrualInvoiceAccrualRow = z.object({
@@ -4543,41 +4535,39 @@ export const zFortnoxInvoiceAccrual = z.object({
 });
 
 export const zFortnoxInvoiceAccrualWrap = z.object({
-  InvoiceAccrual: zFortnoxInvoiceAccrual.optional(),
+  InvoiceAccrual: zFortnoxInvoiceAccrual,
 });
 
 export const zFortnoxInvoiceListItem = z.object({
-  "@url": z.string().optional(),
-  Balance: z.number().optional(),
-  Booked: z.boolean().optional(),
-  Cancelled: z.boolean().optional(),
-  CostCenter: z.string().optional(),
-  Currency: z.string().optional(),
-  CurrencyRate: z.number().optional(),
-  CurrencyUnit: z.number().optional(),
-  CustomerName: z.string().optional(),
-  CustomerNumber: z.string().optional(),
-  DocumentNumber: z.string().optional(),
-  DueDate: z.iso.date().optional(),
-  ExternalInvoiceReference1: z.string().optional(),
-  ExternalInvoiceReference2: z.string().optional(),
-  FinalPayDate: z.iso.date().optional(),
-  InvoiceDate: z.iso.date().optional(),
-  InvoiceType: z
-    .enum([
-      "INVOICE",
-      "AGREEMENTINVOICE",
-      "INTRESTINVOICE",
-      "SUMMARYINVOICE",
-      "CASHINVOICE",
-    ])
-    .optional(),
-  NoxFinans: z.boolean().optional(),
-  OCR: z.string().optional(),
-  Project: z.string().optional(),
-  Sent: z.boolean().optional(),
-  TermsOfPayment: z.string().optional(),
-  Total: z.number().optional(),
+  "@url": z.string(),
+  Balance: z.number(),
+  Booked: z.boolean(),
+  Cancelled: z.boolean(),
+  CostCenter: z.string(),
+  Currency: z.string(),
+  CurrencyRate: z.number(),
+  CurrencyUnit: z.number(),
+  CustomerName: z.string(),
+  CustomerNumber: z.string(),
+  DocumentNumber: z.string(),
+  DueDate: z.iso.date(),
+  ExternalInvoiceReference1: z.string(),
+  ExternalInvoiceReference2: z.string(),
+  FinalPayDate: z.iso.date(),
+  InvoiceDate: z.iso.date(),
+  InvoiceType: z.enum([
+    "INVOICE",
+    "AGREEMENTINVOICE",
+    "INTRESTINVOICE",
+    "SUMMARYINVOICE",
+    "CASHINVOICE",
+  ]),
+  NoxFinans: z.boolean(),
+  OCR: z.string(),
+  Project: z.string(),
+  Sent: z.boolean(),
+  TermsOfPayment: z.string(),
+  Total: z.number(),
   VoucherNumber: z
     .int()
     .min(-2147483648, {
@@ -4585,9 +4575,8 @@ export const zFortnoxInvoiceListItem = z.object({
     })
     .max(2147483647, {
       error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VoucherSeries: z.string().optional(),
+    }),
+  VoucherSeries: z.string(),
   VoucherYear: z
     .int()
     .min(-2147483648, {
@@ -4595,13 +4584,12 @@ export const zFortnoxInvoiceListItem = z.object({
     })
     .max(2147483647, {
       error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  WayOfDelivery: z.string().optional(),
+    }),
+  WayOfDelivery: z.string(),
 });
 
 export const zFortnoxInvoiceListItemWrap = z.object({
-  Invoices: z.array(zFortnoxInvoiceListItem).optional(),
+  Invoices: z.array(zFortnoxInvoiceListItem),
 });
 
 export const zFortnoxInvoicePayloadV2EdiInformation = z.object({
@@ -4859,7 +4847,7 @@ export const zFortnoxInvoicePayloadV2 = z.object({
 });
 
 export const zFortnoxInvoicePayloadV2Wrap = z.object({
-  Invoice: zFortnoxInvoicePayloadV2.optional(),
+  Invoice: zFortnoxInvoicePayloadV2,
 });
 
 export const zFortnoxInvoicePayloadEdiInformation = z.object({
@@ -5033,7 +5021,7 @@ export const zFortnoxInvoicePayload = z.object({
 });
 
 export const zFortnoxInvoicePayloadWrap = z.object({
-  Invoice: zFortnoxInvoicePayload.optional(),
+  Invoice: zFortnoxInvoicePayload,
 });
 
 export const zFortnoxInvoicePaymentListItem = z.object({
@@ -5058,7 +5046,7 @@ export const zFortnoxInvoicePaymentListItem = z.object({
 });
 
 export const zFortnoxInvoicePaymentListItemList = z.object({
-  InvoicePayments: z.array(zFortnoxInvoicePaymentListItem).optional(),
+  InvoicePayments: z.array(zFortnoxInvoicePaymentListItem),
 });
 
 export const zFortnoxInvoicePaymentWriteOff = z.object({
@@ -5122,7 +5110,7 @@ export const zFortnoxInvoicePayment = z.object({
 });
 
 export const zFortnoxInvoicePaymentWrap = z.object({
-  InvoicePayment: zFortnoxInvoicePayment.optional(),
+  InvoicePayment: zFortnoxInvoicePayment,
 });
 
 export const zFortnoxInvoiceResponse = z.object({
@@ -5149,7 +5137,7 @@ export const zFortnoxInvoiceResponse = z.object({
 });
 
 export const zFortnoxInvoiceResponseWrap = z.object({
-  NoxFinansInvoice: zFortnoxInvoiceResponse.optional(),
+  NoxFinansInvoice: zFortnoxInvoiceResponse,
 });
 
 export const zFortnoxInvoiceV2EdiInformation = z.object({
@@ -5503,7 +5491,7 @@ export const zFortnoxInvoiceV2 = z.object({
 });
 
 export const zFortnoxInvoiceV2Wrap = z.object({
-  Invoice: zFortnoxInvoiceV2.optional(),
+  Invoice: zFortnoxInvoiceV2,
 });
 
 export const zFortnoxInvoiceEdiInformation = z.object({
@@ -5768,7 +5756,7 @@ export const zFortnoxInvoice = z.object({
 });
 
 export const zFortnoxInvoiceWrap = z.object({
-  Invoice: zFortnoxInvoice.optional(),
+  Invoice: zFortnoxInvoice,
 });
 
 export const zFortnoxLabel = z.object({
@@ -5785,7 +5773,7 @@ export const zFortnoxLabel = z.object({
 });
 
 export const zFortnoxLabelList = z.object({
-  Labels: z.array(zFortnoxLabel).optional(),
+  Labels: z.array(zFortnoxLabel),
 });
 
 export const zFortnoxLabelWrap = z.object({
@@ -5832,7 +5820,7 @@ export const zFortnoxListAsset = z.object({
 });
 
 export const zFortnoxListAssetWrap = z.object({
-  Assets: z.array(zFortnoxListAsset).optional(),
+  Assets: z.array(zFortnoxListAsset),
 });
 
 export const zFortnoxLockedPeriod = z.object({
@@ -5840,7 +5828,7 @@ export const zFortnoxLockedPeriod = z.object({
 });
 
 export const zFortnoxLockedPeriodWrap = z.object({
-  LockedPeriod: zFortnoxLockedPeriod.optional(),
+  LockedPeriod: zFortnoxLockedPeriod,
 });
 
 export const zFortnoxManualObAsset = z.object({
@@ -5865,7 +5853,7 @@ export const zFortnoxMe = z.object({
 });
 
 export const zFortnoxMeWrap = z.object({
-  MeInformation: zFortnoxMe.optional(),
+  MeInformation: zFortnoxMe,
 });
 
 export const zFortnoxMetaInformation = z.object({
@@ -5904,13 +5892,13 @@ export const zFortnoxAssetFileConnectionResponse = z.object({
 });
 
 export const zFortnoxAssetTypeWrapList = z.object({
-  MetaInformation: zFortnoxMetaInformation.optional(),
-  Types: z.array(zFortnoxAssetType).optional(),
+  MetaInformation: zFortnoxMetaInformation,
+  Types: z.array(zFortnoxAssetType),
 });
 
 export const zFortnoxCurrencyList = z.object({
-  Currencies: z.array(zFortnoxCurrency).optional(),
-  MetaInformation: zFortnoxMetaInformation.optional(),
+  Currencies: z.array(zFortnoxCurrency),
+  MetaInformation: zFortnoxMetaInformation,
 });
 
 export const zFortnoxModeOfPayment = z.object({
@@ -5921,7 +5909,7 @@ export const zFortnoxModeOfPayment = z.object({
 });
 
 export const zFortnoxModeOfPaymentList = z.object({
-  ModesOfPayments: z.array(zFortnoxModeOfPayment).optional(),
+  ModesOfPayments: z.array(zFortnoxModeOfPayment),
 });
 
 export const zFortnoxModeOfPaymentWrap = z.object({
@@ -5942,7 +5930,7 @@ export const zFortnoxOfferListItem = z.object({
 });
 
 export const zFortnoxOfferListItemList = z.object({
-  Offers: z.array(zFortnoxOfferListItem).optional(),
+  Offers: z.array(zFortnoxOfferListItem),
 });
 
 export const zFortnoxOfferPayloadV2EmailInformation = z.object({
@@ -6162,7 +6150,7 @@ export const zFortnoxOfferPayloadV2 = z.object({
 });
 
 export const zFortnoxOfferPayloadV2Wrap = z.object({
-  Offer: zFortnoxOfferPayloadV2.optional(),
+  Offer: zFortnoxOfferPayloadV2,
 });
 
 export const zFortnoxOfferV2EmailInformation = z.object({
@@ -6415,7 +6403,7 @@ export const zFortnoxOfferV2 = z.object({
 });
 
 export const zFortnoxOfferV2Wrap = z.object({
-  Offer: zFortnoxOfferV2.optional(),
+  Offer: zFortnoxOfferV2,
 });
 
 export const zFortnoxOfferEmailInformation = z.object({
@@ -6588,7 +6576,7 @@ export const zFortnoxOffer = z.object({
 });
 
 export const zFortnoxOfferWrap = z.object({
-  Offer: zFortnoxOffer.optional(),
+  Offer: zFortnoxOffer,
 });
 
 export const zFortnoxOrderListItem = z.object({
@@ -6609,7 +6597,7 @@ export const zFortnoxOrderListItem = z.object({
 });
 
 export const zFortnoxOrderListItemList = z.object({
-  Orders: z.array(zFortnoxOrderListItem).optional(),
+  Orders: z.array(zFortnoxOrderListItem),
 });
 
 export const zFortnoxOrderPayloadV2EmailInformation = z.object({
@@ -6830,7 +6818,7 @@ export const zFortnoxOrderPayloadV2 = z.object({
 });
 
 export const zFortnoxOrderPayloadV2Wrap = z.object({
-  Order: zFortnoxOrderPayloadV2.optional(),
+  Order: zFortnoxOrderPayloadV2,
 });
 
 export const zFortnoxOrderV2EmailInformation = z.object({
@@ -7089,7 +7077,7 @@ export const zFortnoxOrderV2 = z.object({
 });
 
 export const zFortnoxOrderV2Wrap = z.object({
-  Order: zFortnoxOrderV2.optional(),
+  Order: zFortnoxOrderV2,
 });
 
 export const zFortnoxOrderEmailInformation = z.object({
@@ -7265,7 +7253,7 @@ export const zFortnoxOrder = z.object({
 });
 
 export const zFortnoxOrderWrap = z.object({
-  Order: zFortnoxOrder.optional(),
+  Order: zFortnoxOrder,
 });
 
 export const zFortnoxPagedClientInfo = z.object({
@@ -7278,7 +7266,7 @@ export const zFortnoxPausePayload = z.object({
 });
 
 export const zFortnoxPausePayloadWrap = z.object({
-  NoxFinansInvoice: zFortnoxPausePayload.optional(),
+  NoxFinansInvoice: zFortnoxPausePayload,
 });
 
 export const zFortnoxPredefinedAccount = z.object({
@@ -7288,7 +7276,7 @@ export const zFortnoxPredefinedAccount = z.object({
 });
 
 export const zFortnoxPredefinedAccountList = z.object({
-  PreDefinedAccounts: z.array(zFortnoxPredefinedAccount).optional(),
+  PreDefinedAccounts: z.array(zFortnoxPredefinedAccount),
 });
 
 export const zFortnoxPredefinedAccountWrap = z.object({
@@ -7302,13 +7290,11 @@ export const zFortnoxPredefinedVoucherSeries = z.object({
 });
 
 export const zFortnoxPredefinedVoucherSeriesList = z.object({
-  PreDefinedVoucherSeriesCollection: z
-    .array(zFortnoxPredefinedVoucherSeries)
-    .optional(),
+  PreDefinedVoucherSeriesCollection: z.array(zFortnoxPredefinedVoucherSeries),
 });
 
 export const zFortnoxPredefinedVoucherSeriesWrap = z.object({
-  PreDefinedVoucherSeries: zFortnoxPredefinedVoucherSeries.optional(),
+  PreDefinedVoucherSeries: zFortnoxPredefinedVoucherSeries,
 });
 
 export const zFortnoxPrice = z.object({
@@ -7338,11 +7324,11 @@ export const zFortnoxPriceListItem = z.object({
 });
 
 export const zFortnoxPriceListItemList = z.object({
-  Prices: z.array(zFortnoxPriceListItem).optional(),
+  Prices: z.array(zFortnoxPriceListItem),
 });
 
 export const zFortnoxPriceListList = z.object({
-  PriceLists: z.array(zFortnoxPriceList).optional(),
+  PriceLists: z.array(zFortnoxPriceList),
 });
 
 export const zFortnoxPriceListWrap = z.object({
@@ -7350,7 +7336,7 @@ export const zFortnoxPriceListWrap = z.object({
 });
 
 export const zFortnoxPriceWrap = z.object({
-  Price: zFortnoxPrice.optional(),
+  Price: zFortnoxPrice,
 });
 
 export const zFortnoxPrintTemplate = z.object({
@@ -7359,7 +7345,7 @@ export const zFortnoxPrintTemplate = z.object({
 });
 
 export const zFortnoxPrintTemplateList = z.object({
-  PrintTemplates: z.array(zFortnoxPrintTemplate).optional(),
+  PrintTemplates: z.array(zFortnoxPrintTemplate),
 });
 
 export const zFortnoxProject = z.object({
@@ -7385,11 +7371,11 @@ export const zFortnoxProjectListItem = z.object({
 });
 
 export const zFortnoxProjectListItemList = z.object({
-  Projects: z.array(zFortnoxProjectListItem).optional(),
+  Projects: z.array(zFortnoxProjectListItem),
 });
 
 export const zFortnoxProjectWrap = z.object({
-  Project: zFortnoxProject.optional(),
+  Project: zFortnoxProject,
 });
 
 export const zFortnoxReportPaymentPayload = z.object({
@@ -7409,7 +7395,7 @@ export const zFortnoxReportPaymentPayload = z.object({
 });
 
 export const zFortnoxReportPaymentPayloadWrap = z.object({
-  NoxFinansInvoice: zFortnoxReportPaymentPayload.optional(),
+  NoxFinansInvoice: zFortnoxReportPaymentPayload,
 });
 
 export const zFortnoxSalaryTransaction = z.object({
@@ -7460,7 +7446,7 @@ export const zFortnoxSalaryTransactionListItem = z.object({
 });
 
 export const zFortnoxSalaryTransactionListItemList = z.object({
-  SalaryTransactions: z.array(zFortnoxSalaryTransactionListItem).optional(),
+  SalaryTransactions: z.array(zFortnoxSalaryTransactionListItem),
 });
 
 export const zFortnoxSalaryTransactionWrap = z.object({
@@ -7480,7 +7466,7 @@ export const zFortnoxScheduleTime = z.object({
 });
 
 export const zFortnoxScheduleTimeWrap = z.object({
-  ScheduleTime: zFortnoxScheduleTime.optional(),
+  ScheduleTime: zFortnoxScheduleTime,
 });
 
 export const zFortnoxScrap = z.object({
@@ -7498,7 +7484,7 @@ export const zFortnoxScrap = z.object({
 });
 
 export const zFortnoxScrapWrap = z.object({
-  Asset: zFortnoxScrap.optional(),
+  Asset: zFortnoxScrap,
 });
 
 export const zFortnoxSell = z.object({
@@ -7525,7 +7511,7 @@ export const zFortnoxSell = z.object({
 });
 
 export const zFortnoxSellWrap = z.object({
-  Asset: zFortnoxSell.optional(),
+  Asset: zFortnoxSell,
 });
 
 export const zFortnoxSupplier = z.object({
@@ -7600,9 +7586,7 @@ export const zFortnoxSupplierInvoiceAccrualListItem = z.object({
 });
 
 export const zFortnoxSupplierInvoiceAccrualListItemList = z.object({
-  SupplierInvoiceAccruals: z
-    .array(zFortnoxSupplierInvoiceAccrualListItem)
-    .optional(),
+  SupplierInvoiceAccruals: z.array(zFortnoxSupplierInvoiceAccrualListItem),
 });
 
 export const zFortnoxSupplierInvoiceAccrualSupplierInvoiceAccrualRows =
@@ -7720,14 +7704,13 @@ export const zFortnoxSupplierInvoiceFileConnection = z.object({
 });
 
 export const zFortnoxSupplierInvoiceFileConnectionList = z.object({
-  SupplierInvoiceFileConnections: z
-    .array(zFortnoxSupplierInvoiceFileConnection)
-    .optional(),
+  SupplierInvoiceFileConnections: z.array(
+    zFortnoxSupplierInvoiceFileConnection,
+  ),
 });
 
 export const zFortnoxSupplierInvoiceFileConnectionWrap = z.object({
-  SupplierInvoiceFileConnection:
-    zFortnoxSupplierInvoiceFileConnection.optional(),
+  SupplierInvoiceFileConnection: zFortnoxSupplierInvoiceFileConnection,
 });
 
 export const zFortnoxSupplierInvoiceListItemVoucher = z.object({
@@ -7779,7 +7762,7 @@ export const zFortnoxSupplierInvoiceListItem = z.object({
 });
 
 export const zFortnoxSupplierInvoiceListItemWrap = z.object({
-  SupplierInvoices: z.array(zFortnoxSupplierInvoiceListItem).optional(),
+  SupplierInvoices: z.array(zFortnoxSupplierInvoiceListItem),
 });
 
 export const zFortnoxSupplierInvoicePaymentListItem = z.object({
@@ -7805,9 +7788,7 @@ export const zFortnoxSupplierInvoicePaymentListItem = z.object({
 });
 
 export const zFortnoxSupplierInvoicePaymentListItemList = z.object({
-  SupplierInvoicePayments: z
-    .array(zFortnoxSupplierInvoicePaymentListItem)
-    .optional(),
+  SupplierInvoicePayments: z.array(zFortnoxSupplierInvoicePaymentListItem),
 });
 
 export const zFortnoxSupplierInvoicePaymentWriteOff = z.object({
@@ -7870,7 +7851,7 @@ export const zFortnoxSupplierInvoicePayment = z.object({
 });
 
 export const zFortnoxSupplierInvoicePaymentWrap = z.object({
-  SupplierInvoicePayment: zFortnoxSupplierInvoicePayment.optional(),
+  SupplierInvoicePayment: zFortnoxSupplierInvoicePayment,
 });
 
 export const zFortnoxSupplierInvoiceSupplierInvoiceRow = z.object({
@@ -8011,7 +7992,7 @@ export const zFortnoxSupplierInvoice = z.object({
 });
 
 export const zFortnoxSupplierInvoiceWrap = z.object({
-  SupplierInvoice: zFortnoxSupplierInvoice.optional(),
+  SupplierInvoice: zFortnoxSupplierInvoice,
 });
 
 export const zFortnoxSupplierListItem = z.object({
@@ -8041,11 +8022,11 @@ export const zFortnoxSupplierListItem = z.object({
 });
 
 export const zFortnoxSupplierListItemList = z.object({
-  Suppliers: z.array(zFortnoxSupplierListItem).optional(),
+  Suppliers: z.array(zFortnoxSupplierListItem),
 });
 
 export const zFortnoxSupplierWrap = z.object({
-  Supplier: zFortnoxSupplier.optional(),
+  Supplier: zFortnoxSupplier,
 });
 
 export const zFortnoxTaxReductionListItem = z.object({
@@ -8074,7 +8055,7 @@ export const zFortnoxTaxReductionListItem = z.object({
 });
 
 export const zFortnoxTaxReductionListItemList = z.object({
-  TaxReductions: z.array(zFortnoxTaxReductionListItem).optional(),
+  TaxReductions: z.array(zFortnoxTaxReductionListItem),
 });
 
 export const zFortnoxTaxReductionTaxReductionAmount = z.object({
@@ -8143,7 +8124,7 @@ export const zFortnoxTermsOfDelivery = z.object({
 });
 
 export const zFortnoxTermsOfDeliveryList = z.object({
-  TermsOfDeliveries: z.array(zFortnoxTermsOfDelivery).optional(),
+  TermsOfDeliveries: z.array(zFortnoxTermsOfDelivery),
 });
 
 export const zFortnoxTermsOfDeliveryWrap = z.object({
@@ -8157,7 +8138,7 @@ export const zFortnoxTermsOfPayment = z.object({
 });
 
 export const zFortnoxTermsOfPaymentList = z.object({
-  TermsOfPayments: z.array(zFortnoxTermsOfPayment).optional(),
+  TermsOfPayments: z.array(zFortnoxTermsOfPayment),
 });
 
 export const zFortnoxTermsOfPaymentWrap = z.object({
@@ -8196,11 +8177,11 @@ export const zFortnoxTrustedEmailSender = z.object({
 });
 
 export const zFortnoxTrustedEmailSenderTrustedSenderWrap = z.object({
-  TrustedSender: zFortnoxTrustedEmailSenderTrustedSender.optional(),
+  TrustedSender: zFortnoxTrustedEmailSenderTrustedSender,
 });
 
 export const zFortnoxTrustedEmailSenderWrap = z.object({
-  EmailSenders: zFortnoxTrustedEmailSender.optional(),
+  EmailSenders: zFortnoxTrustedEmailSender,
 });
 
 export const zFortnoxUnit = z.object({
@@ -8211,7 +8192,7 @@ export const zFortnoxUnit = z.object({
 });
 
 export const zFortnoxUnitList = z.object({
-  Units: z.array(zFortnoxUnit).optional(),
+  Units: z.array(zFortnoxUnit),
 });
 
 export const zFortnoxUnitWrap = z.object({
@@ -8224,11 +8205,11 @@ export const zFortnoxUpdateAsset = z.object({
 });
 
 export const zFortnoxUpdateAssetUpdateWrap = z.object({
-  AssetType: zFortnoxUpdateAsset.optional(),
+  AssetType: zFortnoxUpdateAsset,
 });
 
 export const zFortnoxUpdateAssetWrap = z.object({
-  Asset: zFortnoxUpdateAsset.optional(),
+  Asset: zFortnoxUpdateAsset,
 });
 
 export const zFortnoxVacationDebtBasisEmployee = z.object({
@@ -8291,7 +8272,7 @@ export const zFortnoxVacationDebtBasis = z.object({
 });
 
 export const zFortnoxVacationDebtBasisWrap = z.object({
-  VacationDebtBasis: zFortnoxVacationDebtBasis.optional(),
+  VacationDebtBasis: zFortnoxVacationDebtBasis,
 });
 
 export const zFortnoxVoucherFileConnection = z.object({
@@ -8312,7 +8293,7 @@ export const zFortnoxVoucherFileConnection = z.object({
 });
 
 export const zFortnoxVoucherFileConnectionList = z.object({
-  VoucherFileConnections: z.array(zFortnoxVoucherFileConnection).optional(),
+  VoucherFileConnections: z.array(zFortnoxVoucherFileConnection),
 });
 
 export const zFortnoxVoucherFileConnectionWrap = z.object({
@@ -8320,7 +8301,7 @@ export const zFortnoxVoucherFileConnectionWrap = z.object({
 });
 
 export const zFortnoxVoucherListItem = z.object({
-  "@url": z.string().optional(),
+  "@url": z.string(),
   ApprovalState: z
     .int()
     .min(-2147483648, {
@@ -8328,23 +8309,20 @@ export const zFortnoxVoucherListItem = z.object({
     })
     .max(2147483647, {
       error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Comments: z.string().optional(),
-  Description: z.string().optional(),
-  ReferenceNumber: z.string().optional(),
-  ReferenceType: z
-    .enum([
-      "INVOICE",
-      "SUPPLIERINVOICE",
-      "INVOICEPAYMENT",
-      "SUPPLIERPAYMENT",
-      "MANUAL",
-      "CASHINVOICE",
-      "ACCRUAL",
-    ])
-    .optional(),
-  TransactionDate: z.iso.date().optional(),
+    }),
+  Comments: z.string(),
+  Description: z.string(),
+  ReferenceNumber: z.string(),
+  ReferenceType: z.enum([
+    "INVOICE",
+    "SUPPLIERINVOICE",
+    "INVOICEPAYMENT",
+    "SUPPLIERPAYMENT",
+    "MANUAL",
+    "CASHINVOICE",
+    "ACCRUAL",
+  ]),
+  TransactionDate: z.iso.date(),
   VoucherNumber: z
     .int()
     .min(-2147483648, {
@@ -8352,9 +8330,8 @@ export const zFortnoxVoucherListItem = z.object({
     })
     .max(2147483647, {
       error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VoucherSeries: z.string().optional(),
+    }),
+  VoucherSeries: z.string(),
   Year: z
     .int()
     .min(-2147483648, {
@@ -8362,12 +8339,11 @@ export const zFortnoxVoucherListItem = z.object({
     })
     .max(2147483647, {
       error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
+    }),
 });
 
 export const zFortnoxVoucherListItemList = z.object({
-  Vouchers: z.array(zFortnoxVoucherListItem).optional(),
+  Vouchers: z.array(zFortnoxVoucherListItem),
 });
 
 export const zFortnoxVoucherSeriesListItemApprover = z.object({
@@ -8401,7 +8377,7 @@ export const zFortnoxVoucherSeriesListItem = z.object({
 });
 
 export const zFortnoxVoucherSeriesListItemList = z.object({
-  VoucherSeriesCollection: z.array(zFortnoxVoucherSeriesListItem).optional(),
+  VoucherSeriesCollection: z.array(zFortnoxVoucherSeriesListItem),
 });
 
 export const zFortnoxVoucherSeriesApprover = z.object({
@@ -8513,7 +8489,7 @@ export const zFortnoxVoucher = z.object({
 });
 
 export const zFortnoxVoucherWrap = z.object({
-  Voucher: zFortnoxVoucher.optional(),
+  Voucher: zFortnoxVoucher,
 });
 
 export const zFortnoxWayOfDelivery = z.object({
@@ -8524,11 +8500,11 @@ export const zFortnoxWayOfDelivery = z.object({
 });
 
 export const zFortnoxWayOfDeliveryList = z.object({
-  WayOfDeliveries: z.array(zFortnoxWayOfDelivery).optional(),
+  WayOfDeliveries: z.array(zFortnoxWayOfDelivery),
 });
 
 export const zFortnoxWayOfDeliveryWrap = z.object({
-  WayOfDelivery: zFortnoxWayOfDelivery.optional(),
+  WayOfDelivery: zFortnoxWayOfDelivery,
 });
 
 export const zFortnoxWriteDown = z.object({
@@ -8546,7 +8522,7 @@ export const zFortnoxWriteDown = z.object({
 });
 
 export const zFortnoxWriteDownWrap = z.object({
-  Asset: zFortnoxWriteDown.optional(),
+  Asset: zFortnoxWriteDown,
 });
 
 export const zFortnoxWriteUp = z.object({
@@ -8564,7 +8540,7 @@ export const zFortnoxWriteUp = z.object({
 });
 
 export const zFortnoxWriteUpWrap = z.object({
-  Asset: zFortnoxWriteUp.optional(),
+  Asset: zFortnoxWriteUp,
 });
 
 export const zIntegrationDeveloperIntegrationSalesResponse = z.object({
