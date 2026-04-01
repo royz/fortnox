@@ -25,7 +25,7 @@ const schemas = (spec.components?.schemas ?? {}) as Record<
 
 // Schemas whose names match these patterns are response wrappers: they contain
 // exactly one property (or a list property) that is always present on success.
-const WRAPPER_PATTERN = /(_Wrap|Wrap|_List|_WrapList)$/;
+const WRAPPER_PATTERN = /(_Wrap|Wrap|_List|_WrapList|ListItem)$/;
 
 for (const [name, schema] of Object.entries(schemas)) {
   if (
