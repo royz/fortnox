@@ -2,9 +2,9 @@ import { writeFile } from "node:fs/promises";
 import prettier from "prettier";
 import { getParamsAsZodObject, getSpecFromFile } from "./utils";
 import path from "node:path";
-import z from "zod";
+import dedent from "dedent";
 
-const spec = await getSpecFromFile();
+const spec = await getSpecFromFile("patched");
 
 const pathListFile = path.join(import.meta.dirname, "path-list.ts");
 
@@ -21,13 +21,30 @@ function injectRawExprs(json: string): string {
 
 const paths: Record<string, Record<string, { input: string, output: string }>> = {};
 
+const zodResponseSchemaNames: string[] = [];
+
 Object.entries(spec.paths).forEach(([path, methods]: [string, any]) => {
   Object.entries(methods).forEach(([method, operation]: [string, any]) => {
     if (!(path in paths)) {
       paths[path] = {};
     }
 
-    const { pathParams, queryParams } = getParamsAsZodObject(operation.parameters || []);
+    const { pathParams, queryParams, fullyOptional } = getParamsAsZodObject(operation.parameters || []);
+
+
+    let zodResponseSchemaName: string | null = null;
+
+    const responseSchema = operation.responses?.["200"]?.content?.["application/json"]?.schema?.$ref?.split("/")?.at(-1) || null;
+
+    if (responseSchema) {
+      zodResponseSchemaName = responseSchema
+        ? `z${responseSchema[0].toUpperCase()}${responseSchema.slice(1).replace(/(-|_)([a-z])/gi,
+          (match: any, g1: any, g2: any) => g2.toUpperCase()
+        )}`.replaceAll("URL", "Url").replaceAll("EUVatLimit", "EuVatLimit") : null;
+      if (zodResponseSchemaName) {
+        zodResponseSchemaNames.push(zodResponseSchemaName);
+      }
+    }
 
     let options = `z.object({\n`;
     if (pathParams) {
@@ -42,13 +59,23 @@ Object.entries(spec.paths).forEach(([path, methods]: [string, any]) => {
     }
     options += `})`;
 
-    // TODO" replace with the actual output schema if available in the spec
-    paths[path]![method] = { input: raw(options), output: raw(`z.object({endpoint: z.literal("${path}")})`) };
+    if (fullyOptional) {
+      options += `.optional()`;
+    }
+
+    paths[path]![method] = {
+      input: raw(options),
+      output: raw(zodResponseSchemaName ? zodResponseSchemaName : `z.unknown()`)
+    };
   });
 });
 
 
 const tsContent = injectRawExprs(JSON.stringify(paths, null, 2));
-const rawTs = `import z from "zod";\nexport const paths = ${tsContent} as const;`;
+const rawTs = dedent`
+import z from "zod";
+import {${Array.from(new Set(zodResponseSchemaNames)).join(", ")}} from "../hey-api/zod.gen";
+export const paths = ${tsContent} as const;
+`;
 const formatted = await prettier.format(rawTs, { parser: "typescript" });
 await writeFile(pathListFile, formatted, "utf-8");
