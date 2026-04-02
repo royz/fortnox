@@ -172,4 +172,4 @@ const res = await fx("/3/invoices").get()
 if (res.error) throw res.error;
 
 await writeFile("response.json", JSON.stringify(res.data, null, 2), "utf-8");
-console.log(res.data)
+console.log(res.data.MetaInformation)

@@ -114,7 +114,9 @@ export const zRecurringApiBaseAccrualRow = z.object({
 export const zRecurringApiAccrualRow = zRecurringApiBaseAccrualRow.and(
   z.object({
     accrual_id: z.uuid().optional(),
+    created_at: z.iso.datetime().optional(),
     id: z.uuid().optional(),
+    modified_at: z.iso.datetime().optional(),
   }),
 );
 
@@ -151,7 +153,8 @@ export const zRecurringApiCreateInvoiceDateConfiguration = z.object({
 
 export const zRecurringApiCreateInvoiceRequest = z.object({
   recurring_ids: z.array(z.uuid()).register(z.globalRegistry, {
-    description: "List of recurring IDs to create invoices for",
+    description:
+      "List of recurring IDs to create invoices for. When using SYNC processing mode, a maximum of 100 IDs is allowed. For larger batches, use ASYNC processing mode.",
   }),
 });
 
@@ -165,11 +168,7 @@ export const zRecurringApiCreatePeriodDateConfiguration = z.object({
 });
 
 export const zRecurringApiCreateTaxReduction =
-  zRecurringApiBaseTaxReduction.and(
-    z.object({
-      recurring_id: z.uuid().optional(),
-    }),
-  );
+  zRecurringApiBaseTaxReduction.and(z.record(z.string(), z.unknown()));
 
 export const zRecurringApiDeviationType = z.string();
 
@@ -222,20 +221,21 @@ export const zRecurringApiInvoiceRequestStatus = z.enum([
   "PENDING",
   "PROCESSING",
   "COMPLETED",
+  "PARTIAL",
   "FAILED",
 ]);
 
 /**
  * Indicates the type of invoice service used for automatic invoice handling:
- * - SERVICE_FULL: Full invoice service, including reminders.
- * - SERVICE_LIGHT: Light invoice service, only invoice creation and delivery without reminders.
+ * - WITH_REMINDERS: Full invoice service, including reminders.
+ * - WITHOUT_REMINDERS: Light invoice service, only invoice creation and delivery without automatic reminders.
  *
  */
 export const zRecurringApiInvoiceServiceType = z
   .string()
   .register(z.globalRegistry, {
     description:
-      "Indicates the type of invoice service used for automatic invoice handling:\n- SERVICE_FULL: Full invoice service, including reminders.\n- SERVICE_LIGHT: Light invoice service, only invoice creation and delivery without reminders.\n",
+      "Indicates the type of invoice service used for automatic invoice handling:\n- WITH_REMINDERS: Full invoice service, including reminders.\n- WITHOUT_REMINDERS: Light invoice service, only invoice creation and delivery without automatic reminders.\n",
   });
 
 export const zRecurringApiLanguage = z.string();
@@ -277,7 +277,7 @@ export const zRecurringApiPartialAccrualRow = zRecurringApiBaseAccrualRow.and(
 export const zRecurringApiPartialRecurringCustomer = z.object({
   address: z.string().optional(),
   city: z.string().optional(),
-  country: z.string().optional(),
+  country_code: z.string().optional(),
   name: z.string().optional(),
   number: z.string().optional(),
   phone: z.string().optional(),
@@ -321,22 +321,10 @@ export const zRecurringApiPrintConfiguration = z.object({
 
 export const zRecurringApiProcessingMode = z.enum(["SYNC", "ASYNC"]);
 
-export const zRecurringApiInvoiceRequest = z.object({
-  created_at: z.iso.datetime().optional(),
-  error: z.string().optional(),
-  id: z.uuid().optional(),
-  invoice_ids: z.array(z.uuid()).optional(),
-  modified_at: z.iso.datetime().optional(),
-  processed_at: z.iso.datetime().optional(),
-  processing_mode: zRecurringApiProcessingMode.optional(),
-  recurring_id: z.uuid().optional(),
-  status: zRecurringApiInvoiceRequestStatus.optional(),
-});
-
 export const zRecurringApiRecurringCustomer = z.object({
   address: z.string().optional(),
   city: z.string().optional(),
-  country: z.string().optional(),
+  country_code: z.string().optional(),
   name: z.string().optional(),
   number: z.string(),
   phone: z.string().optional(),
@@ -371,7 +359,7 @@ export const zRecurringApiRecurringDates = z.object({
 export const zRecurringApiRecurringDelivery = z.object({
   address: z.string().optional(),
   city: z.string().optional(),
-  country: z.string().optional(),
+  country_code: z.string().optional(),
   name: z.string().optional(),
   phone: z.string().optional(),
   term_code: z.string().optional(),
@@ -391,6 +379,37 @@ export const zRecurringApiErrorLogEntry = z.object({
   invoice_number: z.int().optional(),
   invoice_period_start: z.string().optional(),
   source: zRecurringApiRecurringErrorSource.optional(),
+});
+
+export const zRecurringApiInvoiceRequestItem = z.object({
+  created_at: z.iso.datetime().optional(),
+  errors: z.array(zRecurringApiErrorLogEntry).optional(),
+  id: z.uuid().optional(),
+  invoice_numbers: z
+    .array(
+      z.coerce
+        .bigint()
+        .min(BigInt("-9223372036854775808"), {
+          error: "Invalid value: Expected int64 to be >= -9223372036854775808",
+        })
+        .max(BigInt("9223372036854775807"), {
+          error: "Invalid value: Expected int64 to be <= 9223372036854775807",
+        }),
+    )
+    .optional(),
+  modified_at: z.iso.datetime().optional(),
+  recurring_id: z.uuid().optional(),
+  status: zRecurringApiInvoiceRequestStatus.optional(),
+});
+
+export const zRecurringApiInvoiceRequest = z.object({
+  created_at: z.iso.datetime().optional(),
+  id: z.uuid().optional(),
+  items: z.array(zRecurringApiInvoiceRequestItem).optional(),
+  modified_at: z.iso.datetime().optional(),
+  processed_at: z.iso.datetime().optional(),
+  processing_mode: zRecurringApiProcessingMode.optional(),
+  status: zRecurringApiInvoiceRequestStatus.optional(),
 });
 
 /**
@@ -456,26 +475,11 @@ export const zRecurringApiRowBase = z.object({
   price: z.number().optional(),
   project_id: z.string().optional(),
   quantity: z.number().optional(),
-  recurring_id: z.uuid().optional(),
   row_index: z.int().optional(),
   type: zRecurringApiRowType.optional(),
   unit: z.string().optional(),
   vat_percentage: z.number().optional(),
 });
-
-export const zRecurringApiCreateRecurringRow = zRecurringApiRowBase.and(
-  z.record(z.string(), z.unknown()),
-);
-
-export const zRecurringApiDeviationRow = zRecurringApiRowBase.and(
-  z.object({
-    created_at: z.iso.datetime().optional(),
-    deviation_id: z.uuid().optional(),
-    id: z.uuid().optional(),
-    modified_at: z.iso.datetime().optional(),
-    totals: zRecurringApiRowTotals.optional(),
-  }),
-);
 
 export const zRecurringApiPartialRecurringRow = zRecurringApiRowBase.and(
   z.record(z.string(), z.unknown()),
@@ -538,11 +542,18 @@ export const zRecurringApiTaxReductionData = z.object({
     .optional(),
 });
 
+export const zRecurringApiCreateRecurringRow = zRecurringApiRowBase.and(
+  z.object({
+    tax_reduction_data: zRecurringApiTaxReductionData.optional(),
+  }),
+);
+
 export const zRecurringApiRecurringRow = zRecurringApiRowBase.and(
   z.object({
     created_at: z.iso.datetime().optional(),
     id: z.uuid().optional(),
     modified_at: z.iso.datetime().optional(),
+    recurring_id: z.uuid().optional(),
     tax_reduction_data: zRecurringApiTaxReductionData.optional(),
     totals: zRecurringApiRowTotals.optional(),
   }),
@@ -557,6 +568,7 @@ export const zRecurringApiUpdateAccrualRow = zRecurringApiBaseAccrualRow.and(
 export const zRecurringApiUpdateRecurringRow = zRecurringApiRowBase.and(
   z.object({
     id: z.uuid().optional(),
+    tax_reduction_data: zRecurringApiTaxReductionData.optional(),
   }),
 );
 
@@ -586,6 +598,9 @@ export const zRecurringApiBaseAccrual = z.object({
 
 export const zRecurringApiAccrual = zRecurringApiBaseAccrual.and(
   z.object({
+    created_at: z.iso.datetime().optional(),
+    id: z.uuid().optional(),
+    modified_at: z.iso.datetime().optional(),
     recurring_id: z.uuid().optional(),
     rows: z.array(zRecurringApiAccrualRow).optional(),
   }),
@@ -597,20 +612,12 @@ export const zRecurringApiCreateAccrual = zRecurringApiBaseAccrual.and(
   }),
 );
 
-export const zRecurringApiDeviation = zRecurringApiBaseDeviation.and(
-  z.object({
-    accrual: zRecurringApiAccrual.optional(),
-    created_at: z.iso.datetime().optional(),
-    id: z.uuid().optional(),
-    modified_at: z.iso.datetime().optional(),
-    recurring_id: z.uuid().optional(),
-    rows: z.array(zRecurringApiDeviationRow).optional(),
-  }),
-);
-
 export const zRecurringApiListAccrual = z.object({
   accrual_account_number: z.int().optional(),
   amount: z.number().optional(),
+  created_at: z.iso.datetime().optional(),
+  id: z.uuid().optional(),
+  modified_at: z.iso.datetime().optional(),
   recurring_id: z.uuid().optional(),
   revenue_account_number: z.int().optional(),
   vat_option: zRecurringApiVatOption.optional(),
@@ -708,7 +715,7 @@ export const zRecurringApiPartialRecurring = zRecurringApiBaseRecurring.and(
 
 export const zRecurringApiJsonPatchOperation = z.object({
   from: z.string().optional(),
-  op: z.enum(["add", "remove", "replace", "move", "copy", "test"]),
+  op: z.enum(["add", "remove", "replace"]),
   path: z.string(),
   value: z
     .union([
@@ -739,7 +746,6 @@ export const zRecurringApiRecurring = zRecurringApiBaseRecurring.and(
     created_at: z.iso.datetime().optional(),
     customer: zRecurringApiRecurringCustomer.optional(),
     dates: zRecurringApiRecurringDates.optional(),
-    deviations: z.array(zRecurringApiDeviation).optional(),
     error_logs: z.array(zRecurringApiErrorLogEntry).optional(),
     id: z.uuid().optional(),
     modified_at: z.iso.datetime().optional(),
@@ -754,7 +760,6 @@ export const zRecurringApiUpdateRecurring = zRecurringApiBaseRecurring.and(
   z.object({
     accrual: zRecurringApiUpdateAccrual.optional(),
     dates: zRecurringApiRecurringDates,
-    id: z.uuid().optional(),
     rows: z.array(zRecurringApiUpdateRecurringRow).optional(),
     tax_reductions: z.array(zRecurringApiUpdateTaxReduction).optional(),
   }),
@@ -2141,143 +2146,8 @@ export const zFileattachmentsWebException = z.object({
   message: z.string().optional(),
 });
 
-export const zFortnoxAbsenceTransactionListItem = z.object({
-  "@url": z.string().optional(),
-  CauseCode: z.enum([
-    "ASK",
-    "FPE",
-    "FRA",
-    "HAV",
-    "KOM",
-    "MIL",
-    "NAR",
-    "OS1",
-    "OS2",
-    "OS3",
-    "OS4",
-    "OS5",
-    "PAP",
-    "PEM",
-    "PER",
-    "SEM",
-    "SJK",
-    "SMB",
-    "SVE",
-    "TJL",
-    "UTB",
-    "VAB",
-  ]),
-  CostCenter: z.string().optional(),
-  Date: z.iso.date(),
-  EmployeeId: z.string().min(1).max(15),
-  Extent: z.number().optional(),
-  HolidayEntitling: z.boolean().optional(),
-  Hours: z.number().optional(),
-  Project: z.string().optional(),
-  id: z.uuid().optional(),
-});
-
-export const zFortnoxAbsenceTransactionListItemWrap = z.object({
-  AbsenceTransactions: z.array(zFortnoxAbsenceTransactionListItem),
-});
-
-export const zFortnoxAbsenceTransactionPayload = z.object({
-  CauseCode: z.enum([
-    "ASK",
-    "FPE",
-    "FRA",
-    "HAV",
-    "KOM",
-    "MIL",
-    "NAR",
-    "OS1",
-    "OS2",
-    "OS3",
-    "OS4",
-    "OS5",
-    "PAP",
-    "PEM",
-    "PER",
-    "SEM",
-    "SJK",
-    "SMB",
-    "SVE",
-    "TJL",
-    "UTB",
-    "VAB",
-  ]),
-  CostCenter: z.string().optional(),
-  Date: z.iso.date(),
-  EmployeeId: z.string(),
-  Extent: z.number().optional(),
-  HolidayEntitling: z.boolean().optional(),
-  Hours: z.number().optional(),
-  Project: z.string().optional(),
-});
-
-export const zFortnoxAbsenceTransactionPayloadWrap = z.object({
-  AbsenceTransaction: zFortnoxAbsenceTransactionPayload,
-});
-
-export const zFortnoxAbsenceTransactionSingleItem = z.object({
-  "@url": z.string().optional(),
-  CauseCode: z.enum([
-    "ASK",
-    "FPE",
-    "FRA",
-    "HAV",
-    "KOM",
-    "MIL",
-    "NAR",
-    "OS1",
-    "OS2",
-    "OS3",
-    "OS4",
-    "OS5",
-    "PAP",
-    "PEM",
-    "PER",
-    "SEM",
-    "SJK",
-    "SMB",
-    "SVE",
-    "TJL",
-    "UTB",
-    "VAB",
-  ]),
-  CostCenter: z.string().optional(),
-  Date: z.iso.date(),
-  EmployeeId: z.string().min(1).max(15),
-  Extent: z.number().optional(),
-  HolidayEntitling: z.boolean().optional(),
-  Hours: z.number().optional(),
-  Project: z.string().optional(),
-  id: z.uuid().optional(),
-});
-
-export const zFortnoxAbsenceTransactionSingleItemWrap = z.object({
-  AbsenceTransaction: zFortnoxAbsenceTransactionSingleItem,
-});
-
-export const zFortnoxAccountChart = z.object({
-  Name: z.string().optional(),
-});
-
-export const zFortnoxAccountChartWrap = z.object({
-  AccountCharts: z.array(zFortnoxAccountChart),
-});
-
-export const zFortnoxAccountListItem = z.object({
-  "@url": z.string().optional(),
-  Active: z.boolean().optional(),
-  BalanceBroughtForward: z.number().optional(),
-  CostCenter: z.string().optional(),
-  CostCenterSettings: z.enum(["ALLOWED", "MANDATORY", "NOTALLOWED"]).optional(),
-  Description: z.string().min(1).max(200),
-  Number: z.int().gte(1000).lte(9999),
-  Project: z.string().optional(),
-  ProjectSettings: z.enum(["ALLOWED", "MANDATORY", "NOTALLOWED"]).optional(),
-  SRU: z
+export const zFortnoxAnlAssetActionsSingleItem = z.object({
+  Amount: z
     .int()
     .min(-2147483648, {
       error: "Invalid value: Expected int32 to be >= -2147483648",
@@ -2286,400 +2156,22 @@ export const zFortnoxAccountListItem = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
-  VATCode: z.string().optional(),
-  Year: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
+  AssetIds: z
+    .array(
+      z
+        .int()
+        .min(-2147483648, {
+          error: "Invalid value: Expected int32 to be >= -2147483648",
+        })
+        .max(2147483647, {
+          error: "Invalid value: Expected int32 to be <= 2147483647",
+        }),
+    )
     .optional(),
-});
-
-export const zFortnoxAccountListItemWrap = z.object({
-  Accounts: z.array(zFortnoxAccountListItem),
-});
-
-export const zFortnoxAccountPayloadOpeningQuantities = z.object({
-  Balance: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Project: z.string().optional(),
-});
-
-export const zFortnoxAccountPayload = z.object({
-  Active: z.boolean().optional(),
-  BalanceBroughtForward: z.number().optional(),
-  CostCenter: z.string().optional(),
-  CostCenterSettings: z.enum(["ALLOWED", "MANDATORY", "NOTALLOWED"]).optional(),
-  Description: z.string().min(1).max(200),
-  Number: z.int().gte(1000).lte(9999),
-  OpeningQuantities: z
-    .array(zFortnoxAccountPayloadOpeningQuantities)
-    .optional(),
-  Project: z.string().optional(),
-  ProjectSettings: z.enum(["ALLOWED", "MANDATORY", "NOTALLOWED"]).optional(),
-  SRU: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  TransactionInformation: z.string().optional(),
-  TransactionInformationSettings: z
-    .enum(["ALLOWED", "MANDATORY", "NOTALLOWED"])
-    .optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxAccountPayloadWrap = z.object({
-  Account: zFortnoxAccountPayload,
-});
-
-export const zFortnoxAccountSingleItemOpeningQuantities = z.object({
-  Balance: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Project: z.string().optional(),
-});
-
-export const zFortnoxAccountSingleItem = z.object({
-  "@url": z.string().optional(),
-  Active: z.boolean().optional(),
-  BalanceBroughtForward: z.number().optional(),
-  BalanceCarriedForward: z.number().optional(),
-  CostCenter: z.string().optional(),
-  CostCenterSettings: z.enum(["ALLOWED", "MANDATORY", "NOTALLOWED"]).optional(),
-  Description: z.string().min(1).max(200),
-  Number: z.int().gte(1000).lte(9999),
-  OpeningQuantities: z
-    .array(zFortnoxAccountSingleItemOpeningQuantities)
-    .optional(),
-  Project: z.string().optional(),
-  ProjectSettings: z.enum(["ALLOWED", "MANDATORY", "NOTALLOWED"]).optional(),
-  QuantitySettings: z.enum(["ALLOWED", "MANDATORY", "NOTALLOWED"]).optional(),
-  QuantityUnit: z.string().optional(),
-  SRU: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  TransactionInformation: z.string().optional(),
-  TransactionInformationSettings: z
-    .enum(["ALLOWED", "MANDATORY", "NOTALLOWED"])
-    .optional(),
-  VATCode: z.string().optional(),
-  Year: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxAccountSingleItemWrap = z.object({
-  Account: zFortnoxAccountSingleItem,
-});
-
-export const zFortnoxArticle = z.object({
-  "@url": z.string().optional(),
-  Active: z.boolean().optional(),
-  ArticleNumber: z.string().max(50).optional(),
-  Bulky: z.boolean().optional(),
-  ConstructionAccount: z.int().gte(1000).lte(99999).optional(),
-  CostCalculationMethod: z.string().optional(),
-  DefaultStockLocation: z.string().optional(),
-  DefaultStockPoint: z.string().optional(),
-  Depth: z.int().gte(0).lte(999999999).optional(),
-  Description: z.string().min(1).max(200),
-  DirectCost: z.number().optional(),
-  DisposableQuantity: z.number().optional(),
-  EAN: z.string().max(30).optional(),
-  EUAccount: z.int().gte(1000).lte(99999).optional(),
-  EUVATAccount: z.int().gte(1000).lte(99999).optional(),
-  Expired: z.boolean().optional(),
-  ExportAccount: z.int().gte(1000).lte(99999).optional(),
-  FreightCost: z.number().optional(),
-  Height: z.int().gte(0).lte(999999999).optional(),
-  Housework: z.boolean().optional(),
-  HouseworkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "HVAC",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "COOKING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "TUTORING",
-      "FURNISHING",
-      "HOMEMAINTENANCE",
-      "TRANSPORTATIONSERVICES",
-      "WASHINGANDCAREOFCLOTHING",
-      "SOLARCELLS",
-      "STORAGESELFPRODUCEDELECTRICITY",
-      "CHARGINGSTATIONELECTRICVEHICLE",
-      "EMPTYHOUSEWORK",
-      "OTHERCOSTS",
-    ])
-    .optional(),
-  Manufacturer: z.string().max(50).optional(),
-  ManufacturerArticleNumber: z.string().max(50).optional(),
-  Note: z.string().max(10000).optional(),
-  OtherCost: z.number().optional(),
-  PurchaseAccount: z.int().gte(1000).lte(99999).optional(),
-  PurchasePrice: z.number().optional(),
-  QuantityInStock: z.number().optional(),
-  ReservedQuantity: z.number().optional(),
-  SalesAccount: z.int().gte(1000).lte(99999).optional(),
-  SalesPrice: z.number().optional(),
-  StockAccount: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  StockChangeAccount: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  StockGoods: z.boolean().optional(),
-  StockPlace: z.string().max(100).optional(),
-  StockValue: z.number().optional(),
-  StockWarning: z.number().optional(),
-  SupplierName: z.string().optional(),
-  SupplierNumber: z.string().optional(),
-  Type: z.enum(["STOCK", "SERVICE"]).optional(),
-  Unit: z.string().optional(),
-  VAT: z.number().optional(),
-  WebshopArticle: z.boolean().optional(),
-  Weight: z.int().gte(0).lte(999999999).optional(),
-  Width: z.int().gte(0).lte(999999999).optional(),
-});
-
-export const zFortnoxArticleFileConnection = z.object({
-  "@url": z.string().optional(),
-  ArticleNumber: z.string(),
-  FileId: z.string(),
-});
-
-export const zFortnoxArticleFileConnectionListItem = z.object({
-  "@url": z.string().optional(),
-  ArticleNumber: z.string(),
-  FileId: z.string(),
-});
-
-export const zFortnoxArticleFileConnectionListItemWrap = z.object({
-  ArticleFileConnections: z.array(zFortnoxArticleFileConnectionListItem),
-});
-
-export const zFortnoxArticleFileConnectionWrap = z.object({
-  ArticleFileConnection: zFortnoxArticleFileConnection,
-});
-
-export const zFortnoxArticleListItem = z.object({
-  "@url": z.string().optional(),
-  ArticleNumber: z.string().max(50).optional(),
-  Description: z.string().min(1).max(200),
-  DisposableQuantity: z.string().optional(),
-  EAN: z.string().max(30).optional(),
-  Housework: z.boolean().optional(),
-  PurchasePrice: z.string().optional(),
-  QuantityInStock: z.number().optional(),
-  ReservedQuantity: z.string().optional(),
-  SalesPrice: z.string().optional(),
-  StockPlace: z.string().max(100).optional(),
-  StockValue: z.string().optional(),
-  Unit: z.string().optional(),
-  VAT: z.string().optional(),
-  WebshopArticle: z.boolean().optional(),
-});
-
-export const zFortnoxArticleListItemV2 = z.object({
-  "@url": z.string().optional(),
-  ArticleNumber: z.string().max(50).optional(),
-  Description: z.string().min(1).max(200),
-  DisposableQuantity: z.string().optional(),
-  EAN: z.string().max(30).optional(),
-  Housework: z.boolean().optional(),
-  PurchasePrice: z.string().optional(),
-  QuantityInStock: z.number().optional(),
-  ReservedQuantity: z.string().optional(),
-  SalesPrice: z.string().optional(),
-  StockPlace: z.string().max(100).optional(),
-  StockValue: z.string().optional(),
-  Unit: z.string().optional(),
-  VAT: z.string().optional(),
-  WebshopArticle: z.boolean().optional(),
-});
-
-export const zFortnoxArticleListItemV2List = z.object({
-  Articles: z.array(zFortnoxArticleListItemV2),
-});
-
-export const zFortnoxArticleListItemList = z.object({
-  Articles: z.array(zFortnoxArticleListItem),
-});
-
-export const zFortnoxArticleUrlConnection = z.object({
-  "@url": z.string().optional(),
-  ArticleNumber: z.string(),
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  URLConnection: z.string(),
-});
-
-export const zFortnoxArticleUrlConnectionListItem = z.object({
-  "@url": z.string().optional(),
-  ArticleNumber: z.string(),
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  URLConnection: z.string(),
-});
-
-export const zFortnoxArticleUrlConnectionListItemList = z.object({
-  ArticleUrlConnections: z.array(zFortnoxArticleUrlConnectionListItem),
-});
-
-export const zFortnoxArticleUrlConnectionWrap = z.object({
-  ArticleUrlConnection: zFortnoxArticleUrlConnection,
-});
-
-export const zFortnoxArticleV2BundlePriceAdjustmentRow = z.object({
-  ConstructionAccount: z.int().gte(1000).lte(99999).optional(),
-  Description: z.string().max(255).optional(),
-  EUAccount: z.int().gte(1000).lte(99999).optional(),
-  EUVATAccount: z.int().gte(1000).lte(99999).optional(),
-  ExportAccount: z.int().gte(1000).lte(99999).optional(),
-  SalesAccount: z.int().gte(1000).lte(99999).optional(),
-  VAT: z.number().optional(),
-});
-
-export const zFortnoxArticleV2BundleSubItem = z.object({
-  ArticleNumber: z.string().max(50).optional(),
-  FixedPrice: z.boolean().optional(),
-  Quantity: z.number().optional(),
-});
-
-export const zFortnoxArticleV2Bundle = z.object({
   Comment: z.string().optional(),
-  PriceAdjustmentRow: zFortnoxArticleV2BundlePriceAdjustmentRow.optional(),
-  SubItems: z.array(zFortnoxArticleV2BundleSubItem).optional(),
-});
-
-export const zFortnoxArticleV2 = z.object({
-  "@url": z.string().optional(),
-  Active: z.boolean().optional(),
-  ArticleNumber: z.string().max(50).optional(),
-  Bulky: z.boolean().optional(),
-  Bundle: zFortnoxArticleV2Bundle.optional(),
-  BundleArticle: z.boolean().optional(),
-  ConstructionAccount: z.int().gte(1000).lte(99999).optional(),
-  CostCalculationMethod: z.string().optional(),
-  DefaultStockLocation: z.string().optional(),
-  DefaultStockPoint: z.string().optional(),
-  Depth: z.int().gte(0).lte(999999999).optional(),
-  Description: z.string().min(1).max(200),
-  DirectCost: z.number().optional(),
-  DisposableQuantity: z.number().optional(),
-  EAN: z.string().max(30).optional(),
-  EUAccount: z.int().gte(1000).lte(99999).optional(),
-  EUVATAccount: z.int().gte(1000).lte(99999).optional(),
-  Expired: z.boolean().optional(),
-  ExportAccount: z.int().gte(1000).lte(99999).optional(),
-  FreightCost: z.number().optional(),
-  Height: z.int().gte(0).lte(999999999).optional(),
-  Housework: z.boolean().optional(),
-  HouseworkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "HVAC",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "FURNISHING",
-      "HOMEMAINTENANCE",
-      "TRANSPORTATIONSERVICES",
-      "WASHINGANDCAREOFCLOTHING",
-      "SOLARCELLS",
-      "STORAGESELFPRODUCEDELECTRICITY",
-      "CHARGINGSTATIONELECTRICVEHICLE",
-      "EMPTYHOUSEWORK",
-      "OTHERCOSTS",
-    ])
-    .optional(),
-  Manufacturer: z.string().max(50).optional(),
-  ManufacturerArticleNumber: z.string().max(50).optional(),
-  Note: z.string().max(10000).optional(),
-  OtherCost: z.number().optional(),
-  PurchaseAccount: z.int().gte(1000).lte(99999).optional(),
-  PurchasePrice: z.number().optional(),
-  QuantityInStock: z.number().optional(),
-  ReservedQuantity: z.number().optional(),
-  SalesAccount: z.int().gte(1000).lte(99999).optional(),
-  SalesPrice: z.number().optional(),
-  StockAccount: z
+  Date: z.iso.date().optional(),
+  DepreciateUntil: z.iso.date().optional(),
+  FinancialYearId: z
     .int()
     .min(-2147483648, {
       error: "Invalid value: Expected int32 to be >= -2147483648",
@@ -2688,7 +2180,7 @@ export const zFortnoxArticleV2 = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
-  StockChangeAccount: z
+  Percentage: z
     .int()
     .min(-2147483648, {
       error: "Invalid value: Expected int32 to be >= -2147483648",
@@ -2697,36 +2189,85 @@ export const zFortnoxArticleV2 = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
-  StockGoods: z.boolean().optional(),
-  StockPlace: z.string().max(100).optional(),
-  StockValue: z.number().optional(),
-  StockWarning: z.number().optional(),
-  SupplierName: z.string().optional(),
-  SupplierNumber: z.string().optional(),
-  Type: z.enum(["STOCK", "SERVICE"]).optional(),
-  Unit: z.string().optional(),
-  VAT: z.number().optional(),
-  WebshopArticle: z.boolean().optional(),
-  Weight: z.int().gte(0).lte(999999999).optional(),
-  Width: z.int().gte(0).lte(999999999).optional(),
+  Price: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TransactionDate: z.iso.date().optional(),
 });
 
-export const zFortnoxArticleV2Wrap = z.object({
-  Article: zFortnoxArticleV2,
+export const zFortnoxAnlAdjustAssetValueWrap = z.object({
+  Asset: zFortnoxAnlAssetActionsSingleItem,
 });
 
-export const zFortnoxArticleWrap = z.object({
-  Article: zFortnoxArticle,
+export const zFortnoxAnlAssetHistorySingleItem = z.object({
+  Amount: z.string().optional(),
+  Date: z.iso.date().optional(),
+  EventId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Notes: z.string().optional(),
+  SupplierInvoice: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  UserId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  UserName: z.string().optional(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VoucherSeries: z.string().optional(),
+  VoucherYear: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
 });
 
-export const zFortnoxAssetFileConnection = z.object({
-  "@url": z.string().optional(),
-  AssetId: z.string().optional(),
-  FileId: z.string().optional(),
-  Name: z.string().optional(),
-});
-
-export const zFortnoxAssetType = z.object({
+export const zFortnoxAnlAssetTypesResponse = z.object({
   "@url": z.string().optional(),
   AccountAsset: z
     .int()
@@ -2764,6 +2305,8 @@ export const zFortnoxAssetType = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
+  AccountOffsetSale: z.string().optional(),
+  AccountOffsetSaleId: z.string().optional(),
   AccountRevaluation: z
     .int()
     .min(-2147483648, {
@@ -2896,148 +2439,1636 @@ export const zFortnoxAssetType = z.object({
     .optional(),
 });
 
-export const zFortnoxAssetTypeWrapSingle = z.object({
-  Type: zFortnoxAssetType.optional(),
+export const zFortnoxAnlAssetTypesSingleResponseWrap = z.object({
+  Type: zFortnoxAnlAssetTypesResponse,
 });
 
-export const zFortnoxAttendanceTransaction = z.object({
-  CauseCode: z.enum([
-    "ARB",
-    "BE2",
-    "BER",
-    "FLX",
-    "HLG",
-    "JO2",
-    "JOR",
-    "MER",
-    "OB1",
-    "OB2",
-    "OB3",
-    "OB4",
-    "OB5",
-    "OK0",
-    "OK1",
-    "OK2",
-    "OK3",
-    "OK4",
-    "OK5",
-    "OT1",
-    "OT2",
-    "OT3",
-    "OT4",
-    "OT5",
-    "RES",
-    "TID",
-  ]),
-  CostCenter: z.string().optional(),
-  Date: z.iso.date(),
-  EmployeeId: z.string().min(1).max(15),
-  Hours: z.string().optional(),
-  Project: z.string().optional(),
-});
-
-export const zFortnoxAttendanceTransactionListItem = z.object({
+export const zFortnoxAnlAssetsDepreciationResponse = z.object({
   "@url": z.string().optional(),
-  CauseCode: z.enum([
-    "ARB",
-    "BE2",
-    "BER",
-    "FLX",
-    "HLG",
-    "JO2",
-    "JOR",
-    "MER",
-    "OB1",
-    "OB2",
-    "OB3",
-    "OB4",
-    "OB5",
-    "OK0",
-    "OK1",
-    "OK2",
-    "OK3",
-    "OK4",
-    "OK5",
-    "OT1",
-    "OT2",
-    "OT3",
-    "OT4",
-    "OT5",
-    "RES",
-    "TID",
-  ]),
+  FinancialYear: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VoucherSeries: z.string().optional(),
+});
+
+export const zFortnoxAnlAssetsDepreciationResponseWrap = z.object({
+  AssetsDepreciation: z.array(zFortnoxAnlAssetsDepreciationResponse),
+});
+
+export const zFortnoxAnlAssetsListItem = z.object({
+  "@url": z.string(),
+  AcquisitionDate: z.string(),
+  AcquisitionStart: z.string(),
+  AcquisitionValue: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  Brand: z.string(),
+  CostCenter: z.string(),
+  Department: z.string(),
+  DepreciateToResidualValue: z.number(),
+  DepreciatedTo: z.string(),
+  DepreciationFinal: z.string(),
+  DepreciationMethod: z.string(),
+  Description: z.string(),
+  Group: z.string(),
+  History: z.array(zFortnoxAnlAssetHistorySingleItem),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  InsuredNumber: z.string(),
+  InsuredWith: z.string(),
+  ManualOb: z.string(),
+  Notes: z.string(),
+  Number: z.string(),
+  Placement: z.string(),
+  Project: z.string(),
+  Reference: z.string(),
+  Room: z.string(),
+  Status: z.string(),
+  StatusId: z.string(),
+  Type: z.string(),
+  TypeId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+});
+
+export const zFortnoxAnlAssetsSingleItem = z.object({
+  "@url": z.string().optional(),
+  AcquisitionDate: z.string().optional(),
+  AcquisitionStart: z.string().optional(),
+  AcquisitionValue: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Brand: z.string().optional(),
   CostCenter: z.string().optional(),
-  Date: z.iso.date(),
-  EmployeeId: z.string().min(1).max(15),
-  Hours: z.string().optional(),
+  Department: z.string().optional(),
+  DepreciateToResidualValue: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  DepreciatedTo: z.string().optional(),
+  DepreciationFinal: z.string().optional(),
+  DepreciationMethod: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Description: z.string().optional(),
+  Group: z.string().optional(),
+  History: z.array(zFortnoxAnlAssetHistorySingleItem).optional(),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  InsuredNumber: z.string().optional(),
+  InsuredWith: z.string().optional(),
+  ManualOb: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Notes: z.string().optional(),
+  Number: z.string().optional(),
+  Placement: z.string().optional(),
   Project: z.string().optional(),
-  id: z.uuid().optional(),
+  Reference: z.string().optional(),
+  Room: z.string().optional(),
+  Status: z.string().optional(),
+  StatusId: z.string().optional(),
+  Type: z.string().optional(),
+  TypeId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
 });
 
-export const zFortnoxAttendanceTransactionListItemList = z.object({
-  AttendanceTransactions: z.array(zFortnoxAttendanceTransactionListItem),
+export const zFortnoxAnlAssetsActionResponse = z.object({
+  Assets: zFortnoxAnlAssetsSingleItem.optional(),
 });
 
-export const zFortnoxAttendanceTransactionWrap = z.object({
-  AttendanceTransaction: zFortnoxAttendanceTransaction,
+export const zFortnoxAnlAssetsSingleItemResponseWrap = z.object({
+  Assets: zFortnoxAnlAssetsSingleItem,
 });
 
-export const zFortnoxAuthorizationCode = z.object({
+export const zFortnoxAnlAssetsSinglePayloadItem = z.object({
+  AcquisitionDate: z.string().optional(),
+  AcquisitionStart: z.string().optional(),
+  AcquisitionValue: z.string().optional(),
+  Brand: z.string().optional(),
+  CostCenter: z.string().optional(),
+  Department: z.string().optional(),
+  DepreciateToResidualValue: z.number().optional(),
+  DepreciationFinal: z.string().optional(),
+  DepreciationMethod: z.string().optional(),
+  Description: z.string().optional(),
+  Group: z.string().optional(),
+  InsuredNumber: z.string().optional(),
+  InsuredWith: z.string().optional(),
+  Notes: z.string().optional(),
+  Number: z.string().optional(),
+  Placement: z.string().optional(),
+  Project: z.string().optional(),
+  Reference: z.string().optional(),
+  Room: z.string().optional(),
+  TypeId: z.string().optional(),
+});
+
+export const zFortnoxAnlAssetsSinglePayloadItemWrap = z.object({
+  Asset: zFortnoxAnlAssetsSinglePayloadItem,
+});
+
+export const zFortnoxAnlCreateAssetType = z.object({
+  AccountAssetId: z.string().optional(),
+  AccountDepreciationId: z.string().optional(),
+  AccountOffsetSaleId: z.string().optional(),
+  AccountRevaluationId: z.string().optional(),
+  AccountSaleLossId: z.string().optional(),
+  AccountSaleWinId: z.string().optional(),
+  AccountValueLossId: z.string().optional(),
+  AccountWriteDownAckId: z.string().optional(),
+  AccountWriteDownId: z.string().optional(),
+  Description: z.string().optional(),
+  Notes: z.string().optional(),
+  Number: z.string().optional(),
+  Type: z.string().optional(),
+});
+
+export const zFortnoxAnlCreateAssetTypeWrap = z.object({
+  AssetType: zFortnoxAnlCreateAssetType,
+});
+
+export const zFortnoxAnlDepreciationWrap = z.object({
+  Asset: zFortnoxAnlAssetActionsSingleItem,
+});
+
+export const zFortnoxAnlScrapAssetWrap = z.object({
+  Asset: zFortnoxAnlAssetActionsSingleItem,
+});
+
+export const zFortnoxAnlSellAssetWrap = z.object({
+  Asset: zFortnoxAnlAssetActionsSingleItem,
+});
+
+export const zFortnoxAnlUpdateAssetType = z.object({
+  AccountAssetId: z.string().optional(),
+  AccountDepreciationId: z.string().optional(),
+  AccountOffsetSaleId: z.string().optional(),
+  AccountRevaluationId: z.string().optional(),
+  AccountSaleLossId: z.string().optional(),
+  AccountSaleWinId: z.string().optional(),
+  AccountValueLossId: z.string().optional(),
+  AccountWriteDownAckId: z.string().optional(),
+  AccountWriteDownId: z.string().optional(),
+  AcquisitionDate: z.string().optional(),
+  AcquisitionStart: z.string().optional(),
+  AcquisitionValue: z.string().optional(),
+  Brand: z.string().optional(),
+  CostCenter: z.string().optional(),
+  Department: z.string().optional(),
+  DepreciateToResidualValue: z.number().optional(),
+  DepreciationFinal: z.string().optional(),
+  DepreciationMethod: z.string().optional(),
+  Description: z.string().optional(),
+  Group: z.string().optional(),
+  InsuredNumber: z.string().optional(),
+  InsuredWith: z.string().optional(),
+  Notes: z.string().optional(),
+  Number: z.string().optional(),
+  Placement: z.string().optional(),
+  Project: z.string().optional(),
+  Reference: z.string().optional(),
+  Room: z.string().optional(),
+  Type: z.string().optional(),
+  TypeId: z.string().optional(),
+});
+
+export const zFortnoxAnlUpdateAssetTypeWrap = z.object({
+  AssetType: zFortnoxAnlUpdateAssetType,
+});
+
+export const zFortnoxArticleBundleItemSingleItem = z.object({
+  ArticleNumber: z.string().max(50).optional(),
+  FixedPrice: z.boolean().optional(),
+  Quantity: z.number().optional(),
+});
+
+export const zFortnoxArticleBundleItemSinglePayloadItem = z.object({
+  ArticleNumber: z.string().max(50).optional(),
+  FixedPrice: z.boolean().optional(),
+  Quantity: z.number().optional(),
+});
+
+export const zFortnoxArticleBundleSubItemRowSingleItem = z.object({
+  ConstructionAccount: z.int().gte(1000).lte(99999).optional(),
+  Description: z.string().max(255).optional(),
+  EUAccount: z.int().gte(1000).lte(99999).optional(),
+  EUVATAccount: z.int().gte(1000).lte(99999).optional(),
+  EuAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  EuVatAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ExportAccount: z.int().gte(1000).lte(99999).optional(),
+  SalesAccount: z.int().gte(1000).lte(99999).optional(),
+  VAT: z.number().optional(),
+  Vat: z.number().optional(),
+});
+
+export const zFortnoxArticleBundleSingleItem = z.object({
+  Comment: z.string().optional(),
+  PriceAdjustmentRow: zFortnoxArticleBundleSubItemRowSingleItem.optional(),
+  SubItems: z.array(zFortnoxArticleBundleItemSingleItem).optional(),
+});
+
+export const zFortnoxArticleBundleSubItemRowSinglePayloadItem = z.object({
+  ConstructionAccount: z.int().gte(1000).lte(99999).optional(),
+  Description: z.string().max(255).optional(),
+  EUAccount: z.int().gte(1000).lte(99999).optional(),
+  EUVATAccount: z.int().gte(1000).lte(99999).optional(),
+  EuAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  EuVatAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ExportAccount: z.int().gte(1000).lte(99999).optional(),
+  SalesAccount: z.int().gte(1000).lte(99999).optional(),
+  VAT: z.number().optional(),
+  Vat: z.number().optional(),
+});
+
+export const zFortnoxArticleBundleSinglePayloadItem = z.object({
+  Comment: z.string().optional(),
+  PriceAdjustmentRow:
+    zFortnoxArticleBundleSubItemRowSinglePayloadItem.optional(),
+  SubItems: z.array(zFortnoxArticleBundleItemSinglePayloadItem).optional(),
+});
+
+export const zFortnoxArticleListItem = z.object({
+  "@url": z.string().optional(),
+  Active: z.boolean().optional(),
+  ArticleNumber: z.string().max(50).optional(),
+  Bulky: z.boolean().optional(),
+  CommodityCode: z.string().optional(),
+  ConstructionAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  CostCalculationMethod: z.string().optional(),
+  DefaultStockLocation: z.string().optional(),
+  DefaultStockPoint: z.string().optional(),
+  Depth: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Description: z.string().min(1).max(200),
+  DirectCost: z.number().optional(),
+  DisposableQuantity: z.string().optional(),
+  EAN: z.string().max(30).optional(),
+  EUAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  EUVATAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Expired: z.boolean().optional(),
+  ExportAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  FreightCost: z.number().optional(),
+  Height: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Housework: z.boolean().optional(),
+  HouseworkType: z.string().optional(),
+  Manufacturer: z.string().optional(),
+  ManufacturerArticleNumber: z.string().optional(),
+  Note: z.string().optional(),
+  OtherCost: z.number().optional(),
+  PurchaseAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  PurchasePrice: z.string().optional(),
+  QuantityInStock: z.number().optional(),
+  ReservedQuantity: z.string().optional(),
+  SalesAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SalesPrice: z.string().optional(),
+  StockAccount: z.string().optional(),
+  StockChangeAccount: z.string().optional(),
+  StockGoods: z.boolean().optional(),
+  StockPlace: z.string().max(100).optional(),
+  StockValue: z.string().optional(),
+  StockWarning: z.number().optional(),
+  SupplierName: z.string().optional(),
+  SupplierNumber: z.string().optional(),
+  Type: z.string().optional(),
+  Unit: z.string().optional(),
+  VAT: z.string().optional(),
+  WebshopArticle: z.boolean().optional(),
+  Weight: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Width: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxArticleSingleItem = z.object({
+  "@url": z.string().optional(),
+  Active: z.boolean().optional(),
+  ArticleNumber: z.string().max(50).optional(),
+  Bulky: z.boolean().optional(),
+  CommodityCode: z.string().optional(),
+  ConstructionAccount: z.int().gte(1000).lte(99999).optional(),
+  CostCalculationMethod: z.string().optional(),
+  DefaultStockLocation: z.string().optional(),
+  DefaultStockPoint: z.string().optional(),
+  Depth: z.int().gte(0).lte(999999999).optional(),
+  Description: z.string().min(1).max(200),
+  DirectCost: z.number().optional(),
+  DisposableQuantity: z.number().optional(),
+  EAN: z.string().max(30).optional(),
+  EUAccount: z.int().gte(1000).lte(99999).optional(),
+  EUVATAccount: z.int().gte(1000).lte(99999).optional(),
+  Expired: z.boolean().optional(),
+  ExportAccount: z.int().gte(1000).lte(99999).optional(),
+  FreightCost: z.number().optional(),
+  Height: z.int().gte(0).lte(999999999).optional(),
+  Housework: z.boolean().optional(),
+  HouseworkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "COOKING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "TUTORING",
+      "FURNISHING",
+      "HOMEMAINTENANCE",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "EMPTYHOUSEWORK",
+      "OTHERCOSTS",
+    ])
+    .optional(),
+  Manufacturer: z.string().max(50).optional(),
+  ManufacturerArticleNumber: z.string().max(50).optional(),
+  Note: z.string().max(10000).optional(),
+  OtherCost: z.number().optional(),
+  PurchaseAccount: z.int().gte(1000).lte(99999).optional(),
+  PurchasePrice: z.number().optional(),
+  QuantityInStock: z.number().optional(),
+  ReservedQuantity: z.number().optional(),
+  SalesAccount: z.int().gte(1000).lte(99999).optional(),
+  SalesPrice: z.number().optional(),
+  StockAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockChangeAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockGoods: z.boolean().optional(),
+  StockPlace: z.string().max(100).optional(),
+  StockValue: z.number().optional(),
+  StockWarning: z.number().optional(),
+  SupplierName: z.string().optional(),
+  SupplierNumber: z.string().optional(),
+  Type: z.enum(["STOCK", "SERVICE"]).optional(),
+  Unit: z.string().optional(),
+  VAT: z.number().optional(),
+  WebshopArticle: z.boolean().optional(),
+  Weight: z.int().gte(0).lte(999999999).optional(),
+  Width: z.int().gte(0).lte(999999999).optional(),
+});
+
+export const zFortnoxArticleSingleItemWrap = z.object({
+  Article: zFortnoxArticleSingleItem,
+});
+
+export const zFortnoxArticleSinglePayloadItem = z.object({
+  Active: z.boolean().optional(),
+  ArticleNumber: z.string().max(50).optional(),
+  Bulky: z.boolean().optional(),
+  ConstructionAccount: z.int().gte(1000).lte(99999).optional(),
+  CostCalculationMethod: z.string().optional(),
+  DefaultStockLocation: z.string().optional(),
+  DefaultStockPoint: z.string().optional(),
+  Depth: z.int().gte(0).lte(999999999).optional(),
+  Description: z.string().min(1).max(200),
+  DirectCost: z.number().optional(),
+  DisposableQuantity: z.number().optional(),
+  EAN: z.string().max(30).optional(),
+  EUAccount: z.int().gte(1000).lte(99999).optional(),
+  EUVATAccount: z.int().gte(1000).lte(99999).optional(),
+  Expired: z.boolean().optional(),
+  ExportAccount: z.int().gte(1000).lte(99999).optional(),
+  FreightCost: z.number().optional(),
+  Height: z.int().gte(0).lte(999999999).optional(),
+  Housework: z.boolean().optional(),
+  HouseworkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "COOKING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "TUTORING",
+      "FURNISHING",
+      "HOMEMAINTENANCE",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "EMPTYHOUSEWORK",
+      "OTHERCOSTS",
+    ])
+    .optional(),
+  Manufacturer: z.string().max(50).optional(),
+  ManufacturerArticleNumber: z.string().max(50).optional(),
+  Note: z.string().max(10000).optional(),
+  OtherCost: z.number().optional(),
+  PurchaseAccount: z.int().gte(1000).lte(99999).optional(),
+  PurchasePrice: z.number().optional(),
+  QuantityInStock: z.number().optional(),
+  ReservedQuantity: z.number().optional(),
+  SalesAccount: z.int().gte(1000).lte(99999).optional(),
+  SalesPrice: z.number().optional(),
+  StockAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockChangeAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockGoods: z.boolean().optional(),
+  StockPlace: z.string().max(100).optional(),
+  StockValue: z.number().optional(),
+  StockWarning: z.number().optional(),
+  SupplierName: z.string().optional(),
+  SupplierNumber: z.string().optional(),
+  Type: z.enum(["STOCK", "SERVICE"]).optional(),
+  Unit: z.string().optional(),
+  VAT: z.number().optional(),
+  WebshopArticle: z.boolean().optional(),
+  Weight: z.int().gte(0).lte(999999999).optional(),
+  Width: z.int().gte(0).lte(999999999).optional(),
+});
+
+export const zFortnoxArticleSinglePayloadItemWrap = z.object({
+  Article: zFortnoxArticleSinglePayloadItem,
+});
+
+export const zFortnoxArticleV2ListItem = z.object({
+  "@url": z.string().optional(),
+  Active: z.boolean().optional(),
+  ArticleNumber: z.string().max(50).optional(),
+  Bulky: z.boolean().optional(),
+  Bundle: zFortnoxArticleBundleSingleItem.optional(),
+  BundleArticle: z.boolean().optional(),
+  CommodityCode: z.string().optional(),
+  ConstructionAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  CostCalculationMethod: z.string().optional(),
+  DefaultStockLocation: z.string().optional(),
+  DefaultStockPoint: z.string().optional(),
+  Depth: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Description: z.string().min(1).max(200),
+  DirectCost: z.number().optional(),
+  DisposableQuantity: z.string().optional(),
+  EAN: z.string().max(30).optional(),
+  EUAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  EUVATAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Expired: z.boolean().optional(),
+  ExportAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  FreightCost: z.number().optional(),
+  Height: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Housework: z.boolean().optional(),
+  HouseworkType: z.string().optional(),
+  Manufacturer: z.string().optional(),
+  ManufacturerArticleNumber: z.string().optional(),
+  Note: z.string().optional(),
+  OtherCost: z.number().optional(),
+  PurchaseAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  PurchasePrice: z.string().optional(),
+  QuantityInStock: z.number().optional(),
+  ReservedQuantity: z.string().optional(),
+  SalesAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SalesPrice: z.string().optional(),
+  StockAccount: z.string().optional(),
+  StockChangeAccount: z.string().optional(),
+  StockGoods: z.boolean().optional(),
+  StockPlace: z.string().max(100).optional(),
+  StockValue: z.string().optional(),
+  StockWarning: z.number().optional(),
+  SupplierName: z.string().optional(),
+  SupplierNumber: z.string().optional(),
+  Type: z.string().optional(),
+  Unit: z.string().optional(),
+  VAT: z.string().optional(),
+  WebshopArticle: z.boolean().optional(),
+  Weight: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Width: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxArticleV2SingleItem = z.object({
+  "@url": z.string().optional(),
+  Active: z.boolean().optional(),
+  ArticleNumber: z.string().max(50).optional(),
+  Bulky: z.boolean().optional(),
+  Bundle: zFortnoxArticleBundleSingleItem.optional(),
+  BundleArticle: z.boolean().optional(),
+  CommodityCode: z.string().optional(),
+  ConstructionAccount: z.int().gte(1000).lte(99999).optional(),
+  CostCalculationMethod: z.string().optional(),
+  DefaultStockLocation: z.string().optional(),
+  DefaultStockPoint: z.string().optional(),
+  Depth: z.int().gte(0).lte(999999999).optional(),
+  Description: z.string().min(1).max(200),
+  DirectCost: z.number().optional(),
+  DisposableQuantity: z.number().optional(),
+  EAN: z.string().max(30).optional(),
+  EUAccount: z.int().gte(1000).lte(99999).optional(),
+  EUVATAccount: z.int().gte(1000).lte(99999).optional(),
+  Expired: z.boolean().optional(),
+  ExportAccount: z.int().gte(1000).lte(99999).optional(),
+  FreightCost: z.number().optional(),
+  Height: z.int().gte(0).lte(999999999).optional(),
+  Housework: z.boolean().optional(),
+  HouseworkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "COOKING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "TUTORING",
+      "FURNISHING",
+      "HOMEMAINTENANCE",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "EMPTYHOUSEWORK",
+      "OTHERCOSTS",
+    ])
+    .optional(),
+  Manufacturer: z.string().max(50).optional(),
+  ManufacturerArticleNumber: z.string().max(50).optional(),
+  Note: z.string().max(10000).optional(),
+  OtherCost: z.number().optional(),
+  PurchaseAccount: z.int().gte(1000).lte(99999).optional(),
+  PurchasePrice: z.number().optional(),
+  QuantityInStock: z.number().optional(),
+  ReservedQuantity: z.number().optional(),
+  SalesAccount: z.int().gte(1000).lte(99999).optional(),
+  SalesPrice: z.number().optional(),
+  StockAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockChangeAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockGoods: z.boolean().optional(),
+  StockPlace: z.string().max(100).optional(),
+  StockValue: z.number().optional(),
+  StockWarning: z.number().optional(),
+  SupplierName: z.string().optional(),
+  SupplierNumber: z.string().optional(),
+  Type: z.enum(["STOCK", "SERVICE"]).optional(),
+  Unit: z.string().optional(),
+  VAT: z.number().optional(),
+  WebshopArticle: z.boolean().optional(),
+  Weight: z.int().gte(0).lte(999999999).optional(),
+  Width: z.int().gte(0).lte(999999999).optional(),
+});
+
+export const zFortnoxArticleV2SingleItemWrap = z.object({
+  Article: zFortnoxArticleV2SingleItem,
+});
+
+export const zFortnoxArticleV2SinglePayloadItem = z.object({
+  Active: z.boolean().optional(),
+  ArticleNumber: z.string().max(50).optional(),
+  Bulky: z.boolean().optional(),
+  Bundle: zFortnoxArticleBundleSinglePayloadItem.optional(),
+  BundleArticle: z.boolean().optional(),
+  ConstructionAccount: z.int().gte(1000).lte(99999).optional(),
+  CostCalculationMethod: z.string().optional(),
+  DefaultStockLocation: z.string().optional(),
+  DefaultStockPoint: z.string().optional(),
+  Depth: z.int().gte(0).lte(999999999).optional(),
+  Description: z.string().min(1).max(200),
+  DirectCost: z.number().optional(),
+  DisposableQuantity: z.number().optional(),
+  EAN: z.string().max(30).optional(),
+  EUAccount: z.int().gte(1000).lte(99999).optional(),
+  EUVATAccount: z.int().gte(1000).lte(99999).optional(),
+  Expired: z.boolean().optional(),
+  ExportAccount: z.int().gte(1000).lte(99999).optional(),
+  FreightCost: z.number().optional(),
+  Height: z.int().gte(0).lte(999999999).optional(),
+  Housework: z.boolean().optional(),
+  HouseworkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "COOKING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "TUTORING",
+      "FURNISHING",
+      "HOMEMAINTENANCE",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "EMPTYHOUSEWORK",
+      "OTHERCOSTS",
+    ])
+    .optional(),
+  Manufacturer: z.string().max(50).optional(),
+  ManufacturerArticleNumber: z.string().max(50).optional(),
+  Note: z.string().max(10000).optional(),
+  OtherCost: z.number().optional(),
+  PurchaseAccount: z.int().gte(1000).lte(99999).optional(),
+  PurchasePrice: z.number().optional(),
+  QuantityInStock: z.number().optional(),
+  ReservedQuantity: z.number().optional(),
+  SalesAccount: z.int().gte(1000).lte(99999).optional(),
+  SalesPrice: z.number().optional(),
+  StockAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockChangeAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockGoods: z.boolean().optional(),
+  StockPlace: z.string().max(100).optional(),
+  StockValue: z.number().optional(),
+  StockWarning: z.number().optional(),
+  SupplierName: z.string().optional(),
+  SupplierNumber: z.string().optional(),
+  Type: z.enum(["STOCK", "SERVICE"]).optional(),
+  Unit: z.string().optional(),
+  VAT: z.number().optional(),
+  WebshopArticle: z.boolean().optional(),
+  Weight: z.int().gte(0).lte(999999999).optional(),
+  Width: z.int().gte(0).lte(999999999).optional(),
+});
+
+export const zFortnoxArticleV2SinglePayloadItemWrap = z.object({
+  Article: zFortnoxArticleV2SinglePayloadItem,
+});
+
+export const zFortnoxBfAccountChartSingleItem = z.object({
+  Name: z.string().optional(),
+});
+
+export const zFortnoxBfAccountingQuantityBalancesSingleItem = z.object({
+  Balance: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Project: z.string().optional(),
+});
+
+export const zFortnoxBfAccountListItem = z.object({
+  "@url": z.string().optional(),
+  Active: z.boolean().optional(),
+  BalanceBroughtForward: z.number().optional(),
+  BalanceCarriedForward: z.number().optional(),
+  CostCenter: z.string().optional(),
+  CostCenterSettings: z.enum(["ALLOWED", "MANDATORY", "NOTALLOWED"]).optional(),
+  Description: z.string().min(1).max(200),
+  Number: z.int().gte(1000).lte(9999),
+  OpeningQuantities: z
+    .array(zFortnoxBfAccountingQuantityBalancesSingleItem)
+    .optional(),
+  Project: z.string().optional(),
+  ProjectSettings: z.enum(["ALLOWED", "MANDATORY", "NOTALLOWED"]).optional(),
+  QuantitySettings: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  QuantityUnit: z.string().optional(),
+  SRU: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TransactionInformation: z.string().optional(),
+  TransactionInformationSettings: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VATCode: z.string().optional(),
+  Year: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxBfAccountSingleItem = z.object({
+  "@url": z.string().optional(),
+  Active: z.boolean().optional(),
+  BalanceBroughtForward: z.number().optional(),
+  BalanceCarriedForward: z.number().optional(),
+  CostCenter: z.string().optional(),
+  CostCenterSettings: z.enum(["ALLOWED", "MANDATORY", "NOTALLOWED"]).optional(),
+  Description: z.string().min(1).max(200),
+  Number: z.int().gte(1000).lte(9999),
+  OpeningQuantities: z
+    .array(zFortnoxBfAccountingQuantityBalancesSingleItem)
+    .optional(),
+  Project: z.string().optional(),
+  ProjectSettings: z.enum(["ALLOWED", "MANDATORY", "NOTALLOWED"]).optional(),
+  QuantitySettings: z.enum(["ALLOWED", "MANDATORY", "NOTALLOWED"]).optional(),
+  QuantityUnit: z.string().optional(),
+  SRU: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TransactionInformation: z.string().optional(),
+  TransactionInformationSettings: z
+    .enum(["ALLOWED", "MANDATORY", "NOTALLOWED"])
+    .optional(),
+  VATCode: z.string().optional(),
+  Year: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxBfAccountSingleItemWrap = z.object({
+  Account: zFortnoxBfAccountSingleItem,
+});
+
+export const zFortnoxBfAccountingQuantityBalancesSinglePayloadItem = z.object({
+  Balance: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Project: z.string().optional(),
+});
+
+export const zFortnoxBfAccountSinglePayloadItem = z.object({
+  Active: z.boolean().optional(),
+  BalanceBroughtForward: z.number().optional(),
+  CostCenter: z.string().optional(),
+  CostCenterSettings: z.enum(["ALLOWED", "MANDATORY", "NOTALLOWED"]).optional(),
+  Description: z.string().min(1).max(200),
+  Number: z.int().gte(1000).lte(9999),
+  OpeningQuantities: z
+    .array(zFortnoxBfAccountingQuantityBalancesSinglePayloadItem)
+    .optional(),
+  Project: z.string().optional(),
+  ProjectSettings: z.enum(["ALLOWED", "MANDATORY", "NOTALLOWED"]).optional(),
+  SRU: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TransactionInformation: z.string().optional(),
+  TransactionInformationSettings: z
+    .enum(["ALLOWED", "MANDATORY", "NOTALLOWED"])
+    .optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxBfAccountSinglePayloadItemWrap = z.object({
+  Account: zFortnoxBfAccountSinglePayloadItem,
+});
+
+export const zFortnoxBfFinancialYearListItem = z.object({
+  "@url": z.string().optional(),
+  AccountChartType: z.string().optional(),
+  AccountingMethod: z.enum(["ACCRUAL", "CASH"]).optional(),
+  FromDate: z.iso.date(),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ToDate: z.iso.date(),
+});
+
+export const zFortnoxBfFinancialYearSingleItem = z.object({
+  "@url": z.string().optional(),
+  AccountChartType: z.string().optional(),
+  AccountingMethod: z.enum(["ACCRUAL", "CASH"]).optional(),
+  FromDate: z.iso.date(),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ToDate: z.iso.date(),
+});
+
+export const zFortnoxBfFinancialYearSingleItemWrap = z.object({
+  FinancialYear: zFortnoxBfFinancialYearSingleItem,
+});
+
+export const zFortnoxBfFinancialYearSinglePayloadItem = z.object({
+  AccountChartType: z.string().optional(),
+  AccountingMethod: z.enum(["ACCRUAL", "CASH"]).optional(),
+  FromDate: z.iso.date(),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ToDate: z.iso.date(),
+});
+
+export const zFortnoxBfFinancialYearSinglePayloadItemWrap = z.object({
+  FinancialYear: zFortnoxBfFinancialYearSinglePayloadItem,
+});
+
+export const zFortnoxBfPreDefinedVoucherSeriesSingleItem = z.object({
+  "@url": z.string().optional(),
+  Name: z.string().optional(),
+  VoucherSeries: z.string().max(1),
+});
+
+export const zFortnoxBfPreDefinedVoucherSeriesSingleItemWrap = z.object({
+  PreDefinedVoucherSeries: zFortnoxBfPreDefinedVoucherSeriesSingleItem,
+});
+
+export const zFortnoxBfPreDefinedVoucherSeriesSinglePayloadItem = z.object({
+  Name: z.string().optional(),
+  VoucherSeries: z.string().max(1),
+});
+
+export const zFortnoxBfPreDefinedVoucherSeriesSinglePayloadItemWrap = z.object({
+  PreDefinedVoucherSeries: zFortnoxBfPreDefinedVoucherSeriesSinglePayloadItem,
+});
+
+export const zFortnoxBfSieVerificationSeriesSingleItem = z.object({
+  First: z.string().optional(),
+  Last: z.string().optional(),
+  Series: z.string().optional(),
+});
+
+export const zFortnoxBfSieSingleItem = z.object({
+  Accounts: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ContactDeliveryAddress: z.string().optional(),
+  ContactMailingAddress: z.string().optional(),
+  ContactName: z.string().optional(),
+  ContactPhone: z.string().optional(),
+  CostCenters: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  DateOfGeneration: z.string().optional(),
+  Extent: z.string().optional(),
+  IncomingBalances: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Projects: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TermBudgets: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TypeOfSie: z.string().optional(),
+  UsedAccounts: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  UsedCostCenters: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  UsedProjects: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Verifications: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VerificationsIntervals: z
+    .array(zFortnoxBfSieVerificationSeriesSingleItem)
+    .optional(),
+});
+
+export const zFortnoxBfSieSingleItemWrap = z.object({
+  SieSummary: zFortnoxBfSieSingleItem,
+});
+
+export const zFortnoxBfVoucherApproverSingleItem = z.object({
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Name: z.string().optional(),
+});
+
+export const zFortnoxBfVoucherRowSingleItem = z.object({
+  Account: z.int().gte(1000).lte(9999),
+  CostCenter: z.string().nullish(),
+  Credit: z.number().optional(),
+  Debit: z.number().optional(),
+  Description: z.string().optional(),
+  Project: z.string().optional(),
+  Quantity: z.number().optional(),
+  Removed: z.boolean().optional(),
+  TransactionInformation: z.string().max(100).optional(),
+});
+
+export const zFortnoxBfVoucherListItem = z.object({
+  "@url": z.string(),
+  ApprovalState: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  Comments: z.string(),
+  CostCenter: z.string(),
+  Description: z.string(),
+  Project: z.string(),
+  ReferenceNumber: z.string(),
+  ReferenceType: z.enum([
+    "INVOICE",
+    "SUPPLIERINVOICE",
+    "INVOICEPAYMENT",
+    "SUPPLIERPAYMENT",
+    "MANUAL",
+    "CASHINVOICE",
+    "ACCRUAL",
+  ]),
+  TransactionDate: z.iso.date(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  VoucherRows: z.array(zFortnoxBfVoucherRowSingleItem),
+  VoucherSeries: z.string(),
+  Year: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+});
+
+export const zFortnoxBfVoucherRowSinglePayloadItem = z.object({
+  Account: z.int().gte(1000).lte(9999),
+  CostCenter: z.string().nullish(),
+  Credit: z.number().optional(),
+  Debit: z.number().optional(),
+  Description: z.string().optional(),
+  Project: z.string().optional(),
+  Quantity: z.number().optional(),
+  Removed: z.boolean().optional(),
+  TransactionInformation: z.string().max(100).optional(),
+});
+
+export const zFortnoxBfVoucherSeriesListItem = z.object({
+  "@url": z.string().optional(),
+  Approver: zFortnoxBfVoucherApproverSingleItem.optional(),
+  Code: z.string().min(1).max(10),
+  Description: z.string().max(200).optional(),
+  Manual: z.boolean().optional(),
+  NextVoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Year: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxBfVoucherSeriesSingleItem = z.object({
+  "@url": z.string().optional(),
+  Approver: zFortnoxBfVoucherApproverSingleItem.optional(),
+  Code: z.string().min(1).max(10),
+  Description: z.string().max(200).optional(),
+  Manual: z.boolean().optional(),
+  NextVoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Year: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxBfVoucherSeriesSingleItemWrap = z.object({
+  VoucherSeries: zFortnoxBfVoucherSeriesSingleItem,
+});
+
+export const zFortnoxBfVoucherSeriesSinglePayloadItem = z.object({
+  Code: z.string().min(1).max(10),
+  Description: z.string().max(200).optional(),
+  Manual: z.boolean().optional(),
+  NextVoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Year: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxBfVoucherSeriesSinglePayloadItemWrap = z.object({
+  VoucherSeries: zFortnoxBfVoucherSeriesSinglePayloadItem,
+});
+
+export const zFortnoxBfVoucherSingleItem = z.object({
+  "@url": z.string().optional(),
+  ApprovalState: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Comments: z.string().max(1000).optional(),
+  CostCenter: z.string().optional(),
+  Description: z.string().min(1).max(200),
+  Project: z.string().optional(),
+  ReferenceNumber: z.string().optional(),
+  ReferenceType: z
+    .enum([
+      "INVOICE",
+      "SUPPLIERINVOICE",
+      "INVOICEPAYMENT",
+      "SUPPLIERPAYMENT",
+      "MANUAL",
+      "CASHINVOICE",
+      "ACCRUAL",
+    ])
+    .optional(),
+  TransactionDate: z.iso.date(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VoucherRows: z
+    .array(zFortnoxBfVoucherRowSingleItem)
+    .min(2)
+    .max(2147483647)
+    .optional(),
+  VoucherSeries: z.string(),
+  Year: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+});
+
+export const zFortnoxBfVoucherSingleItemWrap = z.object({
+  Voucher: zFortnoxBfVoucherSingleItem,
+});
+
+export const zFortnoxBfVoucherSinglePayloadItem = z.object({
+  ApprovalState: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Comments: z.string().max(1000).optional(),
+  CostCenter: z.string().optional(),
+  Description: z.string().min(1).max(200),
+  Project: z.string().optional(),
+  ReferenceNumber: z.string().optional(),
+  ReferenceType: z
+    .enum([
+      "INVOICE",
+      "SUPPLIERINVOICE",
+      "INVOICEPAYMENT",
+      "SUPPLIERPAYMENT",
+      "MANUAL",
+      "CASHINVOICE",
+      "ACCRUAL",
+    ])
+    .optional(),
+  TransactionDate: z.iso.date(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VoucherRows: z
+    .array(zFortnoxBfVoucherRowSinglePayloadItem)
+    .min(2)
+    .max(2147483647)
+    .optional(),
+  VoucherSeries: z.string(),
+  Year: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+});
+
+export const zFortnoxBfVoucherSinglePayloadItemWrap = z.object({
+  Voucher: zFortnoxBfVoucherSinglePayloadItem,
+});
+
+export const zFortnoxBflcClientAuthExchangeSingleItem = z.object({
   AuthorizationCode: z.string().optional(),
 });
 
-export const zFortnoxAuthData = z.object({
-  Authorization: zFortnoxAuthorizationCode.optional(),
+export const zFortnoxBflcClientAuthExchangeSingleItemWrap = z.object({
+  Authorization: zFortnoxBflcClientAuthExchangeSingleItem,
 });
 
-export const zFortnoxBundlePriceCalculationBundleSubItem = z.object({
-  AmountInBundle: z.number().optional(),
-  FixedPrice: z.boolean().optional(),
-  PriceAdjustment: z.boolean().optional(),
-  SalesPriceInBundle: z.number().optional(),
-  UserPrice: z.boolean().optional(),
+export const zFortnoxBflcClientListListItem = z.object({
+  CompanyName: z.string(),
+  Id: z.string(),
+  OrganizationNumber: z.string(),
 });
 
-export const zFortnoxBundlePriceCalculationSubRow = z.object({
-  BundleSubItem: zFortnoxBundlePriceCalculationBundleSubItem.optional(),
-  Price: z.number().optional(),
-  Quantity: z.number().optional(),
-});
-
-export const zFortnoxBundlePriceCalculationBundle = z.object({
-  SubRows: z.array(zFortnoxBundlePriceCalculationSubRow).optional(),
-});
-
-export const zFortnoxBundlePriceCalculationBundleRow = z.object({
-  Bundle: zFortnoxBundlePriceCalculationBundle.optional(),
-  Discount: z.number().optional(),
-  Price: z.number().optional(),
-  Quantity: z.number().optional(),
-});
-
-export const zFortnoxBundlePriceCalculation = z.object({
-  Rows: z.array(zFortnoxBundlePriceCalculationBundleRow).optional(),
-});
-
-export const zFortnoxBundlePriceCalculationWrap = z.object({
-  BundlePriceCalculation: zFortnoxBundlePriceCalculation,
-});
-
-export const zFortnoxBundleSubItem = z.object({
-  AmountInBundle: z.number().optional(),
-  FixedPrice: z.boolean().optional(),
-  PriceAdjustment: z.boolean().optional(),
-  SalesPriceInBundle: z.number().optional(),
-  UserPrice: z.boolean().optional(),
-});
-
-export const zFortnoxClientInfo = z.object({
-  CompanyName: z.string().optional(),
-  Id: z.string().optional(),
-  OrganizationNumber: z.string().optional(),
-});
-
-export const zFortnoxCompanyInfo = z.object({
+export const zFortnoxCompanyInformationSingleItem = z.object({
   Address: z.string().optional(),
   City: z.string().optional(),
   CompanyName: z.string().optional(),
@@ -3059,11 +4090,19 @@ export const zFortnoxCompanyInfo = z.object({
   ZipCode: z.string().optional(),
 });
 
-export const zFortnoxCompanyInfoWrap = z.object({
-  CompanyInformation: zFortnoxCompanyInfo,
+export const zFortnoxCompanyInformationSingleItemWrap = z.object({
+  CompanyInformation: zFortnoxCompanyInformationSingleItem,
 });
 
-export const zFortnoxCompanySettings = z.object({
+export const zFortnoxCompanyCompanyLogoBinaryItem = z.object({
+  file: z.string().optional(),
+});
+
+export const zFortnoxCompanyCompanyLogoBinaryItemWrap = z.object({
+  CompanyLogo: zFortnoxCompanyCompanyLogoBinaryItem,
+});
+
+export const zFortnoxCompanyCompanySettingsSingleItem = z.object({
   Address: z.string().optional(),
   BG: z.string().optional(),
   BIC: z.string().optional(),
@@ -3095,31 +4134,11 @@ export const zFortnoxCompanySettings = z.object({
   ZipCode: z.string().optional(),
 });
 
-export const zFortnoxCompanySettingsWrap = z.object({
-  CompanySettings: zFortnoxCompanySettings,
+export const zFortnoxCompanyCompanySettingsResponseWrap = z.object({
+  CompanySettings: zFortnoxCompanyCompanySettingsSingleItem,
 });
 
-export const zFortnoxContractAccrualListItem = z.object({
-  "@url": z.string().optional(),
-  Description: z.string(),
-  DocumentNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-  Period: z
-    .enum(["MONTHLY", "BIMONTHLY", "QUARTERLY", "SEMIANNUALLY", "ANNUALLY"])
-    .optional(),
-});
-
-export const zFortnoxContractAccrualListItemList = z.object({
-  ContractAccruals: z.array(zFortnoxContractAccrualListItem),
-});
-
-export const zFortnoxContractAccrualAccrualRow = z.object({
+export const zFortnoxContractInvoiceContractAccrualRowSingleItem = z.object({
   Account: z
     .int()
     .min(-2147483648, {
@@ -3129,20 +4148,35 @@ export const zFortnoxContractAccrualAccrualRow = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     }),
   CostCenter: z.string().optional(),
-  Credit: z.number(),
-  Debit: z.number(),
+  Credit: z.number().optional(),
+  Debit: z.number().optional(),
   Project: z.string().optional(),
   TransactionInformation: z.string().max(100).optional(),
 });
 
-export const zFortnoxContractAccrual = z.object({
+export const zFortnoxContractInvoiceContractAccrualListItem = z.object({
   "@url": z.string().optional(),
-  AccrualAccount: z.int().gte(1000).lte(9999),
+  AccrualAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
   AccrualRows: z
-    .array(zFortnoxContractAccrualAccrualRow)
-    .min(2)
-    .max(2147483647),
-  CostAccount: z.int().gte(1000).lte(9999),
+    .array(zFortnoxContractInvoiceContractAccrualRowSingleItem)
+    .optional(),
+  CostAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
   Description: z.string(),
   DocumentNumber: z
     .int()
@@ -3164,18 +4198,139 @@ export const zFortnoxContractAccrual = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
+  Total: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
+});
+
+export const zFortnoxContractInvoiceContractAccrualRowSinglePayloadItem =
+  z.object({
+    Account: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      }),
+    CostCenter: z.string().optional(),
+    Credit: z.number().optional(),
+    Debit: z.number().optional(),
+    Project: z.string().optional(),
+    TransactionInformation: z.string().max(100).optional(),
+  });
+
+export const zFortnoxContractInvoiceContractAccrualSingleItem = z.object({
+  "@url": z.string().optional(),
+  AccrualAccount: z.int().gte(1000).lte(9999),
+  AccrualRows: z
+    .array(zFortnoxContractInvoiceContractAccrualRowSingleItem)
+    .min(2)
+    .max(2147483647),
+  CostAccount: z.int().gte(1000).lte(9999),
+  Description: z.string(),
+  DocumentNumber: z.coerce
+    .bigint()
+    .min(BigInt("-9223372036854775808"), {
+      error: "Invalid value: Expected int64 to be >= -9223372036854775808",
+    })
+    .max(BigInt("9223372036854775807"), {
+      error: "Invalid value: Expected int64 to be <= 9223372036854775807",
+    }),
+  Period: z
+    .enum(["MONTHLY", "BIMONTHLY", "QUARTERLY", "SEMIANNUALLY", "ANNUALLY"])
+    .optional(),
+  Times: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
   Total: z.number(),
   VATIncluded: z.boolean().optional(),
 });
 
-export const zFortnoxContractAccrualWrap = z.object({
-  ContractAccrual: zFortnoxContractAccrual,
+export const zFortnoxContractInvoiceContractAccrualSingleItemWrap = z.object({
+  ContractAccrual: zFortnoxContractInvoiceContractAccrualSingleItem,
 });
 
-export const zFortnoxContractListItem = z.object({
-  "@url": z.string().optional(),
-  Continuous: z.boolean().optional(),
-  ContractLength: z
+export const zFortnoxContractInvoiceContractAccrualSinglePayloadItem = z.object(
+  {
+    AccrualAccount: z.int().gte(1000).lte(9999),
+    AccrualRows: z
+      .array(zFortnoxContractInvoiceContractAccrualRowSinglePayloadItem)
+      .min(2)
+      .max(2147483647),
+    CostAccount: z.int().gte(1000).lte(9999),
+    Description: z.string(),
+    DocumentNumber: z.coerce
+      .bigint()
+      .min(BigInt("-9223372036854775808"), {
+        error: "Invalid value: Expected int64 to be >= -9223372036854775808",
+      })
+      .max(BigInt("9223372036854775807"), {
+        error: "Invalid value: Expected int64 to be <= 9223372036854775807",
+      }),
+    Period: z
+      .enum(["MONTHLY", "BIMONTHLY", "QUARTERLY", "SEMIANNUALLY", "ANNUALLY"])
+      .optional(),
+    Times: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .optional(),
+    Total: z.number(),
+    VATIncluded: z.boolean().optional(),
+  },
+);
+
+export const zFortnoxContractInvoiceContractAccrualSinglePayloadItemWrap =
+  z.object({
+    ContractAccrual: zFortnoxContractInvoiceContractAccrualSinglePayloadItem,
+  });
+
+export const zFortnoxContractInvoiceContractInvoiceRowSingleItem = z.object({
+  AccountNumber: z.int().gte(1000).lte(9999).optional(),
+  ArticleNumber: z.string(),
+  ContributionPercent: z.string().optional(),
+  ContributionValue: z.string().optional(),
+  CostCenter: z.string().nullish(),
+  DeliveredQuantity: z.string(),
+  Description: z.string().max(255).optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "COOKING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "TUTORING",
+      "OTHERCOSTS",
+    ])
+    .optional(),
+  Price: z.number().optional(),
+  PriceExcludingVAT: z.number().optional(),
+  Project: z.string().optional(),
+  RowId: z
     .int()
     .min(-2147483648, {
       error: "Invalid value: Expected int32 to be >= -2147483648",
@@ -3184,68 +4339,66 @@ export const zFortnoxContractListItem = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
-  Currency: z.string().optional(),
-  CustomerName: z.string().optional(),
-  CustomerNumber: z.string(),
-  DocumentNumber: z.string().optional(),
-  Invoiceinterval: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  InvoicesRemaining: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  LastInvoiceDate: z.string().optional(),
-  PeriodEnd: z.iso.date(),
-  PeriodStart: z.iso.date().optional(),
-  Status: z.string().optional(),
-  TemplateNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Total: z.number().optional(),
+  Total: z.number().nullish(),
+  TotalExcludingVAT: z.number().optional(),
+  Unit: z.string().max(20).optional(),
+  VAT: z.number().optional(),
+  VATCode: z.string().optional(),
 });
 
-export const zFortnoxContractListItemList = z.object({
-  Contracts: z.array(zFortnoxContractListItem),
-});
+export const zFortnoxContractInvoiceContractInvoiceRowSinglePayloadItem =
+  z.object({
+    AccountNumber: z.int().gte(1000).lte(9999).optional(),
+    ArticleNumber: z.string(),
+    ContributionPercent: z.string().optional(),
+    ContributionValue: z.string().optional(),
+    CostCenter: z.string().nullish(),
+    DeliveredQuantity: z.string(),
+    Description: z.string().max(255).optional(),
+    Discount: z.number().optional(),
+    DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+    HouseWork: z.boolean().optional(),
+    HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+    HouseWorkType: z
+      .enum([
+        "CONSTRUCTION",
+        "ELECTRICITY",
+        "GLASSMETALWORK",
+        "GROUNDDRAINAGEWORK",
+        "MASONRY",
+        "PAINTINGWALLPAPERING",
+        "HVAC",
+        "CLEANING",
+        "TEXTILECLOTHING",
+        "COOKING",
+        "SNOWPLOWING",
+        "GARDENING",
+        "BABYSITTING",
+        "OTHERCARE",
+        "TUTORING",
+        "OTHERCOSTS",
+      ])
+      .optional(),
+    Price: z.number().optional(),
+    PriceExcludingVAT: z.number().optional(),
+    Project: z.string().optional(),
+    RowId: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .optional(),
+    Total: z.number().nullish(),
+    TotalExcludingVAT: z.number().optional(),
+    Unit: z.string().max(20).optional(),
+    VAT: z.number().optional(),
+    VATCode: z.string().optional(),
+  });
 
-export const zFortnoxContractTemplateListItem = z.object({
-  "@url": z.string(),
-  ContractLength: z.int().gte(1).lte(9999),
-  ContractTemplate: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-  ContractTemplateName: z.string(),
-  InvoiceInterval: z.int().gte(1).lte(9999),
-});
-
-export const zFortnoxContractTemplateListItemList = z.object({
-  ContractTemplates: z.array(zFortnoxContractTemplateListItem),
-});
-
-export const zFortnoxContractTemplateInvoiceRow = z.object({
+export const zFortnoxContractInvoiceContractTemplateRowSingleItem = z.object({
   AccountNumber: z
     .int()
     .min(-2147483648, {
@@ -3256,24 +4409,83 @@ export const zFortnoxContractTemplateInvoiceRow = z.object({
     })
     .optional(),
   ArticleNumber: z.string().optional(),
-  CostCenter: z.string().optional(),
+  CostCenter: z.string().nullish(),
   DeliveredQuantity: z.string().optional(),
   Description: z.string().optional(),
   Discount: z.number().optional(),
   DiscountType: z.enum(["PERCENT", "AMOUNT"]).optional(),
   Price: z.number().optional(),
   Project: z.string().optional(),
+  RowId: z.string().optional(),
   Unit: z.string().optional(),
 });
 
-export const zFortnoxContractTemplate = z.object({
+export const zFortnoxContractInvoiceContractTemplateListItem = z.object({
+  "@url": z.string(),
+  AdministrationFee: z.number(),
+  Continuous: z.boolean(),
+  ContractLength: z.int().gte(1).lte(9999),
+  ContractTemplate: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  ContractTemplateName: z.string(),
+  Freight: z.number(),
+  InvoiceInterval: z.int().gte(1).lte(9999),
+  InvoiceRows: z.array(zFortnoxContractInvoiceContractTemplateRowSingleItem),
+  OurReference: z.string(),
+  PrintTemplate: z.string(),
+  Remarks: z.string(),
+  TemplateName: z.string(),
+  TemplateNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  TermsOfDelivery: z.string(),
+  TermsOfPayment: z.string(),
+  WayOfDelivery: z.string(),
+});
+
+export const zFortnoxContractInvoiceContractTemplateRowSinglePayloadItem =
+  z.object({
+    AccountNumber: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .optional(),
+    ArticleNumber: z.string().optional(),
+    CostCenter: z.string().nullish(),
+    DeliveredQuantity: z.string().optional(),
+    Description: z.string().optional(),
+    Discount: z.number().optional(),
+    DiscountType: z.enum(["PERCENT", "AMOUNT"]).optional(),
+    Price: z.number().optional(),
+    Project: z.string().optional(),
+    Unit: z.string().optional(),
+  });
+
+export const zFortnoxContractInvoiceContractTemplateSingleItem = z.object({
   "@url": z.string().optional(),
   AdministrationFee: z.number().optional(),
   Continuous: z.boolean().optional(),
   ContractLength: z.int().gte(1).lte(9999).optional(),
   Freight: z.number().optional(),
   InvoiceInterval: z.int().gte(1).lte(9999).optional(),
-  InvoiceRows: z.array(zFortnoxContractTemplateInvoiceRow).optional(),
+  InvoiceRows: z
+    .array(zFortnoxContractInvoiceContractTemplateRowSingleItem)
+    .optional(),
   OurReference: z.string().max(25).optional(),
   PrintTemplate: z.string().optional(),
   Remarks: z.string().max(1024).optional(),
@@ -3292,60 +4504,823 @@ export const zFortnoxContractTemplate = z.object({
   WayOfDelivery: z.string().optional(),
 });
 
-export const zFortnoxContractTemplateWrap = z.object({
-  ContractTemplate: zFortnoxContractTemplate,
+export const zFortnoxContractInvoiceContractTemplateResponseWrap = z.object({
+  ContractTemplate: zFortnoxContractInvoiceContractTemplateSingleItem,
 });
 
-export const zFortnoxContractEmailInformation = z.object({
+export const zFortnoxContractInvoiceContractTemplateSinglePayloadItem =
+  z.object({
+    AdministrationFee: z.number().optional(),
+    Continuous: z.boolean().optional(),
+    ContractLength: z.int().gte(1).lte(9999).optional(),
+    Freight: z.number().optional(),
+    InvoiceInterval: z.int().gte(1).lte(9999).optional(),
+    InvoiceRows: z
+      .array(zFortnoxContractInvoiceContractTemplateRowSinglePayloadItem)
+      .optional(),
+    OurReference: z.string().max(25).optional(),
+    PrintTemplate: z.string().optional(),
+    Remarks: z.string().max(1024).optional(),
+    TemplateName: z.string().min(1).max(1024),
+    TemplateNumber: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .optional(),
+    TermsOfDelivery: z.string().optional(),
+    TermsOfPayment: z.string().optional(),
+    WayOfDelivery: z.string().optional(),
+  });
+
+export const zFortnoxContractInvoiceContractTemplateSinglePayloadItemWrap =
+  z.object({
+    ContractTemplate: zFortnoxContractInvoiceContractTemplateSinglePayloadItem,
+  });
+
+export const zFortnoxCostCenterSingleItem = z.object({
+  "@url": z.string().optional(),
+  Active: z.boolean().optional(),
+  Code: z.string().min(1).max(6),
+  Description: z.string().min(1).max(2147483647),
+  Note: z.string().optional(),
+});
+
+export const zFortnoxCostCenterSingleItemWrap = z.object({
+  CostCenter: zFortnoxCostCenterSingleItem,
+});
+
+export const zFortnoxCostCenterSinglePayloadItem = z.object({
+  Active: z.boolean().optional(),
+  Code: z.string().min(1).max(6),
+  Description: z.string().min(1).max(2147483647),
+  Note: z.string().optional(),
+});
+
+export const zFortnoxCostCenterSinglePayloadItemWrap = z.object({
+  CostCenter: zFortnoxCostCenterSinglePayloadItem,
+});
+
+export const zFortnoxCurrencySingleItem = z.object({
+  "@url": z.string().optional(),
+  BuyRate: z.number().optional(),
+  Code: z.string(),
+  Date: z.iso.date().optional(),
+  Description: z.string(),
+  IsAutomatic: z.boolean().optional(),
+  SellRate: z.number().optional(),
+  Unit: z.number().optional(),
+});
+
+export const zFortnoxCurrencySingleItemWrap = z.object({
+  Currency: zFortnoxCurrencySingleItem,
+});
+
+export const zFortnoxCurrencySinglePayloadItem = z.object({
+  BuyRate: z.number().optional(),
+  Code: z.string(),
+  Date: z.iso.date().optional(),
+  Description: z.string(),
+  IsAutomatic: z.boolean().optional(),
+  SellRate: z.number().optional(),
+  Unit: z.number().optional(),
+});
+
+export const zFortnoxCurrencySinglePayloadItemWrap = z.object({
+  Currency: zFortnoxCurrencySinglePayloadItem,
+});
+
+export const zFortnoxDaArticleFileConnectionSingleItem = z.object({
+  "@url": z.string().optional(),
+  ArticleNumber: z.string(),
+  FileId: z.string(),
+});
+
+export const zFortnoxDaArticleFileConnectionSingleItemWrap = z.object({
+  ArticleFileConnection: zFortnoxDaArticleFileConnectionSingleItem,
+});
+
+export const zFortnoxDaArticleFileConnectionSinglePayloadItem = z.object({
+  ArticleNumber: z.string(),
+  FileId: z.string(),
+});
+
+export const zFortnoxDaArticleFileConnectionSinglePayloadItemWrap = z.object({
+  ArticleFileConnection: zFortnoxDaArticleFileConnectionSinglePayloadItem,
+});
+
+export const zFortnoxDaAssetFileConnectionCreatePayload = z.object({
+  AssetId: z.string().optional(),
+  FileId: z.string().optional(),
+  Name: z.string().optional(),
+});
+
+export const zFortnoxDaAssetFileConnectionSingleItem = z.object({
+  "@url": z.string().optional(),
+  AssetId: z.string().optional(),
+  FileId: z.string().optional(),
+  Name: z.string().optional(),
+});
+
+export const zFortnoxDaEmailSenderSingleItem = z.object({
+  Email: z.string(),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxDaEmailSenderTrustedWrap = z.object({
+  TrustedSender: zFortnoxDaEmailSenderSingleItem,
+});
+
+export const zFortnoxDaEmailSenders = z.object({
+  RejectedSenders: z.array(zFortnoxDaEmailSenderSingleItem).optional(),
+  TrustedSenders: z.array(zFortnoxDaEmailSenderSingleItem).optional(),
+});
+
+export const zFortnoxDaInboxFileSingleItem = z.object({
+  "@url": z.string().optional(),
+  ArchiveFileId: z.string().optional(),
+  Comments: z.string().optional(),
+  Id: z.string().optional(),
+  Name: z.string().optional(),
+  Path: z.string().optional(),
+  Size: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxDaInboxFileResponseWrap = z.object({
+  File: zFortnoxDaInboxFileSingleItem,
+});
+
+export const zFortnoxDaInboxFolderListItem = z.object({
+  "@url": z.string(),
+  Email: z.string(),
+  Files: z.array(zFortnoxDaInboxFileSingleItem),
+  Folders: z.array(z.lazy((): any => zFortnoxDaInboxFolderListItem)),
+  Id: z.string(),
+  Name: z.string(),
+});
+
+export const zFortnoxDaInboxFolderSingleItem = z.object({
+  "@url": z.string().optional(),
+  Email: z.string().optional(),
+  Files: z.array(zFortnoxDaInboxFileSingleItem).optional(),
+  Folders: z.array(zFortnoxDaInboxFolderListItem).optional(),
+  Id: z.string().optional(),
+  Name: z.string().min(1).max(30),
+});
+
+export const zFortnoxDaInboxFolderResponseWrap = z.object({
+  Folder: zFortnoxDaInboxFolderSingleItem,
+});
+
+export const zFortnoxDaSupplierInvoiceFileConnectionSingleItem = z.object({
+  "@url": z.string().optional(),
+  FileId: z.string().optional(),
+  Name: z.string().optional(),
+  SupplierInvoiceNumber: z.string().optional(),
+  SupplierName: z.string().optional(),
+});
+
+export const zFortnoxDaSupplierInvoiceFileConnectionSingleItemWrap = z.object({
+  SupplierInvoiceFileConnection:
+    zFortnoxDaSupplierInvoiceFileConnectionSingleItem,
+});
+
+export const zFortnoxDaSupplierInvoiceFileConnectionSinglePayloadItem =
+  z.object({
+    FileId: z.string().optional(),
+    Name: z.string().optional(),
+    SupplierInvoiceNumber: z.string().optional(),
+    SupplierName: z.string().optional(),
+  });
+
+export const zFortnoxDaSupplierInvoiceFileConnectionSinglePayloadItemWrap =
+  z.object({
+    SupplierInvoiceFileConnection:
+      zFortnoxDaSupplierInvoiceFileConnectionSinglePayloadItem,
+  });
+
+export const zFortnoxDaVoucherFileConnectionSingleItem = z.object({
+  "@url": z.string().optional(),
+  FileId: z.string(),
+  Name: z.string().optional(),
+  VoucherDescription: z.string().optional(),
+  VoucherNumber: z.string(),
+  VoucherSeries: z.string(),
+  VoucherYear: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxDaVoucherFileConnectionSingleItemWrap = z.object({
+  VoucherFileConnection: zFortnoxDaVoucherFileConnectionSingleItem,
+});
+
+export const zFortnoxDaVoucherFileConnectionSinglePayloadItem = z.object({
+  FileId: z.string(),
+  VoucherDescription: z.string().optional(),
+  VoucherNumber: z.string(),
+  VoucherSeries: z.string(),
+  VoucherYear: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxDaVoucherFileConnectionSinglePayloadItemWrap = z.object({
+  VoucherFileConnection: zFortnoxDaVoucherFileConnectionSinglePayloadItem,
+});
+
+export const zFortnoxDefaultDeliveryTypesSingleItem = z.object({
+  Invoice: z.enum(["PRINT", "EMAIL", "PRINTSERVICE"]).optional(),
+  Offer: z.enum(["PRINT", "EMAIL", "PRINTSERVICE"]).optional(),
+  Order: z.enum(["PRINT", "EMAIL", "PRINTSERVICE"]).optional(),
+});
+
+export const zFortnoxDefaultDeliveryTypesSinglePayloadItem = z.object({
+  Invoice: z.enum(["PRINT", "EMAIL", "PRINTSERVICE"]).optional(),
+  Offer: z.enum(["PRINT", "EMAIL", "PRINTSERVICE"]).optional(),
+  Order: z.enum(["PRINT", "EMAIL", "PRINTSERVICE"]).optional(),
+});
+
+export const zFortnoxDefaultTemplatesSingleItem = z.object({
+  CashInvoice: z.string().optional(),
+  Invoice: z.string().optional(),
+  Offer: z.string().optional(),
+  Order: z.string().optional(),
+});
+
+export const zFortnoxDefaultTemplatesSinglePayloadItem = z.object({
+  CashInvoice: z.string().optional(),
+  Invoice: z.string().optional(),
+  Offer: z.string().optional(),
+  Order: z.string().optional(),
+});
+
+export const zFortnoxDelete = z.object({
+  Date: z.string().optional(),
+});
+
+export const zFortnoxDeleteWrap = z.object({
+  Asset: zFortnoxDelete,
+});
+
+export const zFortnoxDocumentEdiFieldSingleItem = z.object({
+  EDIGlobalLocationNumber: z.string().max(13).optional(),
+  EDIGlobalLocationNumberDelivery: z.string().max(13).optional(),
+  EDIInvoiceExtra1: z.string().optional(),
+  EDIInvoiceExtra2: z.string().optional(),
+  EDIOurElectronicReference: z.string().optional(),
+  EDIStatus: z.string().optional(),
+  EDIYourElectronicReference: z.string().optional(),
+});
+
+export const zFortnoxDocumentEdiFieldSinglePayloadItem = z.object({
+  EDIGlobalLocationNumber: z.string().max(13).optional(),
+  EDIGlobalLocationNumberDelivery: z.string().max(13).optional(),
+  EDIInvoiceExtra1: z.string().optional(),
+  EDIInvoiceExtra2: z.string().optional(),
+  EDIOurElectronicReference: z.string().optional(),
+  EDIYourElectronicReference: z.string().optional(),
+});
+
+export const zFortnoxDocumentEmailFieldSingleItem = z.object({
   EmailAddressBCC: z.string().optional(),
   EmailAddressCC: z.string().optional(),
   EmailAddressFrom: z.string().optional(),
   EmailAddressTo: z.string().optional(),
-  EmailBody: z.string().optional(),
-  EmailSubject: z.string().optional(),
+  EmailBody: z.string().max(20000).optional(),
+  EmailSubject: z.string().max(100).optional(),
 });
 
-export const zFortnoxContractInvoiceRow = z.object({
-  AccountNumber: z.int().gte(1000).lte(9999).optional(),
-  ArticleNumber: z.string(),
-  ContributionPercent: z.string().optional(),
-  ContributionValue: z.string().optional(),
-  CostCenter: z.string().optional(),
-  DeliveredQuantity: z.string(),
-  Description: z.string().optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  HouseWorkType: z.string().optional(),
-  Price: z.number().optional(),
-  PriceExcludingVAT: z.number().optional(),
-  Project: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Total: z.number().optional(),
-  TotalExcludingVAT: z.number().optional(),
-  Unit: z.string().optional(),
-  VAT: z.number().optional(),
-});
-
-export const zFortnoxContract = z.object({
+export const zFortnoxContractInvoiceContractListItem = z.object({
   "@url": z.string().optional(),
+  "@urlTaxReductionList": z.string().optional(),
+  Active: z.boolean().optional(),
+  AdministrationFee: z.number().optional(),
+  BasisTaxReduction: z.number().optional(),
+  Comments: z.string().optional(),
+  Continuous: z.boolean().optional(),
+  ContractDate: z.iso.date().optional(),
+  ContractLength: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ContributionPercent: z.number().optional(),
+  ContributionValue: z.number().optional(),
+  CostCenter: z.string().optional(),
+  Currency: z.string().optional(),
+  CustomerName: z.string().max(1024).optional(),
+  CustomerNumber: z.string(),
+  DocumentNumber: z.string().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSingleItem.optional(),
+  ExternalInvoiceReference1: z.string().optional(),
+  ExternalInvoiceReference2: z.string().optional(),
+  Freight: z.number().gte(-9999999999).lte(9999999999).optional(),
+  Gross: z.number().optional(),
+  HouseWork: z.boolean().optional(),
+  InvoiceDiscount: z.number().optional(),
+  InvoiceInterval: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  InvoiceRows: z
+    .array(zFortnoxContractInvoiceContractInvoiceRowSingleItem)
+    .optional(),
+  Invoiceinterval: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  InvoicesRemaining: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Language: z.string().optional(),
+  LastInvoiceDate: z.string().optional(),
+  Net: z.number().optional(),
+  OurReference: z.string().max(50).optional(),
+  PeriodEnd: z.iso.date(),
+  PeriodStart: z.iso.date().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().optional(),
+  RoundOff: z.number().optional(),
+  Status: z.string().optional(),
+  TaxReduction: z.number().optional(),
+  TaxReductionType: z.string().optional(),
+  TemplateName: z.string().optional(),
+  TemplateNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  Total: z.number().gte(-999999999).lte(9999999999).optional(),
+  TotalToPay: z.number().optional(),
+  TotalVAT: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourOrderNumber: z.string().optional(),
+  YourReference: z.string().max(50).optional(),
+});
+
+export const zFortnoxContractInvoiceContractSingleItem = z.object({
+  "@url": z.string().optional(),
+  "@urlTaxReductionList": z.string().optional(),
+  Active: z.boolean().optional(),
+  AdministrationFee: z.number().optional(),
+  BasisTaxReduction: z.number().optional(),
+  Comments: z.string().max(1024).optional(),
+  Continuous: z.boolean().optional(),
+  ContractDate: z.iso.date().optional(),
+  ContractLength: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ContributionPercent: z.number().optional(),
+  ContributionValue: z.number().optional(),
+  CostCenter: z.string().optional(),
+  Currency: z.string().optional(),
+  CustomerName: z.string().max(1024).optional(),
+  CustomerNumber: z.string(),
+  DocumentNumber: z.coerce
+    .bigint()
+    .min(BigInt("-9223372036854775808"), {
+      error: "Invalid value: Expected int64 to be >= -9223372036854775808",
+    })
+    .max(BigInt("9223372036854775807"), {
+      error: "Invalid value: Expected int64 to be <= 9223372036854775807",
+    })
+    .optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSingleItem.optional(),
+  ExternalInvoiceReference1: z.string().optional(),
+  ExternalInvoiceReference2: z.string().optional(),
+  Freight: z.number().gte(-9999999999).lte(9999999999).optional(),
+  Gross: z.number().optional(),
+  HouseWork: z.boolean().optional(),
+  InvoiceDiscount: z.number().optional(),
+  InvoiceInterval: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  InvoiceRows: z.array(zFortnoxContractInvoiceContractInvoiceRowSingleItem),
+  InvoicesRemaining: z.string().optional(),
+  Language: z.enum(["SV", "EN"]).optional(),
+  LastInvoiceDate: z.string().optional(),
+  Net: z.number().optional(),
+  OurReference: z.string().max(25).optional(),
+  PeriodEnd: z.iso.date(),
+  PeriodStart: z.iso.date().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().max(1024).optional(),
+  RoundOff: z.number().optional(),
+  TaxReduction: z.number().optional(),
+  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
+  TemplateName: z.string().optional(),
+  TemplateNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  Total: z.number().gte(-999999999).lte(9999999999).optional(),
+  TotalToPay: z.number().optional(),
+  TotalVAT: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourOrderNumber: z.string().max(75).optional(),
+  YourReference: z.string().max(50).optional(),
+});
+
+export const zFortnoxContractInvoiceContractResponseWrap = z.object({
+  Contract: zFortnoxContractInvoiceContractSingleItem,
+});
+
+export const zFortnoxDocumentEmailFieldSinglePayloadItem = z.object({
+  EmailAddressBCC: z.string().optional(),
+  EmailAddressCC: z.string().optional(),
+  EmailAddressFrom: z.string().optional(),
+  EmailAddressTo: z.string().optional(),
+  EmailBody: z.string().max(20000).optional(),
+  EmailSubject: z.string().max(100).optional(),
+});
+
+export const zFortnoxContractInvoiceContractCreatePayload = z.object({
+  Active: z.boolean().optional(),
+  AdministrationFee: z.number().optional(),
+  Comments: z.string().max(1024).optional(),
+  Continuous: z.boolean().optional(),
+  ContractDate: z.iso.date().optional(),
+  ContractLength: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  CostCenter: z.string().optional(),
+  Currency: z.string().optional(),
+  CustomerNumber: z.string(),
+  DocumentNumber: z.coerce
+    .bigint()
+    .min(BigInt("-9223372036854775808"), {
+      error: "Invalid value: Expected int64 to be >= -9223372036854775808",
+    })
+    .max(BigInt("9223372036854775807"), {
+      error: "Invalid value: Expected int64 to be <= 9223372036854775807",
+    })
+    .optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSinglePayloadItem.optional(),
+  ExternalInvoiceReference1: z.string().optional(),
+  ExternalInvoiceReference2: z.string().optional(),
+  Freight: z.number().gte(-9999999999).lte(9999999999).optional(),
+  HouseWork: z.boolean().optional(),
+  InvoiceDiscount: z.number().optional(),
+  InvoiceInterval: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  InvoiceRows: z.array(
+    zFortnoxContractInvoiceContractInvoiceRowSinglePayloadItem,
+  ),
+  Language: z.enum(["SV", "EN"]).optional(),
+  OurReference: z.string().max(25).optional(),
+  PeriodEnd: z.iso.date(),
+  PeriodStart: z.iso.date().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().max(1024).optional(),
+  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
+  TemplateNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  VATIncluded: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourOrderNumber: z.string().max(75).optional(),
+  YourReference: z.string().max(50).optional(),
+});
+
+export const zFortnoxContractInvoiceContractCreatePayloadWrap = z.object({
+  Contract: zFortnoxContractInvoiceContractCreatePayload,
+});
+
+export const zFortnoxContractInvoiceContractUpdateAndCreateInvoicePayload =
+  z.object({
+    Active: z.boolean().optional(),
+    AdministrationFee: z.number().optional(),
+    Comments: z.string().optional(),
+    Continuous: z.boolean().optional(),
+    ContractDate: z.iso.date().optional(),
+    ContractLength: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .optional(),
+    CostCenter: z.string().optional(),
+    Currency: z.string().optional(),
+    CustomerNumber: z.string().optional(),
+    DocumentNumber: z.coerce
+      .bigint()
+      .min(BigInt("-9223372036854775808"), {
+        error: "Invalid value: Expected int64 to be >= -9223372036854775808",
+      })
+      .max(BigInt("9223372036854775807"), {
+        error: "Invalid value: Expected int64 to be <= 9223372036854775807",
+      })
+      .optional(),
+    EmailInformation: zFortnoxDocumentEmailFieldSinglePayloadItem.optional(),
+    ExternalInvoiceReference1: z.string().optional(),
+    ExternalInvoiceReference2: z.string().optional(),
+    Freight: z.number().gte(-9999999999).lte(9999999999).optional(),
+    InvoiceDiscount: z.number().optional(),
+    InvoiceInterval: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .optional(),
+    InvoiceRows: z
+      .array(zFortnoxContractInvoiceContractInvoiceRowSinglePayloadItem)
+      .optional(),
+    Language: z.string().optional(),
+    OurReference: z.string().max(50).optional(),
+    PeriodEnd: z.iso.date().optional(),
+    PeriodStart: z.iso.date().optional(),
+    PriceList: z.string().optional(),
+    PrintTemplate: z.string().optional(),
+    Project: z.string().optional(),
+    Remarks: z.string().optional(),
+    TaxReductionType: z.string().optional(),
+    TemplateNumber: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .optional(),
+    TermsOfDelivery: z.string().optional(),
+    TermsOfPayment: z.string().optional(),
+    VATIncluded: z.boolean().optional(),
+    WayOfDelivery: z.string().optional(),
+    YourOrderNumber: z.string().optional(),
+    YourReference: z.string().max(50).optional(),
+  });
+
+export const zFortnoxContractInvoiceContractUpdateAndCreateInvoicePayloadWrap =
+  z.object({
+    Contract: zFortnoxContractInvoiceContractUpdateAndCreateInvoicePayload,
+  });
+
+export const zFortnoxContractInvoiceContractUpdateAndFinishPayload = z.object({
+  Active: z.boolean().optional(),
+  AdministrationFee: z.number().optional(),
+  Comments: z.string().optional(),
+  Continuous: z.boolean().optional(),
+  ContractDate: z.iso.date().optional(),
+  ContractLength: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  CostCenter: z.string().optional(),
+  Currency: z.string().optional(),
+  CustomerNumber: z.string().optional(),
+  DocumentNumber: z.coerce
+    .bigint()
+    .min(BigInt("-9223372036854775808"), {
+      error: "Invalid value: Expected int64 to be >= -9223372036854775808",
+    })
+    .max(BigInt("9223372036854775807"), {
+      error: "Invalid value: Expected int64 to be <= 9223372036854775807",
+    })
+    .optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSinglePayloadItem.optional(),
+  ExternalInvoiceReference1: z.string().optional(),
+  ExternalInvoiceReference2: z.string().optional(),
+  Freight: z.number().gte(-9999999999).lte(9999999999).optional(),
+  InvoiceDiscount: z.number().optional(),
+  InvoiceInterval: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  InvoiceRows: z
+    .array(zFortnoxContractInvoiceContractInvoiceRowSinglePayloadItem)
+    .optional(),
+  Language: z.string().optional(),
+  OurReference: z.string().max(50).optional(),
+  PeriodEnd: z.iso.date().optional(),
+  PeriodStart: z.iso.date().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().optional(),
+  TaxReductionType: z.string().optional(),
+  TemplateNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  VATIncluded: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourOrderNumber: z.string().optional(),
+  YourReference: z.string().max(50).optional(),
+});
+
+export const zFortnoxContractInvoiceContractUpdateAndFinishPayloadWrap =
+  z.object({
+    Contract: zFortnoxContractInvoiceContractUpdateAndFinishPayload,
+  });
+
+export const zFortnoxContractInvoiceContractUpdateAndIncreaseInvoiceCountPayload =
+  z.object({
+    Active: z.boolean().optional(),
+    AdministrationFee: z.number().optional(),
+    Comments: z.string().optional(),
+    Continuous: z.boolean().optional(),
+    ContractDate: z.iso.date().optional(),
+    ContractLength: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .optional(),
+    CostCenter: z.string().optional(),
+    Currency: z.string().optional(),
+    CustomerNumber: z.string().optional(),
+    DocumentNumber: z.coerce
+      .bigint()
+      .min(BigInt("-9223372036854775808"), {
+        error: "Invalid value: Expected int64 to be >= -9223372036854775808",
+      })
+      .max(BigInt("9223372036854775807"), {
+        error: "Invalid value: Expected int64 to be <= 9223372036854775807",
+      })
+      .optional(),
+    EmailInformation: zFortnoxDocumentEmailFieldSinglePayloadItem.optional(),
+    ExternalInvoiceReference1: z.string().optional(),
+    ExternalInvoiceReference2: z.string().optional(),
+    Freight: z.number().gte(-9999999999).lte(9999999999).optional(),
+    InvoiceDiscount: z.number().optional(),
+    InvoiceInterval: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .optional(),
+    InvoiceRows: z
+      .array(zFortnoxContractInvoiceContractInvoiceRowSinglePayloadItem)
+      .optional(),
+    Language: z.string().optional(),
+    OurReference: z.string().max(50).optional(),
+    PeriodEnd: z.iso.date().optional(),
+    PeriodStart: z.iso.date().optional(),
+    PriceList: z.string().optional(),
+    PrintTemplate: z.string().optional(),
+    Project: z.string().optional(),
+    Remarks: z.string().optional(),
+    TaxReductionType: z.string().optional(),
+    TemplateNumber: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .optional(),
+    TermsOfDelivery: z.string().optional(),
+    TermsOfPayment: z.string().optional(),
+    VATIncluded: z.boolean().optional(),
+    WayOfDelivery: z.string().optional(),
+    YourOrderNumber: z.string().optional(),
+    YourReference: z.string().max(50).optional(),
+  });
+
+export const zFortnoxContractInvoiceContractUpdateAndIncreaseInvoiceCountPayloadWrap =
+  z.object({
+    Contract:
+      zFortnoxContractInvoiceContractUpdateAndIncreaseInvoiceCountPayload,
+  });
+
+export const zFortnoxContractInvoiceContractUpdatePayload = z.object({
   "@urlTaxReductionList": z.string().optional(),
   Active: z.boolean().optional(),
   AdministrationFee: z.number().optional(),
@@ -3368,11 +5343,19 @@ export const zFortnoxContract = z.object({
   Currency: z.string().optional(),
   CustomerName: z.string().optional(),
   CustomerNumber: z.string(),
-  DocumentNumber: z.string().optional(),
-  EmailInformation: zFortnoxContractEmailInformation.optional(),
+  DocumentNumber: z.coerce
+    .bigint()
+    .min(BigInt("-9223372036854775808"), {
+      error: "Invalid value: Expected int64 to be >= -9223372036854775808",
+    })
+    .max(BigInt("9223372036854775807"), {
+      error: "Invalid value: Expected int64 to be <= 9223372036854775807",
+    })
+    .optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSinglePayloadItem.optional(),
   ExternalInvoiceReference1: z.string().optional(),
   ExternalInvoiceReference2: z.string().optional(),
-  Freight: z.number().optional(),
+  Freight: z.number().gte(-9999999999).lte(9999999999).optional(),
   Gross: z.number().optional(),
   HouseWork: z.boolean().optional(),
   InvoiceDiscount: z.number().optional(),
@@ -3385,7 +5368,9 @@ export const zFortnoxContract = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
-  InvoiceRows: z.array(zFortnoxContractInvoiceRow),
+  InvoiceRows: z.array(
+    zFortnoxContractInvoiceContractInvoiceRowSinglePayloadItem,
+  ),
   InvoicesRemaining: z.string().optional(),
   Language: z.enum(["SV", "EN"]).optional(),
   LastInvoiceDate: z.string().optional(),
@@ -3415,126 +5400,271 @@ export const zFortnoxContract = z.object({
   Total: z.number().optional(),
   TotalToPay: z.number().optional(),
   TotalVAT: z.number().optional(),
-  VatIncluded: z.boolean().optional(),
+  VATIncluded: z.boolean().optional(),
   WayOfDelivery: z.string().optional(),
   YourOrderNumber: z.string().max(75).optional(),
-  YourReference: z.string().optional(),
+  YourReference: z.string().max(50).optional(),
 });
 
-export const zFortnoxContractWrap = z.object({
-  Contract: zFortnoxContract,
+export const zFortnoxContractInvoiceContractUpdatePayloadWrap = z.object({
+  Contract: zFortnoxContractInvoiceContractUpdatePayload,
 });
 
-export const zFortnoxCostCenter = z.object({
+export const zFortnoxDocumentTagSingleItem = z.object({
+  Description: z.string().min(1).max(25),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxDocumentTagSingleItemWrap = z.object({
+  Label: zFortnoxDocumentTagSingleItem,
+});
+
+export const zFortnoxDocumentTagSinglePayloadItem = z.object({
+  Description: z.string().min(1).max(25),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxDocumentTagSinglePayloadItemWrap = z.object({
+  Label: zFortnoxDocumentTagSinglePayloadItem,
+});
+
+export const zFortnoxEuVatLimitRegulationSingleItem = z.object({
+  IsOverLimit: z.boolean().optional(),
+  Limit: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TotalExclVat: z.number().optional(),
+  Year: z.string().optional(),
+});
+
+export const zFortnoxEuVatLimitRegulationResponseWrap = z.object({
+  EUVatLimitRegulation: zFortnoxEuVatLimitRegulationSingleItem,
+});
+
+export const zFortnoxErrorInformation = z.object({
+  Code: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Error: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Message: z.string().optional(),
+});
+
+export const zFortnoxErrorInformationWrap = z.object({
+  ErrorInformation: zFortnoxErrorInformation,
+});
+
+export const zFortnoxFileStorageFileSingleItem = z.object({
+  "@url": z.string().optional(),
+  ArchiveFileId: z.string().optional(),
+  Comments: z.string().optional(),
+  Id: z.string().optional(),
+  Name: z.string().optional(),
+  Path: z.string().optional(),
+  Size: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxFileStorageFolderListItem = z.object({
+  "@url": z.string(),
+  Email: z.string(),
+  Files: z.array(zFortnoxFileStorageFileSingleItem),
+  Folders: z.array(z.lazy((): any => zFortnoxFileStorageFolderListItem)),
+  Id: z.string(),
+  Name: z.string(),
+});
+
+export const zFortnoxFileStorageFolderSingleItem = z.object({
+  "@url": z.string().optional(),
+  Email: z.string().optional(),
+  Files: z.array(zFortnoxFileStorageFileSingleItem).optional(),
+  Folders: z.array(zFortnoxFileStorageFolderListItem).optional(),
+  Id: z.string().optional(),
+  Name: z.string().min(1).max(30),
+});
+
+export const zFortnoxFileStorageFolderSingleItemWrap = z.object({
+  Folder: zFortnoxFileStorageFolderSingleItem,
+});
+
+export const zFortnoxFileStorageFolderFileRow = z.object({
+  "@url": z.string().optional(),
+  ArchiveFileId: z.string().optional(),
+  Comments: z.string().optional(),
+  Id: z.string().optional(),
+  Name: z.string().optional(),
+  Path: z.string().optional(),
+  Size: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxFileStorageFolderFileRowWrap = z.object({
+  File: zFortnoxFileStorageFolderFileRow,
+});
+
+export const zFortnoxItemUrlConnectionSingleItem = z.object({
+  "@url": z.string().optional(),
+  ArticleNumber: z.string(),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  URLConnection: z.string(),
+});
+
+export const zFortnoxItemUrlConnectionSingleItemWrap = z.object({
+  ArticleUrlConnection: zFortnoxItemUrlConnectionSingleItem,
+});
+
+export const zFortnoxItemUrlConnectionSinglePayloadItem = z.object({
+  ArticleNumber: z.string(),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  URLConnection: z.string(),
+});
+
+export const zFortnoxItemUrlConnectionSinglePayloadItemWrap = z.object({
+  ArticleUrlConnection: zFortnoxItemUrlConnectionSinglePayloadItem,
+});
+
+export const zFortnoxKfCustomerListItem = z.object({
   "@url": z.string().optional(),
   Active: z.boolean().optional(),
-  Code: z.string().min(1).max(6),
-  Description: z.string().min(1).max(2147483647),
-  Note: z.string().optional(),
-});
-
-export const zFortnoxCostCenterList = z.object({
-  CostCenters: z.array(zFortnoxCostCenter),
-});
-
-export const zFortnoxCostCenterWrap = z.object({
-  CostCenter: zFortnoxCostCenter,
-});
-
-export const zFortnoxCreateAsset = z.object({
-  AccountAssetId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  AccountDepreciationId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  AccountValueLossId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Description: z.string().optional(),
-  Notes: z.string().optional(),
-  Number: z.string().optional(),
-  Type: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxCreateAssetFileConnection = z.object({
-  AssetId: z.string().optional(),
-  FileId: z.string().optional(),
-});
-
-export const zFortnoxCreateAssetWrap = z.object({
-  AssetType: zFortnoxCreateAsset,
-});
-
-export const zFortnoxCreatePayload = z.object({
-  InvoiceNumber: z.string(),
-  SendMethod: z.string(),
-  Service: z.string(),
-});
-
-export const zFortnoxCreatePayloadWrap = z.object({
-  NoxFinansInvoice: zFortnoxCreatePayload,
-});
-
-export const zFortnoxCurrency = z.object({
-  "@url": z.string().optional(),
-  BuyRate: z.number().optional(),
-  Code: z.string(),
-  Date: z.iso.date().optional(),
-  Description: z.string(),
-  IsAutomatic: z.boolean().optional(),
-  SellRate: z.number().optional(),
-  Unit: z.number().optional(),
-});
-
-export const zFortnoxCurrencyWrap = z.object({
-  Currency: zFortnoxCurrency,
-});
-
-export const zFortnoxCustomerListItem = z.object({
-  "@url": z.string().optional(),
   Address1: z.string().max(1024).optional(),
   Address2: z.string().max(1024).optional(),
   City: z.string().max(1024).optional(),
+  Comments: z.string().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  CountryCode: z.string().optional(),
+  Currency: z.string().optional(),
   CustomerNumber: z.string().max(1024).optional(),
+  DefaultDeliveryTypes: zFortnoxDefaultDeliveryTypesSingleItem.optional(),
+  DefaultTemplates: zFortnoxDefaultTemplatesSingleItem.optional(),
+  DeliveryAddress1: z.string().optional(),
+  DeliveryAddress2: z.string().optional(),
+  DeliveryCity: z.string().optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryCountryCode: z.string().optional(),
+  DeliveryFax: z.string().optional(),
+  DeliveryName: z.string().optional(),
+  DeliveryPhone1: z.string().optional(),
+  DeliveryPhone2: z.string().optional(),
+  DeliveryZipCode: z.string().optional(),
   Email: z.string().max(1024).optional(),
+  EmailInvoice: z.string().optional(),
+  EmailInvoiceBCC: z.string().optional(),
+  EmailInvoiceCC: z.string().optional(),
+  EmailOffer: z.string().optional(),
+  EmailOfferBCC: z.string().optional(),
+  EmailOfferCC: z.string().optional(),
+  EmailOrder: z.string().optional(),
+  EmailOrderBCC: z.string().optional(),
+  EmailOrderCC: z.string().optional(),
+  ExternalReference: z.string().optional(),
+  Fax: z.string().optional(),
+  GLN: z.string().optional(),
+  GLNDelivery: z.string().optional(),
+  InvoiceAdministrationFee: z.number().optional(),
+  InvoiceDiscount: z.number().optional(),
+  InvoiceFreight: z.number().optional(),
+  InvoiceRemark: z.string().optional(),
   Name: z.string().min(1).max(1024),
   OrganisationNumber: z.string().max(30).optional(),
+  OurReference: z.string().optional(),
   Phone: z.string().max(1024).optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PriceList: z.string().optional(),
+  Project: z.string().optional(),
+  SalesAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ShowPriceVATIncluded: z.boolean().optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  Type: z.string().optional(),
+  VATNumber: z.string().optional(),
+  VATType: z.string().optional(),
+  VisitingAddress: z.string().optional(),
+  VisitingCity: z.string().optional(),
+  VisitingCountry: z.string().optional(),
+  VisitingCountryCode: z.string().optional(),
+  VisitingZipCode: z.string().optional(),
+  WWW: z.string().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourReference: z.string().optional(),
   ZipCode: z.string().max(10).optional(),
 });
 
-export const zFortnoxCustomerListItemList = z.object({
-  Customers: z.array(zFortnoxCustomerListItem),
-});
-
-export const zFortnoxCustomerReferenceCustomerReferenceRow = z.object({
+export const zFortnoxKfCustomerReferenceRowRow = z.object({
   CustomerNumber: z.string().optional(),
   Id: z
     .int()
@@ -3548,34 +5678,35 @@ export const zFortnoxCustomerReferenceCustomerReferenceRow = z.object({
   Reference: z.string().optional(),
 });
 
-export const zFortnoxCustomerReference = z.object({
+export const zFortnoxKfCustomerReferenceRowRowWrap = z.object({
+  CustomerReferenceRow: zFortnoxKfCustomerReferenceRowRow,
+});
+
+export const zFortnoxKfCustomerReferenceRowSingleItem = z.object({
+  CustomerNumber: z.string().optional(),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Reference: z.string().optional(),
+});
+
+export const zFortnoxKfCustomerReferenceSingleItem = z.object({
   CustomerReferenceRows: z
-    .array(zFortnoxCustomerReferenceCustomerReferenceRow)
+    .array(zFortnoxKfCustomerReferenceRowSingleItem)
     .optional(),
 });
 
-export const zFortnoxCustomerReferenceCustomerReferenceRowWrap = z.object({
-  CustomerReferenceRow: zFortnoxCustomerReferenceCustomerReferenceRow,
+export const zFortnoxKfCustomerReferenceSingleItemWrap = z.object({
+  CustomerReference: zFortnoxKfCustomerReferenceSingleItem,
 });
 
-export const zFortnoxCustomerReferenceWrap = z.object({
-  CustomerReference: zFortnoxCustomerReference,
-});
-
-export const zFortnoxCustomerDefaultDeliveryTypes = z.object({
-  Invoice: z.enum(["PRINT", "EMAIL", "PRINTSERVICE"]).optional(),
-  Offer: z.enum(["PRINT", "EMAIL", "PRINTSERVICE"]).optional(),
-  Order: z.enum(["PRINT", "EMAIL", "PRINTSERVICE"]).optional(),
-});
-
-export const zFortnoxCustomerDefaultTemplates = z.object({
-  CashInvoice: z.string().optional(),
-  Invoice: z.string().optional(),
-  Offer: z.string().optional(),
-  Order: z.string().optional(),
-});
-
-export const zFortnoxCustomer = z.object({
+export const zFortnoxKfCustomerSingleItem = z.object({
   "@url": z.string().optional(),
   Active: z.boolean().optional(),
   Address1: z.string().min(1).max(1024).optional(),
@@ -3587,8 +5718,8 @@ export const zFortnoxCustomer = z.object({
   CountryCode: z.string().length(2).optional(),
   Currency: z.string().length(3).optional(),
   CustomerNumber: z.string().max(1024).optional(),
-  DefaultDeliveryTypes: zFortnoxCustomerDefaultDeliveryTypes.optional(),
-  DefaultTemplates: zFortnoxCustomerDefaultTemplates.optional(),
+  DefaultDeliveryTypes: zFortnoxDefaultDeliveryTypesSingleItem.optional(),
+  DefaultTemplates: zFortnoxDefaultTemplatesSingleItem.optional(),
   DeliveryAddress1: z.string().max(1024).optional(),
   DeliveryAddress2: z.string().max(1024).optional(),
   DeliveryCity: z.string().max(1024).optional(),
@@ -3644,532 +5775,86 @@ export const zFortnoxCustomer = z.object({
   ZipCode: z.string().max(10).optional(),
 });
 
-export const zFortnoxCustomerWrap = z.object({
-  Customer: zFortnoxCustomer,
+export const zFortnoxKfCustomerSingleItemWrap = z.object({
+  Customer: zFortnoxKfCustomerSingleItem,
 });
 
-export const zFortnoxDelete = z.object({
-  Date: z.string().optional(),
-});
-
-export const zFortnoxDeleteWrap = z.object({
-  Asset: zFortnoxDelete,
-});
-
-export const zFortnoxDepreciation = z.object({
-  AssetIds: z
-    .array(
-      z
-        .int()
-        .min(-2147483648, {
-          error: "Invalid value: Expected int32 to be >= -2147483648",
-        })
-        .max(2147483647, {
-          error: "Invalid value: Expected int32 to be <= 2147483647",
-        }),
-    )
-    .optional(),
-  DepreciateUntil: z.string().optional(),
-});
-
-export const zFortnoxDepreciationResponse = z.object({
-  "@url": z.string().optional(),
-  FinancialYear: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VoucherNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VoucherSeries: z.string().optional(),
-});
-
-export const zFortnoxDepreciationResponseWrap = z.object({
-  AssetsDepreciation: z.array(zFortnoxDepreciationResponse),
-});
-
-export const zFortnoxDepreciationWrap = z.object({
-  Asset: zFortnoxDepreciation,
-});
-
-export const zFortnoxEuVatLimitRegulation = z.object({
-  IsOverLimit: z.boolean().optional(),
-  Limit: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  TotalExclVat: z.number().optional(),
-  Year: z.string().optional(),
-});
-
-export const zFortnoxEuVatLimitRegulationWrap = z.object({
-  EUVatLimitRegulation: zFortnoxEuVatLimitRegulation,
-});
-
-export const zFortnoxEmployeeDatedSchedule = z.object({
-  EmployeeId: z.string().min(1).max(15),
-  FirstDay: z.iso.date(),
-  ScheduleId: z.string().optional(),
-});
-
-export const zFortnoxEmployeeDatedWage = z.object({
-  EmployeeId: z.string().min(1).max(15),
-  FirstDay: z.iso.date(),
-  HourlyPay: z.string().optional(),
-  MonthlySalary: z.string().optional(),
-});
-
-export const zFortnoxEmployeeEmployeeCategory = z.object({
-  Name: z.string().optional(),
-  value: z.string().optional(),
-});
-
-export const zFortnoxEmployeeEmployeeChild = z.object({
-  ApprovedDays: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-  Child: z.string(),
-  EmployeeId: z.string().min(1).max(15),
-  Id: z.string().optional(),
-  IngoingWithdrawnDays: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-  WithdrawnDays: z.number().optional(),
-});
-
-export const zFortnoxEmployeeOpeningSalary = z.object({
-  Amount: z.number().optional(),
-  EmployeeId: z.string().min(1).max(15),
-  Period: z.string().optional(),
-  ProductGroup: z.string().optional(),
-  Quantity: z.number().optional(),
-  QuantityUnit: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  SalaryTypeName: z.string().optional(),
-  SalaryTypeNumber: z.string(),
-  SortCode: z.string().optional(),
-  TextRow: z.string().optional(),
-  Total: z.number().optional(),
-  VAT: z.number().optional(),
-});
-
-export const zFortnoxEmployee = z.object({
-  ATFValue: z.number().optional(),
-  ATKValue: z.number().optional(),
-  AbsenceHoursNonVacationBased: z.number().optional(),
-  AbsenceHoursVacationBased: z.number().optional(),
-  AbsenceWorkdaysNonVacationBased: z.number().optional(),
-  AbsenceWorkdaysVacationBased: z.number().optional(),
-  Address1: z.string().optional(),
-  Address2: z.string().optional(),
-  AutoNonRecurringTax: z.boolean().optional(),
-  AverageHourlyWage: z.string().optional(),
-  AverageWeeklyHours: z.string().optional(),
-  BankAccountNo: z.string().optional(),
-  City: z.string().optional(),
-  ClearingNo: z.string().optional(),
+export const zFortnoxKfCustomerSinglePayloadItem = z.object({
+  Active: z.boolean().optional(),
+  Address1: z.string().min(1).max(1024).optional(),
+  Address2: z.string().max(1024).optional(),
+  City: z.string().max(1024).optional(),
+  Comments: z.string().max(1024).optional(),
   CostCenter: z.string().optional(),
   Country: z.string().optional(),
-  CurrentCompBalance: z.number().optional(),
-  CurrentFlexBalance: z.number().optional(),
-  DatedSchedules: z.array(zFortnoxEmployeeDatedSchedule).optional(),
-  DatedWages: z.array(zFortnoxEmployeeDatedWage).optional(),
-  Email: z.string(),
-  EmployedTo: z.iso.date().optional(),
-  EmployeeCategories: z.array(zFortnoxEmployeeEmployeeCategory).optional(),
-  EmployeeChildren: z.array(zFortnoxEmployeeEmployeeChild).optional(),
-  EmployeeId: z.string().min(1).max(15).optional(),
-  EmploymentDate: z.iso.date().optional(),
-  EmploymentForm: z
-    .enum(["TV", "PRO", "TID", "SVT", "VIK", "PRJ", "PRA", "FER", "SES", "NEJ"])
-    .optional(),
-  FirstName: z.string(),
-  ForaType: z
-    .enum([
-      "A",
-      "A51",
-      "A52",
-      "A53",
-      "A54",
-      "A55",
-      "A56",
-      "A57",
-      "A58",
-      "A59",
-      "A60",
-      "A61",
-      "A62",
-      "A63",
-      "A64",
-      "A65",
-      "A66",
-      "A67",
-      "A68",
-      "A69",
-      "A70",
-      "A71",
-      "A72",
-      "A73",
-      "A74",
-      "A75",
-      "A76",
-      "A77",
-      "A78",
-      "A79",
-      "A80",
-      "A81",
-      "A82",
-      "A83",
-      "A84",
-      "A85",
-      "A86",
-      "A3",
-      "A91",
-      "A92",
-      "A93",
-      "A11",
-      "A12",
-      "A13",
-      "A14",
-      "A15",
-      "A16",
-      "A17",
-      "A18",
-      "A19",
-      "A20",
-      "A21",
-      "A22",
-      "A23",
-      "A24",
-      "A25",
-      "A26",
-      "A27",
-      "A28",
-      "A29",
-      "A30",
-      "A41",
-      "A42",
-      "A43",
-      "A44",
-      "A45",
-      "A46",
-      "A47",
-      "A48",
-      "T",
-      "T6",
-      "-",
-    ])
-    .optional(),
-  FullName: z.string().optional(),
-  FullTimeEquivalent: z.number().optional(),
-  HourlyPay: z.string().optional(),
-  Inactive: z.boolean().optional(),
-  InitialComp: z.number().optional(),
-  InitialFlex: z.number().optional(),
-  JobTitle: z.string().max(30).optional(),
-  LastName: z.string(),
-  MonthlySalary: z.string().optional(),
-  NonRecurringTax: z.string().optional(),
-  NonVacationBasedCalendarDaysPartial: z.number().optional(),
-  NonVacationBasedCalendarDaysWhole: z.number().optional(),
-  OpeningSalaries: z.array(zFortnoxEmployeeOpeningSalary).optional(),
-  PayslipType: z.enum(["pdf", "digital", "kivra"]).optional(),
-  PersonalIdentityNumber: z.string().optional(),
-  PersonelType: z.enum(["TJM", "ARB"]).optional(),
-  Phone1: z.string().optional(),
-  Phone2: z.string().optional(),
-  PostCode: z.string().optional(),
-  PreliminaryTaxDeducted: z.number().optional(),
+  CountryCode: z.string().length(2).optional(),
+  Currency: z.string().length(3).optional(),
+  CustomerNumber: z.string().max(1024).optional(),
+  DefaultDeliveryTypes:
+    zFortnoxDefaultDeliveryTypesSinglePayloadItem.optional(),
+  DefaultTemplates: zFortnoxDefaultTemplatesSinglePayloadItem.optional(),
+  DeliveryAddress1: z.string().max(1024).optional(),
+  DeliveryAddress2: z.string().max(1024).optional(),
+  DeliveryCity: z.string().max(1024).optional(),
+  DeliveryCountry: z.string().max(1024).optional(),
+  DeliveryCountryCode: z.string().length(2).optional(),
+  DeliveryFax: z.string().max(1024).optional(),
+  DeliveryName: z.string().max(1024).optional(),
+  DeliveryPhone1: z.string().max(1024).optional(),
+  DeliveryPhone2: z.string().max(1024).optional(),
+  DeliveryZipCode: z.string().max(10).optional(),
+  Email: z.string().max(1024).optional(),
+  EmailInvoice: z.string().max(1024).optional(),
+  EmailInvoiceBCC: z.string().max(1024).optional(),
+  EmailInvoiceCC: z.string().max(1024).optional(),
+  EmailOffer: z.string().max(1024).optional(),
+  EmailOfferBCC: z.string().max(1024).optional(),
+  EmailOfferCC: z.string().max(1024).optional(),
+  EmailOrder: z.string().max(1024).optional(),
+  EmailOrderBCC: z.string().max(1024).optional(),
+  EmailOrderCC: z.string().max(1024).optional(),
+  ExternalReference: z.string().max(1024).optional(),
+  Fax: z.string().max(1024).optional(),
+  GLN: z.string().length(13).optional(),
+  GLNDelivery: z.string().length(13).optional(),
+  InvoiceAdministrationFee: z.string().optional(),
+  InvoiceDiscount: z.number().optional(),
+  InvoiceFreight: z.string().optional(),
+  InvoiceRemark: z.string().max(1024).optional(),
+  Name: z.string().min(1).max(1024),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().max(50).optional(),
+  Phone1: z.string().max(1024).optional(),
+  Phone2: z.string().max(1024).optional(),
+  PriceList: z.string().optional(),
   Project: z.string().optional(),
-  SalaryForm: z.enum(["MAN", "TIM"]).optional(),
-  ScheduleId: z.string().optional(),
-  TaxAllowance: z.enum(["HUV", "EXT", "TMP", "STU", "EJ", "???"]).optional(),
-  TaxColumn: z.int().gte(1).lte(6).optional(),
-  TaxTable: z.string().optional(),
-  VacationBasedAttendanceDays: z.number().optional(),
-  VacationBasedAttendanceHours: z.number().optional(),
-  VacationBasedCalendarDaysWhole: z.number().optional(),
-  VacationBasedSalaryTotal: z.number().optional(),
-  VacationBasedSalaryVariableAddition: z.number().optional(),
-  VacationBasedSalaryWorkedTime: z.number().optional(),
-  VacationCalculationAdvanceVacationDebt: z.number().optional(),
-  VacationCalculationIncludeInCalculation: z.boolean().optional(),
-  VacationCalculationSameWagePercent: z.boolean().optional(),
-  VacationCalculationSoleCustody: z.boolean().optional(),
-  VacationCalculationSumOnlyNoDays: z.boolean().optional(),
-  VacationCalculationTotalVacationSalarySum: z.number().optional(),
-  VacationCalculationVacationEntitlement: z.number().optional(),
-  VacationCalculationVariableAdditionSum: z.number().optional(),
-  VacationDaysPaid: z.number().optional(),
-  VacationDaysPendingPaid: z.number().optional(),
-  VacationDaysPendingPrepaid: z.number().optional(),
-  VacationDaysPendingSaved: z.number().optional(),
-  VacationDaysPendingSavedYear1: z.number().optional(),
-  VacationDaysPendingSavedYear2: z.number().optional(),
-  VacationDaysPendingSavedYear3: z.number().optional(),
-  VacationDaysPendingSavedYear4: z.number().optional(),
-  VacationDaysPendingSavedYear5: z.number().optional(),
-  VacationDaysPendingSavedYear6Plus: z.number().optional(),
-  VacationDaysPendingUnpaid: z.number().optional(),
-  VacationDaysPrepaid: z.number().optional(),
-  VacationDaysRegisteredPaid: z.number().optional(),
-  VacationDaysRegisteredPrepaid: z.number().optional(),
-  VacationDaysRegisteredSaved: z.number().optional(),
-  VacationDaysRegisteredSavedYear1: z.number().optional(),
-  VacationDaysRegisteredSavedYear2: z.number().optional(),
-  VacationDaysRegisteredSavedYear3: z.number().optional(),
-  VacationDaysRegisteredSavedYear4: z.number().optional(),
-  VacationDaysRegisteredSavedYear5: z.number().optional(),
-  VacationDaysRegisteredSavedYear6Plus: z.number().optional(),
-  VacationDaysRegisteredUnpaid: z.number().optional(),
-  VacationDaysSaved: z.number().optional(),
-  VacationDaysSavedEmploymentRateYear1: z.number().optional(),
-  VacationDaysSavedEmploymentRateYear2: z.number().optional(),
-  VacationDaysSavedEmploymentRateYear3: z.number().optional(),
-  VacationDaysSavedEmploymentRateYear4: z.number().optional(),
-  VacationDaysSavedEmploymentRateYear5: z.number().optional(),
-  VacationDaysSavedEmploymentRateYear6Plus: z.number().optional(),
-  VacationDaysSavedYear1: z.number().optional(),
-  VacationDaysSavedYear2: z.number().optional(),
-  VacationDaysSavedYear3: z.number().optional(),
-  VacationDaysSavedYear4: z.number().optional(),
-  VacationDaysSavedYear5: z.number().optional(),
-  VacationDaysSavedYear6Plus: z.number().optional(),
-  VacationDaysUnpaid: z.number().optional(),
-  WorkingTimeEnumeration: z.string().optional(),
+  SalesAccount: z.string().length(4).optional(),
+  ShowPriceVATIncluded: z.boolean().optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  Type: z.enum(["PRIVATE", "COMPANY"]).optional(),
+  VATNumber: z.string().optional(),
+  VATType: z
+    .enum(["SEVAT", "SEREVERSEDVAT", "EUREVERSEDVAT", "EUVAT", "EXPORT"])
+    .optional(),
+  VisitingAddress: z.string().max(128).optional(),
+  VisitingCity: z.string().max(128).optional(),
+  VisitingCountry: z.string().max(128).optional(),
+  VisitingCountryCode: z.string().length(2).optional(),
+  VisitingZipCode: z.string().max(10).optional(),
+  WWW: z.string().max(128).optional(),
+  WayOfDelivery: z.string().optional(),
+  YourReference: z.string().max(50).optional(),
+  ZipCode: z.string().max(10).optional(),
 });
 
-export const zFortnoxEmployeeListItem = z.object({
+export const zFortnoxKfCustomerSinglePayloadItemWrap = z.object({
+  Customer: zFortnoxKfCustomerSinglePayloadItem,
+});
+
+export const zFortnoxKfInvoiceAccrualListItem = z.object({
   "@url": z.string().optional(),
-  ATFValue: z.number().optional(),
-  ATKValue: z.number().optional(),
-  AbsenceHoursNonVacationBased: z.number().optional(),
-  AbsenceHoursVacationBased: z.number().optional(),
-  AbsenceWorkdaysNonVacationBased: z.number().optional(),
-  AbsenceWorkdaysVacationBased: z.number().optional(),
-  Address1: z.string().optional(),
-  Address2: z.string().optional(),
-  AutoNonRecurringTax: z.boolean().optional(),
-  AverageHourlyWage: z.string().optional(),
-  AverageWeeklyHours: z.string().optional(),
-  BankAccountNo: z.string().optional(),
-  City: z.string().optional(),
-  ClearingNo: z.string().optional(),
-  CostCenter: z.string().optional(),
-  Country: z.string().optional(),
-  CurrentCompBalance: z.number().optional(),
-  CurrentFlexBalance: z.number().optional(),
-  DatedSchedules: z.array(zFortnoxEmployeeDatedSchedule).optional(),
-  DatedWages: z.array(zFortnoxEmployeeDatedWage).optional(),
-  Email: z.string(),
-  EmployedTo: z.iso.date().optional(),
-  EmployeeCategories: z.array(zFortnoxEmployeeEmployeeCategory).optional(),
-  EmployeeChildren: z.array(zFortnoxEmployeeEmployeeChild).optional(),
-  EmployeeId: z.string().min(1).max(15).optional(),
-  EmploymentDate: z.iso.date().optional(),
-  EmploymentForm: z
-    .enum(["TV", "PRO", "TID", "SVT", "VIK", "PRJ", "PRA", "FER", "SES", "NEJ"])
-    .optional(),
-  FirstName: z.string(),
-  ForaType: z
-    .enum([
-      "A",
-      "A51",
-      "A52",
-      "A53",
-      "A54",
-      "A55",
-      "A56",
-      "A57",
-      "A58",
-      "A59",
-      "A60",
-      "A61",
-      "A62",
-      "A63",
-      "A64",
-      "A65",
-      "A66",
-      "A67",
-      "A68",
-      "A69",
-      "A70",
-      "A71",
-      "A72",
-      "A73",
-      "A74",
-      "A75",
-      "A76",
-      "A77",
-      "A78",
-      "A79",
-      "A80",
-      "A81",
-      "A82",
-      "A83",
-      "A84",
-      "A85",
-      "A86",
-      "A3",
-      "A91",
-      "A92",
-      "A93",
-      "A11",
-      "A12",
-      "A13",
-      "A14",
-      "A15",
-      "A16",
-      "A17",
-      "A18",
-      "A19",
-      "A20",
-      "A21",
-      "A22",
-      "A23",
-      "A24",
-      "A25",
-      "A26",
-      "A27",
-      "A28",
-      "A29",
-      "A30",
-      "A41",
-      "A42",
-      "A43",
-      "A44",
-      "A45",
-      "A46",
-      "A47",
-      "A48",
-      "T",
-      "T6",
-      "-",
-    ])
-    .optional(),
-  FullName: z.string().optional(),
-  FullTimeEquivalent: z.number().optional(),
-  HourlyPay: z.string().optional(),
-  Inactive: z.boolean().optional(),
-  InitialComp: z.number().optional(),
-  InitialFlex: z.number().optional(),
-  JobTitle: z.string().max(30).optional(),
-  LastName: z.string(),
-  MonthlySalary: z.string().optional(),
-  NonRecurringTax: z.string().optional(),
-  NonVacationBasedCalendarDaysPartial: z.number().optional(),
-  NonVacationBasedCalendarDaysWhole: z.number().optional(),
-  OpeningSalaries: z.array(zFortnoxEmployeeOpeningSalary).optional(),
-  PayslipType: z.enum(["pdf", "digital", "kivra"]).optional(),
-  PersonalIdentityNumber: z.string().optional(),
-  PersonelType: z.enum(["TJM", "ARB"]).optional(),
-  Phone1: z.string().optional(),
-  Phone2: z.string().optional(),
-  PostCode: z.string().optional(),
-  PreliminaryTaxDeducted: z.number().optional(),
-  Project: z.string().optional(),
-  SalaryForm: z.enum(["MAN", "TIM"]).optional(),
-  ScheduleId: z.string().optional(),
-  TaxAllowance: z.enum(["HUV", "EXT", "TMP", "STU", "EJ", "???"]).optional(),
-  TaxColumn: z.int().gte(1).lte(6).optional(),
-  TaxTable: z.string().optional(),
-  VacationBasedAttendanceDays: z.number().optional(),
-  VacationBasedAttendanceHours: z.number().optional(),
-  VacationBasedCalendarDaysWhole: z.number().optional(),
-  VacationBasedSalaryTotal: z.number().optional(),
-  VacationBasedSalaryVariableAddition: z.number().optional(),
-  VacationBasedSalaryWorkedTime: z.number().optional(),
-  VacationCalculationAdvanceVacationDebt: z.number().optional(),
-  VacationCalculationIncludeInCalculation: z.boolean().optional(),
-  VacationCalculationSameWagePercent: z.boolean().optional(),
-  VacationCalculationSoleCustody: z.boolean().optional(),
-  VacationCalculationSumOnlyNoDays: z.boolean().optional(),
-  VacationCalculationTotalVacationSalarySum: z.number().optional(),
-  VacationCalculationVacationEntitlement: z.number().optional(),
-  VacationCalculationVariableAdditionSum: z.number().optional(),
-  VacationDaysPaid: z.number().optional(),
-  VacationDaysPendingPaid: z.number().optional(),
-  VacationDaysPendingPrepaid: z.number().optional(),
-  VacationDaysPendingSaved: z.number().optional(),
-  VacationDaysPendingSavedYear1: z.number().optional(),
-  VacationDaysPendingSavedYear2: z.number().optional(),
-  VacationDaysPendingSavedYear3: z.number().optional(),
-  VacationDaysPendingSavedYear4: z.number().optional(),
-  VacationDaysPendingSavedYear5: z.number().optional(),
-  VacationDaysPendingSavedYear6Plus: z.number().optional(),
-  VacationDaysPendingUnpaid: z.number().optional(),
-  VacationDaysPrepaid: z.number().optional(),
-  VacationDaysRegisteredPaid: z.number().optional(),
-  VacationDaysRegisteredPrepaid: z.number().optional(),
-  VacationDaysRegisteredSaved: z.number().optional(),
-  VacationDaysRegisteredSavedYear1: z.number().optional(),
-  VacationDaysRegisteredSavedYear2: z.number().optional(),
-  VacationDaysRegisteredSavedYear3: z.number().optional(),
-  VacationDaysRegisteredSavedYear4: z.number().optional(),
-  VacationDaysRegisteredSavedYear5: z.number().optional(),
-  VacationDaysRegisteredSavedYear6Plus: z.number().optional(),
-  VacationDaysRegisteredUnpaid: z.number().optional(),
-  VacationDaysSaved: z.number().optional(),
-  VacationDaysSavedEmploymentRateYear1: z.number().optional(),
-  VacationDaysSavedEmploymentRateYear2: z.number().optional(),
-  VacationDaysSavedEmploymentRateYear3: z.number().optional(),
-  VacationDaysSavedEmploymentRateYear4: z.number().optional(),
-  VacationDaysSavedEmploymentRateYear5: z.number().optional(),
-  VacationDaysSavedEmploymentRateYear6Plus: z.number().optional(),
-  VacationDaysSavedYear1: z.number().optional(),
-  VacationDaysSavedYear2: z.number().optional(),
-  VacationDaysSavedYear3: z.number().optional(),
-  VacationDaysSavedYear4: z.number().optional(),
-  VacationDaysSavedYear5: z.number().optional(),
-  VacationDaysSavedYear6Plus: z.number().optional(),
-  VacationDaysUnpaid: z.number().optional(),
-  WorkingTimeEnumeration: z.string().optional(),
-});
-
-export const zFortnoxEmployeeListItemWrap = z.object({
-  Employees: z.array(zFortnoxEmployeeListItem),
-});
-
-export const zFortnoxEmployeeWrap = z.object({
-  Employee: zFortnoxEmployee,
-});
-
-export const zFortnoxErrorInformationWrapErrorInformation = z.object({
-  Code: z
+  AccrualAccount: z
     .int()
     .min(-2147483648, {
       error: "Invalid value: Expected int32 to be >= -2147483648",
@@ -4178,271 +5863,11 @@ export const zFortnoxErrorInformationWrapErrorInformation = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
-  Error: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Message: z.string().optional(),
-});
-
-export const zFortnoxErrorInformationWrap = z.object({
-  ErrorInformation: zFortnoxErrorInformationWrapErrorInformation,
-});
-
-export const zFortnoxExpense = z.object({
-  Account: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-  Code: z.string(),
-  Text: z.string(),
-});
-
-export const zFortnoxExpenseListItem = z.object({
-  "@url": z.string().optional(),
-  Account: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-  Code: z.string(),
-  Text: z.string(),
-});
-
-export const zFortnoxExpenseListItemWrap = z.object({
-  Expenses: z.array(zFortnoxExpenseListItem),
-});
-
-export const zFortnoxExpenseWrap = z.object({
-  Expense: zFortnoxExpense,
-});
-
-export const zFortnoxFinancialYear = z.object({
-  "@url": z.string().optional(),
-  AccountChartType: z.string().optional(),
-  AccountingMethod: z.enum(["ACCRUAL", "CASH"]).optional(),
-  FromDate: z.iso.date(),
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ToDate: z.iso.date(),
-});
-
-export const zFortnoxFinancialYearWrap = z.object({
-  FinancialYear: zFortnoxFinancialYear,
-});
-
-export const zFortnoxFinancialYearWrapList = z.object({
-  FinancialYears: z.array(zFortnoxFinancialYear),
-});
-
-export const zFortnoxFolderFileRow = z.object({
-  "@url": z.string().optional(),
-  ArchiveFileId: z.string().optional(),
-  Comments: z.string().optional(),
-  Id: z.string().optional(),
-  Name: z.string().optional(),
-  Path: z.string().optional(),
-  Size: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxFolderFileRowWrap = z.object({
-  File: zFortnoxFolderFileRow,
-});
-
-export const zFortnoxFolderFolderRow = z.object({
-  "@url": z.string().optional(),
-  Id: z.string().optional(),
-  Name: z.string().optional(),
-});
-
-export const zFortnoxFolder = z.object({
-  "@url": z.string().optional(),
-  Email: z.string().optional(),
-  Files: z.array(zFortnoxFolderFileRow).optional(),
-  Folders: z.array(zFortnoxFolderFolderRow).optional(),
-  Id: z.string().optional(),
-  Name: z.string().min(1).max(30),
-});
-
-export const zFortnoxFolderWrap = z.object({
-  Folder: zFortnoxFolder,
-});
-
-export const zFortnoxHistory = z.object({
-  Amount: z.string().optional(),
-  Date: z.string().optional(),
-  EventId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Notes: z.string().optional(),
-  SupplierInvoice: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  UserId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  UserName: z.string().optional(),
-  VoucherNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VoucherSeries: z.string().optional(),
-  VoucherYear: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxAsset = z.object({
-  "@url": z.string().optional(),
-  AcquisitionDate: z.string().optional(),
-  AcquisitionStart: z.string().optional(),
-  AcquisitionValue: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Brand: z.string().optional(),
-  CostCenter: z.string().optional(),
-  Department: z.string().optional(),
-  DepreciateToResidualValue: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  DepreciatedTo: z.string().optional(),
-  DepreciationFinal: z.string().optional(),
-  DepreciationMethod: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Description: z.string().optional(),
-  Group: z.string().optional(),
-  History: z.array(zFortnoxHistory).optional(),
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  InsuredNumber: z.string().optional(),
-  InsuredWith: z.string().optional(),
-  ManualOb: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Notes: z.string().optional(),
-  Number: z.string().optional(),
-  Placement: z.string().optional(),
-  Project: z.string().optional(),
-  Reference: z.string().optional(),
-  Room: z.string().optional(),
-  Status: z.string().optional(),
-  StatusId: z.string().optional(),
-  Type: z.string().optional(),
-  TypeId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxAssetSingle = z.object({
-  Assets: zFortnoxAsset.optional(),
-});
-
-export const zFortnoxInvoiceAccrualListItem = z.object({
-  "@url": z.string().optional(),
   Description: z.string(),
+  EndDate: z.iso.date().optional(),
+  InvoiceAccrualRows: z
+    .array(zFortnoxContractInvoiceContractAccrualRowSingleItem)
+    .optional(),
   InvoiceNumber: z
     .int()
     .min(-2147483648, {
@@ -4465,14 +5890,7 @@ export const zFortnoxInvoiceAccrualListItem = z.object({
       "12_MONTHS",
     ])
     .optional(),
-});
-
-export const zFortnoxInvoiceAccrualListItemList = z.object({
-  InvoiceAccruals: z.array(zFortnoxInvoiceAccrualListItem),
-});
-
-export const zFortnoxInvoiceAccrualInvoiceAccrualRow = z.object({
-  Account: z
+  RevenueAccount: z
     .int()
     .min(-2147483648, {
       error: "Invalid value: Expected int32 to be >= -2147483648",
@@ -4481,20 +5899,27 @@ export const zFortnoxInvoiceAccrualInvoiceAccrualRow = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
-  CostCenter: z.string().optional(),
-  Credit: z.number().optional(),
-  Debit: z.number().optional(),
-  Project: z.string().optional(),
-  TransactionInformation: z.string().optional(),
+  StartDate: z.iso.date().optional(),
+  Times: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Total: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
 });
 
-export const zFortnoxInvoiceAccrual = z.object({
+export const zFortnoxKfInvoiceAccrualSingleItem = z.object({
   "@url": z.string().optional(),
   AccrualAccount: z.int().gte(1000).lte(9999),
   Description: z.string(),
   EndDate: z.iso.date(),
   InvoiceAccrualRows: z
-    .array(zFortnoxInvoiceAccrualInvoiceAccrualRow)
+    .array(zFortnoxContractInvoiceContractAccrualRowSingleItem)
     .min(2)
     .max(2147483647),
   InvoiceNumber: z
@@ -4534,27 +5959,2687 @@ export const zFortnoxInvoiceAccrual = z.object({
   VATIncluded: z.boolean().optional(),
 });
 
-export const zFortnoxInvoiceAccrualWrap = z.object({
-  InvoiceAccrual: zFortnoxInvoiceAccrual,
+export const zFortnoxKfInvoiceAccrualSingleItemWrap = z.object({
+  InvoiceAccrual: zFortnoxKfInvoiceAccrualSingleItem,
 });
 
-export const zFortnoxInvoiceListItem = z.object({
+export const zFortnoxKfInvoiceAccrualSinglePayloadItem = z.object({
+  AccrualAccount: z.int().gte(1000).lte(9999),
+  Description: z.string(),
+  EndDate: z.iso.date(),
+  InvoiceAccrualRows: z
+    .array(zFortnoxContractInvoiceContractAccrualRowSinglePayloadItem)
+    .min(2)
+    .max(2147483647),
+  InvoiceNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  Period: z
+    .enum([
+      "MONTHLY",
+      "BIMONTHLY",
+      "QUARTERLY",
+      "SEMIANNUALLY",
+      "ANNUALLY",
+      "1_MONTHS",
+      "2_MONTHS",
+      "3_MONTHS",
+      "6_MONTHS",
+      "12_MONTHS",
+    ])
+    .optional(),
+  RevenueAccount: z.int().gte(1000).lte(9999),
+  StartDate: z.iso.date(),
+  Times: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Total: z.number(),
+  VATIncluded: z.boolean().optional(),
+});
+
+export const zFortnoxKfInvoiceAccrualSinglePayloadItemWrap = z.object({
+  InvoiceAccrual: zFortnoxKfInvoiceAccrualSinglePayloadItem,
+});
+
+export const zFortnoxKfInvoiceRowSingleItem = z.object({
+  AccountNumber: z.int().gte(1000).lte(9999).optional(),
+  ArticleNumber: z.string().optional(),
+  ContributionPercent: z.string().optional(),
+  ContributionValue: z.string().optional(),
+  Cost: z.number().gte(-9999999999).lte(9999999999).nullish(),
+  CostCenter: z.string().nullish(),
+  DeliveredQuantity: z.string().optional(),
+  Description: z.string().max(255).optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "MAJORAPPLIANCEREPAIR",
+      "MOVINGSERVICES",
+      "ITSERVICES",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "OTHERCOSTS",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "HOMEMAINTENANCE",
+      "FURNISHING",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+    ])
+    .optional(),
+  Price: z.number().optional(),
+  PriceExcludingVAT: z.number().optional(),
+  Project: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockPointCode: z.string().optional(),
+  Total: z.number().nullish(),
+  TotalExcludingVAT: z.number().optional(),
+  Unit: z.string().max(20).optional(),
+  VAT: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxKfBundleSubItemInstanceSingleItem = z.object({
+  AccountNumber: z.int().gte(1000).lte(9999).optional(),
+  AmountInBundle: z.number().optional(),
+  ArticleNumber: z.string().optional(),
+  ContributionPercent: z.string().optional(),
+  ContributionValue: z.string().optional(),
+  CostCenter: z.string().nullish(),
+  DeliveredQuantity: z.string().optional(),
+  Description: z.string().max(255).optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  DocumentRow: zFortnoxKfInvoiceRowSingleItem.optional(),
+  FixedPrice: z.boolean().optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "MAJORAPPLIANCEREPAIR",
+      "MOVINGSERVICES",
+      "ITSERVICES",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "OTHERCOSTS",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "HOMEMAINTENANCE",
+      "FURNISHING",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+    ])
+    .optional(),
+  Price: z.number().optional(),
+  PriceAdjustment: z.boolean().optional(),
+  PriceExcludingVAT: z.number().optional(),
+  Project: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SalesPriceInBundle: z.number().optional(),
+  StockPointCode: z.string().optional(),
+  Total: z.number().nullish(),
+  TotalExcludingVAT: z.number().optional(),
+  Unit: z.string().optional(),
+  UserPrice: z.boolean().optional(),
+  VAT: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxKfBundleInstanceSingleItem = z.object({
+  Revision: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SubRows: z.array(zFortnoxKfBundleSubItemInstanceSingleItem).optional(),
+});
+
+export const zFortnoxKfInvoiceRowSinglePayloadItem = z.object({
+  AccountNumber: z.int().gte(1000).lte(9999).optional(),
+  ArticleNumber: z.string().optional(),
+  Cost: z.number().gte(-9999999999).lte(9999999999).nullish(),
+  CostCenter: z.string().nullish(),
+  DeliveredQuantity: z.string().optional(),
+  Description: z.string().max(255).optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "MAJORAPPLIANCEREPAIR",
+      "MOVINGSERVICES",
+      "ITSERVICES",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "OTHERCOSTS",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "HOMEMAINTENANCE",
+      "FURNISHING",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+    ])
+    .optional(),
+  Price: z.number().optional(),
+  Project: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockPointCode: z.string().optional(),
+  Unit: z.string().max(20).optional(),
+  VAT: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxKfBundleSubItemInstanceSinglePayloadItem = z.object({
+  AccountNumber: z.int().gte(1000).lte(9999).optional(),
+  AmountInBundle: z.number().optional(),
+  ArticleNumber: z.string().optional(),
+  CostCenter: z.string().nullish(),
+  DeliveredQuantity: z.string().optional(),
+  Description: z.string().optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  DocumentRow: zFortnoxKfInvoiceRowSinglePayloadItem.optional(),
+  FixedPrice: z.boolean().optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "MAJORAPPLIANCEREPAIR",
+      "MOVINGSERVICES",
+      "ITSERVICES",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "OTHERCOSTS",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "HOMEMAINTENANCE",
+      "FURNISHING",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+    ])
+    .optional(),
+  Price: z.number().optional(),
+  PriceAdjustment: z.boolean().optional(),
+  Project: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SalesPriceInBundle: z.number().optional(),
+  StockPointCode: z.string().optional(),
+  Unit: z.string().optional(),
+  UserPrice: z.boolean().optional(),
+  VAT: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxKfBundleInstanceSinglePayloadItem = z.object({
+  Revision: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SubRows: z.array(zFortnoxKfBundleSubItemInstanceSinglePayloadItem).optional(),
+});
+
+export const zFortnoxKfInvoiceRowV2SingleItem = z.object({
+  AccountNumber: z.int().gte(1000).lte(9999).optional(),
+  ArticleNumber: z.string().optional(),
+  Bundle: zFortnoxKfBundleInstanceSingleItem.optional(),
+  ContributionPercent: z.string().optional(),
+  ContributionValue: z.string().optional(),
+  Cost: z.number().gte(-9999999999).lte(9999999999).nullish(),
+  CostCenter: z.string().nullish(),
+  DeliveredQuantity: z.string().optional(),
+  Description: z.string().max(255).optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "MAJORAPPLIANCEREPAIR",
+      "MOVINGSERVICES",
+      "ITSERVICES",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "OTHERCOSTS",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "HOMEMAINTENANCE",
+      "FURNISHING",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+    ])
+    .optional(),
+  Price: z.number().optional(),
+  PriceExcludingVAT: z.number().optional(),
+  Project: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockPointCode: z.string().optional(),
+  Total: z.number().nullish(),
+  TotalExcludingVAT: z.number().optional(),
+  Unit: z.string().max(20).optional(),
+  VAT: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxKfInvoiceRowV2SinglePayloadItem = z.object({
+  AccountNumber: z.int().gte(1000).lte(9999).optional(),
+  ArticleNumber: z.string().optional(),
+  Bundle: zFortnoxKfBundleInstanceSinglePayloadItem.optional(),
+  Cost: z.number().gte(-9999999999).lte(9999999999).nullish(),
+  CostCenter: z.string().nullish(),
+  DeliveredQuantity: z.string().optional(),
+  Description: z.string().max(255).optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "MAJORAPPLIANCEREPAIR",
+      "MOVINGSERVICES",
+      "ITSERVICES",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "OTHERCOSTS",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "HOMEMAINTENANCE",
+      "FURNISHING",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+    ])
+    .optional(),
+  Price: z.number().optional(),
+  Project: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockPointCode: z.string().optional(),
+  Unit: z.string().max(20).optional(),
+  VAT: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxKfNoxInvoiceCreatePayload = z.object({
+  BalanceIncludeFees: z.number().optional(),
+  BalanceIncludeFeesCurrency: z.number().optional(),
+  CurrentCapitalBalance: z.number().optional(),
+  CurrentCapitalBalanceCurrency: z.number().optional(),
+  InvoiceDocumentURL: z.string().optional(),
+  InvoiceNumber: z.string(),
+  NextEvent: z.string().optional(),
+  NextEventDate: z.string().optional(),
+  OCRNumber: z.string().optional(),
+  SendMethod: z.string(),
+  Service: z.string(),
+  ServiceName: z.string().optional(),
+  Status: z.string().optional(),
+});
+
+export const zFortnoxKfNoxInvoiceCreatePayloadWrap = z.object({
+  NoxFinansInvoice: zFortnoxKfNoxInvoiceCreatePayload,
+});
+
+export const zFortnoxKfNoxInvoiceSingleItem = z.object({
   "@url": z.string(),
+  BalanceIncludeFees: z.number(),
+  BalanceIncludeFeesCurrency: z.number(),
+  CurrentCapitalBalance: z.number(),
+  CurrentCapitalBalanceCurrency: z.number(),
+  InvoiceDocumentURL: z.string().optional(),
+  InvoiceNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  NextEvent: z.string(),
+  NextEventDate: z.iso.date(),
+  OCRNumber: z.string(),
+  Service: z.string(),
+  ServiceName: z.string(),
+  Status: z.string(),
+});
+
+export const zFortnoxKfNoxInvoiceSingleItemWrap = z.object({
+  NoxFinansInvoice: zFortnoxKfNoxInvoiceSingleItem,
+});
+
+export const zFortnoxKfNoxInvoiceUpdateAndPausePayload = z.object({
+  PausedUntilDate: z.iso.date(),
+});
+
+export const zFortnoxKfNoxInvoiceUpdateAndPausePayloadWrap = z.object({
+  NoxFinansInvoice: zFortnoxKfNoxInvoiceUpdateAndPausePayload,
+});
+
+export const zFortnoxKfNoxInvoiceUpdateAndRepostPaymentPayload = z.object({
+  BookkeepPaymentInFortnox: z.boolean(),
+  ClientTakesFees: z.boolean(),
+  PaymentAmount: z.number(),
+  PaymentMethodAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  PaymentMethodCode: z.string(),
+  ReportToFinance: z.boolean(),
+});
+
+export const zFortnoxKfNoxInvoiceUpdateAndRepostPaymentPayloadWrap = z.object({
+  NoxFinansInvoice: zFortnoxKfNoxInvoiceUpdateAndRepostPaymentPayload,
+});
+
+export const zFortnoxKfNoxInvoiceUpdateAndStopPayload = z.object({
+  BalanceIncludeFees: z.number().optional(),
+  BalanceIncludeFeesCurrency: z.number().optional(),
+  CurrentCapitalBalance: z.number().optional(),
+  CurrentCapitalBalanceCurrency: z.number().optional(),
+  InvoiceDocumentURL: z.string().optional(),
+  InvoiceNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  NextEvent: z.string().optional(),
+  NextEventDate: z.string().optional(),
+  OCRNumber: z.string().optional(),
+  Service: z.string().optional(),
+  ServiceName: z.string().optional(),
+  Status: z.string().optional(),
+});
+
+export const zFortnoxKfNoxInvoiceUpdateAndStopPayloadWrap = z.object({
+  NoxFinansInvoice: zFortnoxKfNoxInvoiceUpdateAndStopPayload,
+});
+
+export const zFortnoxKfNoxInvoiceUpdateAndTakeFeesPayload = z.object({
+  BalanceIncludeFees: z.number().optional(),
+  BalanceIncludeFeesCurrency: z.number().optional(),
+  CurrentCapitalBalance: z.number().optional(),
+  CurrentCapitalBalanceCurrency: z.number().optional(),
+  InvoiceDocumentURL: z.string().optional(),
+  InvoiceNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  NextEvent: z.string().optional(),
+  NextEventDate: z.string().optional(),
+  OCRNumber: z.string().optional(),
+  Service: z.string().optional(),
+  ServiceName: z.string().optional(),
+  Status: z.string().optional(),
+});
+
+export const zFortnoxKfNoxInvoiceUpdateAndTakeFeesPayloadWrap = z.object({
+  NoxFinansInvoice: zFortnoxKfNoxInvoiceUpdateAndTakeFeesPayload,
+});
+
+export const zFortnoxKfNoxInvoiceUpdateAndUnpausePayload = z.object({
+  BalanceIncludeFees: z.number().optional(),
+  BalanceIncludeFeesCurrency: z.number().optional(),
+  CurrentCapitalBalance: z.number().optional(),
+  CurrentCapitalBalanceCurrency: z.number().optional(),
+  InvoiceDocumentURL: z.string().optional(),
+  InvoiceNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  NextEvent: z.string().optional(),
+  NextEventDate: z.string().optional(),
+  OCRNumber: z.string().optional(),
+  Service: z.string().optional(),
+  ServiceName: z.string().optional(),
+  Status: z.string().optional(),
+});
+
+export const zFortnoxKfNoxInvoiceUpdateAndUnpausePayloadWrap = z.object({
+  NoxFinansInvoice: zFortnoxKfNoxInvoiceUpdateAndUnpausePayload,
+});
+
+export const zFortnoxKfTermsOfDeliverySingleItem = z.object({
+  "@url": z.string().optional(),
+  Code: z.string().min(1).max(20),
+  Description: z.string().max(200),
+  DescriptionEnglish: z.string().max(100).optional(),
+});
+
+export const zFortnoxKfTermsOfDeliverySingleItemWrap = z.object({
+  TermsOfDelivery: zFortnoxKfTermsOfDeliverySingleItem,
+});
+
+export const zFortnoxKfTermsOfDeliverySinglePayloadItem = z.object({
+  Code: z.string().min(1).max(20),
+  Description: z.string().max(200),
+  DescriptionEnglish: z.string().max(100).optional(),
+});
+
+export const zFortnoxKfTermsOfDeliverySinglePayloadItemWrap = z.object({
+  TermsOfDelivery: zFortnoxKfTermsOfDeliverySinglePayloadItem,
+});
+
+export const zFortnoxLfSupplierInvoiceAccrualListItem = z.object({
+  "@url": z.string().optional(),
+  AccrualAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  CostAccount: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Description: z.string().optional(),
+  EndDate: z.iso.date().optional(),
+  Period: z.enum([
+    "MONTHLY",
+    "BIMONTHLY",
+    "QUARTERLY",
+    "SEMIANNUALLY",
+    "ANNUALLY",
+    "1_MONTHS",
+    "2_MONTHS",
+    "3_MONTHS",
+    "6_MONTHS",
+    "12_MONTHS",
+  ]),
+  StartDate: z.iso.date().optional(),
+  SupplierInvoiceAccrualRows: z
+    .array(zFortnoxContractInvoiceContractAccrualRowSingleItem)
+    .optional(),
+  SupplierInvoiceNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Times: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Total: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
+});
+
+export const zFortnoxLfSupplierInvoiceAccrualSingleItem = z.object({
+  "@url": z.string().optional(),
+  AccrualAccount: z.int().gte(1000).lte(9999),
+  CostAccount: z.int().gte(1000).lte(9999),
+  Description: z.string().optional(),
+  EndDate: z.iso.date(),
+  Period: z.enum([
+    "MONTHLY",
+    "BIMONTHLY",
+    "QUARTERLY",
+    "SEMIANNUALLY",
+    "ANNUALLY",
+    "1_MONTHS",
+    "2_MONTHS",
+    "3_MONTHS",
+    "6_MONTHS",
+    "12_MONTHS",
+  ]),
+  StartDate: z.iso.date(),
+  SupplierInvoiceAccrualRows: z
+    .array(zFortnoxContractInvoiceContractAccrualRowSingleItem)
+    .min(2)
+    .max(2147483647),
+  SupplierInvoiceNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  Times: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  Total: z.number(),
+  VATIncluded: z.boolean().optional(),
+});
+
+export const zFortnoxLfSupplierInvoiceAccrualSingleItemWrap = z.object({
+  SupplierInvoiceAccrual: zFortnoxLfSupplierInvoiceAccrualSingleItem,
+});
+
+export const zFortnoxLfSupplierInvoiceAccrualSinglePayloadItem = z.object({
+  AccrualAccount: z.int().gte(1000).lte(9999),
+  CostAccount: z.int().gte(1000).lte(9999),
+  Description: z.string().optional(),
+  EndDate: z.iso.date(),
+  Period: z.enum([
+    "MONTHLY",
+    "BIMONTHLY",
+    "QUARTERLY",
+    "SEMIANNUALLY",
+    "ANNUALLY",
+    "1_MONTHS",
+    "2_MONTHS",
+    "3_MONTHS",
+    "6_MONTHS",
+    "12_MONTHS",
+  ]),
+  StartDate: z.iso.date(),
+  SupplierInvoiceAccrualRows: z
+    .array(zFortnoxContractInvoiceContractAccrualRowSinglePayloadItem)
+    .min(2)
+    .max(2147483647),
+  SupplierInvoiceNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  Times: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  Total: z.number(),
+  VATIncluded: z.boolean().optional(),
+});
+
+export const zFortnoxLfSupplierInvoiceAccrualSinglePayloadItemWrap = z.object({
+  SupplierInvoiceAccrual: zFortnoxLfSupplierInvoiceAccrualSinglePayloadItem,
+});
+
+export const zFortnoxLfSupplierInvoiceRowSingleItem = z.object({
+  Account: z.int().gte(1000).lte(9999).optional(),
+  AccountDescription: z.string().optional(),
+  ArticleNumber: z.string().optional(),
+  Code: z
+    .enum([
+      "TOT",
+      "VAT",
+      "FRT",
+      "AFE",
+      "ROV",
+      "CND",
+      "CNC",
+      "PRD",
+      "PRC",
+      "SRD",
+      "SRC",
+      "PRE",
+      "GWB",
+      "ACC",
+    ])
+    .optional(),
+  CostCenter: z.string().nullish(),
+  Credit: z.number().optional(),
+  CreditCurrency: z.number().optional(),
+  Debit: z.number().optional(),
+  DebitCurrency: z.number().optional(),
+  ItemDescription: z.string().optional(),
+  Price: z.number().optional(),
+  Project: z.string().optional(),
+  Quantity: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockLocationCode: z.string().optional(),
+  StockPointCode: z.string().optional(),
+  Total: z.number().nullish(),
+  TransactionInformation: z.string().max(100).optional(),
+  Unit: z.string().optional(),
+});
+
+export const zFortnoxLfSupplierInvoiceRowSinglePayloadItem = z.object({
+  Account: z.int().gte(1000).lte(9999).optional(),
+  AccountDescription: z.string().optional(),
+  ArticleNumber: z.string().optional(),
+  Code: z
+    .enum([
+      "TOT",
+      "VAT",
+      "FRT",
+      "AFE",
+      "ROV",
+      "CND",
+      "CNC",
+      "PRD",
+      "PRC",
+      "SRD",
+      "SRC",
+      "PRE",
+      "GWB",
+      "ACC",
+    ])
+    .optional(),
+  CostCenter: z.string().nullish(),
+  Credit: z.number().optional(),
+  CreditCurrency: z.number().optional(),
+  Debit: z.number().optional(),
+  DebitCurrency: z.number().optional(),
+  ItemDescription: z.string().optional(),
+  Price: z.number().optional(),
+  Project: z.string().optional(),
+  Quantity: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockLocationCode: z.string().optional(),
+  StockPointCode: z.string().optional(),
+  Total: z.number().nullish(),
+  TransactionInformation: z.string().max(100).optional(),
+  Unit: z.string().optional(),
+});
+
+export const zFortnoxLfSupplierInvoiceSinglePayloadItem = z.object({
+  AdministrationFee: z.string().optional(),
+  Comments: z.string().max(1000).optional(),
+  CostCenter: z.string().optional(),
+  Currency: z.string().optional(),
+  CurrencyRate: z.string().optional(),
+  CurrencyUnit: z.number().optional(),
+  DisablePaymentFile: z.boolean().optional(),
+  DueDate: z.iso.date().optional(),
+  ExternalInvoiceNumber: z.string().optional(),
+  ExternalInvoiceSeries: z.string().optional(),
+  Freight: z.string().optional(),
+  GivenNumber: z.string().optional(),
+  InvoiceDate: z.iso.date().optional(),
+  InvoiceNumber: z.string().max(64).optional(),
+  OCR: z.string().optional(),
+  OurReference: z.string().max(50).optional(),
+  PaymentPending: z.boolean().optional(),
+  Project: z.string().optional(),
+  RoundOffValue: z.string().optional(),
+  SalesType: z.enum(["STOCK", "SERVICE"]).optional(),
+  SupplierInvoiceRows: z
+    .array(zFortnoxLfSupplierInvoiceRowSinglePayloadItem)
+    .optional(),
+  SupplierNumber: z.string(),
+  Total: z.string().optional(),
+  VAT: z.string().optional(),
+  VATType: z.enum(["NORMAL", "EUINTERNAL", "REVERSE"]).optional(),
+  YourReference: z.string().max(50).optional(),
+});
+
+export const zFortnoxLfSupplierInvoiceSinglePayloadItemWrap = z.object({
+  SupplierInvoice: zFortnoxLfSupplierInvoiceSinglePayloadItem,
+});
+
+export const zFortnoxLfSupplierListItem = z.object({
+  "@url": z.string().optional(),
+  Active: z.boolean().optional(),
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  BG: z.string().optional(),
+  BIC: z.string().optional(),
+  Bank: z.string().optional(),
+  BankAccountNumber: z.string().optional(),
+  BranchCode: z.string().optional(),
+  City: z.string().max(1024).optional(),
+  ClearingNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Comments: z.string().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  CountryCode: z.string().max(2).optional(),
+  Currency: z.string().max(3).optional(),
+  DisablePaymentFile: z.boolean().optional(),
+  Email: z.string().optional(),
+  Fax: z.string().optional(),
+  IBAN: z.string().optional(),
+  Name: z.string().min(1).max(1024),
+  OrganisationNumber: z.string().optional(),
+  OurCustomerNumber: z.string().optional(),
+  OurReference: z.string().optional(),
+  PG: z.string().optional(),
+  Phone: z.string().optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PreDefinedAccount: z.string().length(4).optional(),
+  Project: z.string().optional(),
+  SupplierNumber: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  VATNumber: z.string().optional(),
+  VATType: z.string().optional(),
+  VisitingAddress: z.string().optional(),
+  VisitingCity: z.string().optional(),
+  VisitingCountry: z.string().optional(),
+  VisitingCountryCode: z.string().optional(),
+  VisitingZipCode: z.string().optional(),
+  WWW: z.string().optional(),
+  WorkPlace: z.string().optional(),
+  YourReference: z.string().optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxLfSupplierSingleItem = z.object({
+  "@url": z.string().optional(),
+  Active: z.boolean().optional(),
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  BG: z.string().optional(),
+  BIC: z.string().optional(),
+  Bank: z.string().optional(),
+  BankAccountNumber: z.string().optional(),
+  BranchCode: z.string().optional(),
+  City: z.string().max(1024).optional(),
+  ClearingNumber: z.string().optional(),
+  Comments: z.string().max(1024).optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  CountryCode: z.string().max(2).optional(),
+  Currency: z.string().max(3).optional(),
+  DisablePaymentFile: z.boolean().optional(),
+  Email: z.string().optional(),
+  Fax: z.string().optional(),
+  IBAN: z.string().optional(),
+  Name: z.string().min(1).max(1024),
+  OrganisationNumber: z.string().optional(),
+  OurCustomerNumber: z.string().optional(),
+  OurReference: z.string().optional(),
+  PG: z.string().optional(),
+  Phone1: z.string().max(1024).optional(),
+  Phone2: z.string().max(1024).optional(),
+  PreDefinedAccount: z.string().length(4).optional(),
+  Project: z.string().optional(),
+  SupplierNumber: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  VATNumber: z.string().optional(),
+  VATType: z.string().optional(),
+  VisitingAddress: z.string().optional(),
+  VisitingCity: z.string().optional(),
+  VisitingCountry: z.string().optional(),
+  VisitingCountryCode: z.string().optional(),
+  VisitingZipCode: z.string().optional(),
+  WWW: z.string().optional(),
+  WorkPlace: z.string().optional(),
+  YourReference: z.string().optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxLfSupplierSingleItemWrap = z.object({
+  Supplier: zFortnoxLfSupplierSingleItem,
+});
+
+export const zFortnoxLfSupplierSinglePayloadItem = z.object({
+  Active: z.boolean().optional(),
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  BG: z.string().optional(),
+  BIC: z.string().optional(),
+  Bank: z.string().optional(),
+  BankAccountNumber: z.string().optional(),
+  BranchCode: z.string().optional(),
+  City: z.string().max(1024).optional(),
+  ClearingNumber: z.string().optional(),
+  Comments: z.string().max(1024).optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  CountryCode: z.string().max(2).optional(),
+  Currency: z.string().max(3).optional(),
+  DisablePaymentFile: z.boolean().optional(),
+  Email: z.string().optional(),
+  Fax: z.string().optional(),
+  IBAN: z.string().optional(),
+  Name: z.string().min(1).max(1024),
+  OrganisationNumber: z.string().optional(),
+  OurCustomerNumber: z.string().optional(),
+  OurReference: z.string().optional(),
+  PG: z.string().optional(),
+  Phone1: z.string().max(1024).optional(),
+  Phone2: z.string().max(1024).optional(),
+  PreDefinedAccount: z.string().length(4).optional(),
+  Project: z.string().optional(),
+  SupplierNumber: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  VATNumber: z.string().optional(),
+  VATType: z.string().optional(),
+  VisitingAddress: z.string().optional(),
+  VisitingCity: z.string().optional(),
+  VisitingCountry: z.string().optional(),
+  VisitingCountryCode: z.string().optional(),
+  VisitingZipCode: z.string().optional(),
+  WWW: z.string().optional(),
+  WorkPlace: z.string().optional(),
+  YourReference: z.string().optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxLfSupplierSinglePayloadItemWrap = z.object({
+  Supplier: zFortnoxLfSupplierSinglePayloadItem,
+});
+
+export const zFortnoxLfVoucherReferenceSingleItem = z.object({
+  Number: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ReferenceType: z.string().optional(),
+  Series: z.string().optional(),
+  Year: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxLfSupplierInvoiceListItem = z.object({
+  "@url": z.string().optional(),
+  AccountingMethod: z.string().optional(),
+  AdministrationFee: z.number().optional(),
+  AuthorizerName: z.string().optional(),
+  Balance: z.string().optional(),
+  Booked: z.boolean().optional(),
+  Cancel: z.boolean().optional(),
+  Cancelled: z.boolean().optional(),
+  Comments: z.string().optional(),
+  CostCenter: z.string().optional(),
+  Credit: z.boolean().optional(),
+  CreditReference: z.string().optional(),
+  Currency: z.string().optional(),
+  CurrencyRate: z.string().optional(),
+  CurrencyUnit: z.number().optional(),
+  DisablePaymentFile: z.boolean().optional(),
+  DueDate: z.iso.date().optional(),
+  ExternalInvoiceNumber: z.string().optional(),
+  ExternalInvoiceSeries: z.string().optional(),
+  FinalPayDate: z.iso.date().optional(),
+  Freight: z.number().optional(),
+  GivenNumber: z.string().optional(),
+  InvoiceDate: z.iso.date().optional(),
+  InvoiceNumber: z.string().optional(),
+  OCR: z.string().optional(),
+  OurReference: z.string().optional(),
+  PaymentPending: z.boolean().optional(),
+  Project: z.string().optional(),
+  RoundOffValue: z.number().optional(),
+  SalesType: z.string().optional(),
+  SupplierInvoiceRows: z
+    .array(zFortnoxLfSupplierInvoiceRowSingleItem)
+    .optional(),
+  SupplierName: z.string().optional(),
+  SupplierNumber: z.string(),
+  Total: z.string().optional(),
+  VAT: z.number().optional(),
+  VATType: z.string().optional(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VoucherSeries: z.string().optional(),
+  VoucherYear: z.string().optional(),
+  Vouchers: z.array(zFortnoxLfVoucherReferenceSingleItem).optional(),
+  YourReference: z.string().optional(),
+});
+
+export const zFortnoxLfSupplierInvoiceSingleItem = z.object({
+  "@url": z.string().optional(),
+  AccountingMethod: z.enum(["ACCRUAL", "CASH"]).optional(),
+  AdministrationFee: z.string().optional(),
+  Balance: z.string().optional(),
+  Booked: z.boolean().optional(),
+  Cancelled: z.boolean().optional(),
+  Comments: z.string().max(1000).optional(),
+  CostCenter: z.string().optional(),
+  Credit: z.boolean().optional(),
+  CreditReference: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Currency: z.string().optional(),
+  CurrencyRate: z.string().optional(),
+  CurrencyUnit: z.number().optional(),
+  DisablePaymentFile: z.boolean().optional(),
+  DueDate: z.iso.date().optional(),
+  ExternalInvoiceNumber: z.string().optional(),
+  ExternalInvoiceSeries: z.string().optional(),
+  FinalPayDate: z.iso.date().optional(),
+  Freight: z.string().optional(),
+  GivenNumber: z.string().optional(),
+  InvoiceDate: z.iso.date().optional(),
+  InvoiceNumber: z.string().max(64).optional(),
+  OCR: z.string().optional(),
+  OurReference: z.string().max(50).optional(),
+  PaymentPending: z.boolean().optional(),
+  Project: z.string().optional(),
+  RoundOffValue: z.string().optional(),
+  SalesType: z.enum(["STOCK", "SERVICE"]).optional(),
+  SupplierInvoiceRows: z
+    .array(zFortnoxLfSupplierInvoiceRowSingleItem)
+    .optional(),
+  SupplierName: z.string().optional(),
+  SupplierNumber: z.string(),
+  Total: z.string().optional(),
+  VAT: z.string().optional(),
+  VATType: z.enum(["NORMAL", "EUINTERNAL", "REVERSE"]).optional(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VoucherSeries: z.string().optional(),
+  VoucherYear: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Vouchers: z.array(zFortnoxLfVoucherReferenceSingleItem).optional(),
+  YourReference: z.string().max(50).optional(),
+});
+
+export const zFortnoxLfSupplierInvoiceSingleItemWrap = z.object({
+  SupplierInvoice: zFortnoxLfSupplierInvoiceSingleItem,
+});
+
+export const zFortnoxLockedPeriodSettingsSingleItem = z.object({
+  EndDate: z.iso.date().optional(),
+});
+
+export const zFortnoxLockedPeriodSettingsSingleItemWrap = z.object({
+  LockedPeriod: zFortnoxLockedPeriodSettingsSingleItem,
+});
+
+export const zFortnoxLonAbsenceTransactionsListItem = z.object({
+  "@url": z.string().optional(),
+  CauseCode: z.enum([
+    "ASK",
+    "FPE",
+    "FRA",
+    "HAV",
+    "KOM",
+    "MIL",
+    "NAR",
+    "OS1",
+    "OS2",
+    "OS3",
+    "OS4",
+    "OS5",
+    "PAP",
+    "PEM",
+    "PER",
+    "SEM",
+    "SJK",
+    "SMB",
+    "SVE",
+    "TJL",
+    "UTB",
+    "VAB",
+  ]),
+  CostCenter: z.string().optional(),
+  Date: z.iso.date(),
+  EmployeeId: z.string().min(1).max(15),
+  Extent: z.number().optional(),
+  HolidayEntitling: z.boolean().optional(),
+  Hours: z.number().optional(),
+  Project: z.string().optional(),
+  id: z.uuid().optional(),
+});
+
+export const zFortnoxLonAbsenceTransactionsSingleItem = z.object({
+  "@url": z.string().optional(),
+  CauseCode: z.enum([
+    "ASK",
+    "FPE",
+    "FRA",
+    "HAV",
+    "KOM",
+    "MIL",
+    "NAR",
+    "OS1",
+    "OS2",
+    "OS3",
+    "OS4",
+    "OS5",
+    "PAP",
+    "PEM",
+    "PER",
+    "SEM",
+    "SJK",
+    "SMB",
+    "SVE",
+    "TJL",
+    "UTB",
+    "VAB",
+  ]),
+  CostCenter: z.string().optional(),
+  Date: z.iso.date(),
+  EmployeeId: z.string().min(1).max(15),
+  Extent: z.number().optional(),
+  HolidayEntitling: z.boolean().optional(),
+  Hours: z.number().optional(),
+  Project: z.string().optional(),
+  id: z.uuid().optional(),
+});
+
+export const zFortnoxLonAbsenceTransactionsSingleItemWrap = z.object({
+  AbsenceTransaction: zFortnoxLonAbsenceTransactionsSingleItem,
+});
+
+export const zFortnoxLonAbsenceTransactionsSinglePayloadItem = z.object({
+  CauseCode: z.enum([
+    "ASK",
+    "FPE",
+    "FRA",
+    "HAV",
+    "KOM",
+    "MIL",
+    "NAR",
+    "OS1",
+    "OS2",
+    "OS3",
+    "OS4",
+    "OS5",
+    "PAP",
+    "PEM",
+    "PER",
+    "SEM",
+    "SJK",
+    "SMB",
+    "SVE",
+    "TJL",
+    "UTB",
+    "VAB",
+  ]),
+  CostCenter: z.string().optional(),
+  Date: z.iso.date(),
+  EmployeeId: z.string(),
+  Extent: z.number().optional(),
+  HolidayEntitling: z.boolean().optional(),
+  Hours: z.number().optional(),
+  Project: z.string().optional(),
+});
+
+export const zFortnoxLonAbsenceTransactionsSinglePayloadItemWrap = z.object({
+  AbsenceTransaction: zFortnoxLonAbsenceTransactionsSinglePayloadItem,
+});
+
+export const zFortnoxLonAttendanceTransactionsListItem = z.object({
+  "@url": z.string().optional(),
+  CauseCode: z.enum([
+    "ARB",
+    "BE2",
+    "BER",
+    "FLX",
+    "HLG",
+    "JO2",
+    "JOR",
+    "MER",
+    "OB1",
+    "OB2",
+    "OB3",
+    "OB4",
+    "OB5",
+    "OK0",
+    "OK1",
+    "OK2",
+    "OK3",
+    "OK4",
+    "OK5",
+    "OT1",
+    "OT2",
+    "OT3",
+    "OT4",
+    "OT5",
+    "RES",
+    "TID",
+  ]),
+  CostCenter: z.string().optional(),
+  Date: z.iso.date(),
+  EmployeeId: z.string().min(1).max(15),
+  Hours: z.string().optional(),
+  Project: z.string().optional(),
+  id: z.uuid().optional(),
+});
+
+export const zFortnoxLonAttendanceTransactionsSingleItem = z.object({
+  "@url": z.string().optional(),
+  CauseCode: z.enum([
+    "ARB",
+    "BE2",
+    "BER",
+    "FLX",
+    "HLG",
+    "JO2",
+    "JOR",
+    "MER",
+    "OB1",
+    "OB2",
+    "OB3",
+    "OB4",
+    "OB5",
+    "OK0",
+    "OK1",
+    "OK2",
+    "OK3",
+    "OK4",
+    "OK5",
+    "OT1",
+    "OT2",
+    "OT3",
+    "OT4",
+    "OT5",
+    "RES",
+    "TID",
+  ]),
+  CostCenter: z.string().optional(),
+  Date: z.iso.date(),
+  EmployeeId: z.string().min(1).max(15),
+  Hours: z.string().optional(),
+  Project: z.string().optional(),
+  id: z.string().optional(),
+});
+
+export const zFortnoxLonAttendanceTransactionsSingleItemWrap = z.object({
+  AttendanceTransaction: zFortnoxLonAttendanceTransactionsSingleItem,
+});
+
+export const zFortnoxLonAttendanceTransactionsSinglePayloadItem = z.object({
+  CauseCode: z.enum([
+    "ARB",
+    "BE2",
+    "BER",
+    "FLX",
+    "HLG",
+    "JO2",
+    "JOR",
+    "MER",
+    "OB1",
+    "OB2",
+    "OB3",
+    "OB4",
+    "OB5",
+    "OK0",
+    "OK1",
+    "OK2",
+    "OK3",
+    "OK4",
+    "OK5",
+    "OT1",
+    "OT2",
+    "OT3",
+    "OT4",
+    "OT5",
+    "RES",
+    "TID",
+  ]),
+  CostCenter: z.string().optional(),
+  Date: z.iso.date(),
+  EmployeeId: z.string().min(1).max(15),
+  Hours: z.string().optional(),
+  Project: z.string().optional(),
+});
+
+export const zFortnoxLonAttendanceTransactionsSinglePayloadItemWrap = z.object({
+  AttendanceTransaction: zFortnoxLonAttendanceTransactionsSinglePayloadItem,
+});
+
+export const zFortnoxLonDatedSalarySupplementListItem = z.object({
+  EmployeeId: z.string(),
+  FirstDay: z.iso.date(),
+  FixedSalarySupplement: z.number(),
+  VariableSalarySupplement: z.number(),
+});
+
+export const zFortnoxLonDatedSalarySupplementListPayloadItem = z.object({
+  EmployeeId: z.string().optional(),
+  FirstDay: z.iso.date().optional(),
+  FixedSalarySupplement: z.number().optional(),
+  VariableSalarySupplement: z.number().optional(),
+});
+
+export const zFortnoxLonDatedScheduleListItem = z.object({
+  EmployeeId: z.string().min(1).max(15),
+  FirstDay: z.iso.date(),
+  ScheduleId: z.string().optional(),
+});
+
+export const zFortnoxLonDatedScheduleListPayloadItem = z.object({
+  EmployeeId: z.string().min(1).max(15),
+  FirstDay: z.iso.date(),
+  ScheduleId: z.string().optional(),
+});
+
+export const zFortnoxLonDatedWageListItem = z.object({
+  EmployeeId: z.string().min(1).max(15),
+  FirstDay: z.iso.date(),
+  HourlyPay: z.string().optional(),
+  MonthlySalary: z.string().optional(),
+});
+
+export const zFortnoxLonDatedWageListPayloadItem = z.object({
+  EmployeeId: z.string().min(1).max(15),
+  FirstDay: z.iso.date(),
+  HourlyPay: z.string().optional(),
+  MonthlySalary: z.string().optional(),
+});
+
+export const zFortnoxLonEmployeeCategoryListItem = z.object({
+  Name: z.string(),
+  Value: z.string(),
+  value: z.string(),
+});
+
+export const zFortnoxLonEmployeeChildListItem = z.object({
+  ApprovedDays: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  Child: z.string(),
+  EmployeeId: z.string().min(1).max(15),
+  Id: z.string().optional(),
+  IngoingWithdrawnDays: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  WithdrawnDays: z.number().optional(),
+});
+
+export const zFortnoxLonEmployeeChildListPayloadItem = z.object({
+  ApprovedDays: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  Child: z.string(),
+  EmployeeId: z.string().min(1).max(15),
+  Id: z.string().optional(),
+  IngoingWithdrawnDays: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  WithdrawnDays: z.number().optional(),
+});
+
+export const zFortnoxLonExpensesListItem = z.object({
+  "@url": z.string().optional(),
+  Account: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  Code: z.string(),
+  Text: z.string(),
+});
+
+export const zFortnoxLonExpensesSingleItem = z.object({
+  Account: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  Code: z.string(),
+  Text: z.string(),
+});
+
+export const zFortnoxLonExpensesSingleItemWrap = z.object({
+  Expense: zFortnoxLonExpensesSingleItem,
+});
+
+export const zFortnoxLonExpensesSinglePayloadItem = z.object({
+  Account: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  Code: z.string(),
+  Text: z.string(),
+});
+
+export const zFortnoxLonExpensesSinglePayloadItemWrap = z.object({
+  Expense: zFortnoxLonExpensesSinglePayloadItem,
+});
+
+export const zFortnoxLonIngoingSickLeaveListItem = z.object({
+  EndDate: z.string().optional(),
+  FirstDay: z.string(),
+  SickDaysCount: z.number().optional(),
+  SickWaitingPeriodDeduction: z.number().optional(),
+});
+
+export const zFortnoxLonOpeningSalaryListItem = z.object({
+  Amount: z.number().optional(),
+  EmployeeId: z.string().min(1).max(15),
+  Period: z.string().optional(),
+  ProductGroup: z.string().optional(),
+  Quantity: z.number().optional(),
+  QuantityUnit: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SalaryTypeName: z.string().optional(),
+  SalaryTypeNumber: z.string(),
+  SortCode: z.string().optional(),
+  TextRow: z.string().optional(),
+  Total: z.number().optional(),
+  VAT: z.number().optional(),
+});
+
+export const zFortnoxLonEmployeeListItem = z.object({
+  "@url": z.string().optional(),
+  ATFValue: z.number().optional(),
+  ATKValue: z.number().optional(),
+  AbsenceHoursNonVacationBased: z.number().optional(),
+  AbsenceHoursVacationBased: z.number().optional(),
+  AbsenceWorkdaysNonVacationBased: z.number().optional(),
+  AbsenceWorkdaysVacationBased: z.number().optional(),
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AutoNonRecurringTax: z.boolean().optional(),
+  AverageHourlyWage: z.string().optional(),
+  AverageWeeklyHours: z.string().optional(),
+  BankAccountNo: z.string().optional(),
+  City: z.string().optional(),
+  ClearingNo: z.string().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  CurrentCompBalance: z.number().optional(),
+  CurrentFlexBalance: z.number().optional(),
+  DatedSalarySupplements: z
+    .array(zFortnoxLonDatedSalarySupplementListItem)
+    .optional(),
+  DatedSchedules: z.array(zFortnoxLonDatedScheduleListItem).optional(),
+  DatedWages: z.array(zFortnoxLonDatedWageListItem).optional(),
+  Email: z.string(),
+  EmployedTo: z.iso.date().optional(),
+  EmployeeCategories: z.array(zFortnoxLonEmployeeCategoryListItem).optional(),
+  EmployeeChildren: z.array(zFortnoxLonEmployeeChildListItem).optional(),
+  EmployeeId: z.string().min(1).max(15).optional(),
+  EmploymentDate: z.iso.date().optional(),
+  EmploymentForm: z
+    .enum(["TV", "PRO", "TID", "SVT", "VIK", "PRJ", "PRA", "FER", "SES", "NEJ"])
+    .optional(),
+  FirstName: z.string(),
+  ForaType: z
+    .enum([
+      "A",
+      "A51",
+      "A52",
+      "A53",
+      "A54",
+      "A55",
+      "A56",
+      "A57",
+      "A58",
+      "A59",
+      "A60",
+      "A61",
+      "A62",
+      "A63",
+      "A64",
+      "A65",
+      "A66",
+      "A67",
+      "A68",
+      "A69",
+      "A70",
+      "A71",
+      "A72",
+      "A73",
+      "A74",
+      "A75",
+      "A76",
+      "A77",
+      "A78",
+      "A79",
+      "A80",
+      "A81",
+      "A82",
+      "A83",
+      "A84",
+      "A85",
+      "A86",
+      "A3",
+      "A91",
+      "A92",
+      "A93",
+      "A11",
+      "A12",
+      "A13",
+      "A14",
+      "A15",
+      "A16",
+      "A17",
+      "A18",
+      "A19",
+      "A20",
+      "A21",
+      "A22",
+      "A23",
+      "A24",
+      "A25",
+      "A26",
+      "A27",
+      "A28",
+      "A29",
+      "A30",
+      "A41",
+      "A42",
+      "A43",
+      "A44",
+      "A45",
+      "A46",
+      "A47",
+      "A48",
+      "T",
+      "T6",
+      "-",
+    ])
+    .optional(),
+  FullName: z.string().optional(),
+  FullTimeEquivalent: z.number().optional(),
+  HourlyPay: z.string().optional(),
+  Inactive: z.boolean().optional(),
+  IngoingSickLeave: z.array(zFortnoxLonIngoingSickLeaveListItem).optional(),
+  IngoingUsedHolidaySupplement: z.number().optional(),
+  IngoingUsedVacationDays: z.number().optional(),
+  InitialComp: z.number().optional(),
+  InitialFlex: z.number().optional(),
+  JobTitle: z.string().max(30).optional(),
+  LastName: z.string(),
+  MonthlySalary: z.string().optional(),
+  NonRecurringTax: z.string().optional(),
+  NonVacationBasedCalendarDaysPartial: z.number().optional(),
+  NonVacationBasedCalendarDaysWhole: z.number().optional(),
+  OpeningSalaries: z.array(zFortnoxLonOpeningSalaryListItem).optional(),
+  PayslipType: z.enum(["pdf", "digital", "kivra"]).optional(),
+  PersonalIdentityNumber: z.string().optional(),
+  PersonelType: z.enum(["TJM", "ARB"]).optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PostCode: z.string().optional(),
+  PreliminaryTaxDeducted: z.number().optional(),
+  Project: z.string().optional(),
+  SalaryForm: z.enum(["MAN", "TIM"]).optional(),
+  ScheduleId: z.string().optional(),
+  TaxAllowance: z.enum(["HUV", "EXT", "TMP", "STU", "EJ", "???"]).optional(),
+  TaxColumn: z.int().gte(1).lte(6).optional(),
+  TaxTable: z.string().optional(),
+  VacationBasedAttendanceDays: z.number().optional(),
+  VacationBasedAttendanceHours: z.number().optional(),
+  VacationBasedCalendarDaysWhole: z.number().optional(),
+  VacationBasedSalaryTotal: z.number().optional(),
+  VacationBasedSalaryVariableAddition: z.number().optional(),
+  VacationBasedSalaryWorkedTime: z.number().optional(),
+  VacationCalculationAdvanceVacationDebt: z.number().optional(),
+  VacationCalculationIncludeInCalculation: z.boolean().optional(),
+  VacationCalculationSameWagePercent: z.boolean().optional(),
+  VacationCalculationSoleCustody: z.boolean().optional(),
+  VacationCalculationSumOnlyNoDays: z.boolean().optional(),
+  VacationCalculationTotalVacationSalarySum: z.number().optional(),
+  VacationCalculationVacationEntitlement: z.number().optional(),
+  VacationCalculationVariableAdditionSum: z.number().optional(),
+  VacationDaysPaid: z.number().optional(),
+  VacationDaysPendingPaid: z.number().optional(),
+  VacationDaysPendingPrepaid: z.number().optional(),
+  VacationDaysPendingSaved: z.number().optional(),
+  VacationDaysPendingSavedYear1: z.number().optional(),
+  VacationDaysPendingSavedYear2: z.number().optional(),
+  VacationDaysPendingSavedYear3: z.number().optional(),
+  VacationDaysPendingSavedYear4: z.number().optional(),
+  VacationDaysPendingSavedYear5: z.number().optional(),
+  VacationDaysPendingSavedYear6Plus: z.number().optional(),
+  VacationDaysPendingUnpaid: z.number().optional(),
+  VacationDaysPrepaid: z.number().optional(),
+  VacationDaysRegisteredPaid: z.number().optional(),
+  VacationDaysRegisteredPrepaid: z.number().optional(),
+  VacationDaysRegisteredSaved: z.number().optional(),
+  VacationDaysRegisteredSavedYear1: z.number().optional(),
+  VacationDaysRegisteredSavedYear2: z.number().optional(),
+  VacationDaysRegisteredSavedYear3: z.number().optional(),
+  VacationDaysRegisteredSavedYear4: z.number().optional(),
+  VacationDaysRegisteredSavedYear5: z.number().optional(),
+  VacationDaysRegisteredSavedYear6Plus: z.number().optional(),
+  VacationDaysRegisteredUnpaid: z.number().optional(),
+  VacationDaysSaved: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear1: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear2: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear3: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear4: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear5: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear6Plus: z.number().optional(),
+  VacationDaysSavedYear1: z.number().optional(),
+  VacationDaysSavedYear2: z.number().optional(),
+  VacationDaysSavedYear3: z.number().optional(),
+  VacationDaysSavedYear4: z.number().optional(),
+  VacationDaysSavedYear5: z.number().optional(),
+  VacationDaysSavedYear6Plus: z.number().optional(),
+  VacationDaysUnpaid: z.number().optional(),
+  WorkingTimeEnumeration: z.string().optional(),
+});
+
+export const zFortnoxLonEmployeeSingleItem = z.object({
+  ATFValue: z.number().optional(),
+  ATKValue: z.number().optional(),
+  AbsenceHoursNonVacationBased: z.number().optional(),
+  AbsenceHoursVacationBased: z.number().optional(),
+  AbsenceWorkdaysNonVacationBased: z.number().optional(),
+  AbsenceWorkdaysVacationBased: z.number().optional(),
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AutoNonRecurringTax: z.boolean().optional(),
+  AverageHourlyWage: z.string().optional(),
+  AverageWeeklyHours: z.string().optional(),
+  BankAccountNo: z.string().optional(),
+  City: z.string().optional(),
+  ClearingNo: z.string().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  CurrentCompBalance: z.number().optional(),
+  CurrentFlexBalance: z.number().optional(),
+  DatedSalarySupplements: z
+    .array(zFortnoxLonDatedSalarySupplementListItem)
+    .optional(),
+  DatedSchedules: z.array(zFortnoxLonDatedScheduleListItem).optional(),
+  DatedWages: z.array(zFortnoxLonDatedWageListItem).optional(),
+  Email: z.string(),
+  EmployedTo: z.iso.date().optional(),
+  EmployeeCategories: z.array(zFortnoxLonEmployeeCategoryListItem).optional(),
+  EmployeeChildren: z.array(zFortnoxLonEmployeeChildListItem).optional(),
+  EmployeeId: z.string().min(1).max(15).optional(),
+  EmploymentDate: z.iso.date().optional(),
+  EmploymentForm: z
+    .enum(["TV", "PRO", "TID", "SVT", "VIK", "PRJ", "PRA", "FER", "SES", "NEJ"])
+    .optional(),
+  FirstName: z.string(),
+  ForaType: z
+    .enum([
+      "A",
+      "A51",
+      "A52",
+      "A53",
+      "A54",
+      "A55",
+      "A56",
+      "A57",
+      "A58",
+      "A59",
+      "A60",
+      "A61",
+      "A62",
+      "A63",
+      "A64",
+      "A65",
+      "A66",
+      "A67",
+      "A68",
+      "A69",
+      "A70",
+      "A71",
+      "A72",
+      "A73",
+      "A74",
+      "A75",
+      "A76",
+      "A77",
+      "A78",
+      "A79",
+      "A80",
+      "A81",
+      "A82",
+      "A83",
+      "A84",
+      "A85",
+      "A86",
+      "A3",
+      "A91",
+      "A92",
+      "A93",
+      "A11",
+      "A12",
+      "A13",
+      "A14",
+      "A15",
+      "A16",
+      "A17",
+      "A18",
+      "A19",
+      "A20",
+      "A21",
+      "A22",
+      "A23",
+      "A24",
+      "A25",
+      "A26",
+      "A27",
+      "A28",
+      "A29",
+      "A30",
+      "A41",
+      "A42",
+      "A43",
+      "A44",
+      "A45",
+      "A46",
+      "A47",
+      "A48",
+      "T",
+      "T6",
+      "-",
+    ])
+    .optional(),
+  FullName: z.string().optional(),
+  FullTimeEquivalent: z.number().optional(),
+  HourlyPay: z.string().optional(),
+  Inactive: z.boolean().optional(),
+  IngoingSickLeave: z.array(zFortnoxLonIngoingSickLeaveListItem).optional(),
+  IngoingUsedHolidaySupplement: z.number().optional(),
+  IngoingUsedVacationDays: z.number().optional(),
+  InitialComp: z.number().optional(),
+  InitialFlex: z.number().optional(),
+  JobTitle: z.string().max(30).optional(),
+  LastName: z.string(),
+  MonthlySalary: z.string().optional(),
+  NonRecurringTax: z.string().optional(),
+  NonVacationBasedCalendarDaysPartial: z.number().optional(),
+  NonVacationBasedCalendarDaysWhole: z.number().optional(),
+  OpeningSalaries: z.array(zFortnoxLonOpeningSalaryListItem).optional(),
+  PayslipType: z.enum(["pdf", "digital", "kivra"]).optional(),
+  PersonalIdentityNumber: z.string().optional(),
+  PersonelType: z.enum(["TJM", "ARB"]).optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PostCode: z.string().optional(),
+  PreliminaryTaxDeducted: z.number().optional(),
+  Project: z.string().optional(),
+  SalaryForm: z.enum(["MAN", "TIM"]).optional(),
+  ScheduleId: z.string().optional(),
+  TaxAllowance: z.enum(["HUV", "EXT", "TMP", "STU", "EJ", "???"]).optional(),
+  TaxColumn: z.int().gte(1).lte(6).optional(),
+  TaxTable: z.string().optional(),
+  VacationBasedAttendanceDays: z.number().optional(),
+  VacationBasedAttendanceHours: z.number().optional(),
+  VacationBasedCalendarDaysWhole: z.number().optional(),
+  VacationBasedSalaryTotal: z.number().optional(),
+  VacationBasedSalaryVariableAddition: z.number().optional(),
+  VacationBasedSalaryWorkedTime: z.number().optional(),
+  VacationCalculationAdvanceVacationDebt: z.number().optional(),
+  VacationCalculationIncludeInCalculation: z.boolean().optional(),
+  VacationCalculationSameWagePercent: z.boolean().optional(),
+  VacationCalculationSoleCustody: z.boolean().optional(),
+  VacationCalculationSumOnlyNoDays: z.boolean().optional(),
+  VacationCalculationTotalVacationSalarySum: z.number().optional(),
+  VacationCalculationVacationEntitlement: z.number().optional(),
+  VacationCalculationVariableAdditionSum: z.number().optional(),
+  VacationDaysPaid: z.number().optional(),
+  VacationDaysPendingPaid: z.number().optional(),
+  VacationDaysPendingPrepaid: z.number().optional(),
+  VacationDaysPendingSaved: z.number().optional(),
+  VacationDaysPendingSavedYear1: z.number().optional(),
+  VacationDaysPendingSavedYear2: z.number().optional(),
+  VacationDaysPendingSavedYear3: z.number().optional(),
+  VacationDaysPendingSavedYear4: z.number().optional(),
+  VacationDaysPendingSavedYear5: z.number().optional(),
+  VacationDaysPendingSavedYear6Plus: z.number().optional(),
+  VacationDaysPendingUnpaid: z.number().optional(),
+  VacationDaysPrepaid: z.number().optional(),
+  VacationDaysRegisteredPaid: z.number().optional(),
+  VacationDaysRegisteredPrepaid: z.number().optional(),
+  VacationDaysRegisteredSaved: z.number().optional(),
+  VacationDaysRegisteredSavedYear1: z.number().optional(),
+  VacationDaysRegisteredSavedYear2: z.number().optional(),
+  VacationDaysRegisteredSavedYear3: z.number().optional(),
+  VacationDaysRegisteredSavedYear4: z.number().optional(),
+  VacationDaysRegisteredSavedYear5: z.number().optional(),
+  VacationDaysRegisteredSavedYear6Plus: z.number().optional(),
+  VacationDaysRegisteredUnpaid: z.number().optional(),
+  VacationDaysSaved: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear1: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear2: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear3: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear4: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear5: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear6Plus: z.number().optional(),
+  VacationDaysSavedYear1: z.number().optional(),
+  VacationDaysSavedYear2: z.number().optional(),
+  VacationDaysSavedYear3: z.number().optional(),
+  VacationDaysSavedYear4: z.number().optional(),
+  VacationDaysSavedYear5: z.number().optional(),
+  VacationDaysSavedYear6Plus: z.number().optional(),
+  VacationDaysUnpaid: z.number().optional(),
+  WorkingTimeEnumeration: z.string().optional(),
+});
+
+export const zFortnoxLonEmployeeSingleItemWrap = z.object({
+  Employee: zFortnoxLonEmployeeSingleItem,
+});
+
+export const zFortnoxLonOpeningSalaryListPayloadItem = z.object({
+  Amount: z.number().optional(),
+  EmployeeId: z.string().min(1).max(15),
+  Period: z.string().optional(),
+  ProductGroup: z.string().optional(),
+  Quantity: z.number().optional(),
+  QuantityUnit: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SalaryTypeName: z.string().optional(),
+  SalaryTypeNumber: z.string(),
+  SortCode: z.string().optional(),
+  TextRow: z.string().optional(),
+  Total: z.number().optional(),
+  VAT: z.number().optional(),
+});
+
+export const zFortnoxLonEmployeeSinglePayloadItem = z.object({
+  ATFValue: z.number().optional(),
+  ATKValue: z.number().optional(),
+  AbsenceHoursNonVacationBased: z.number().optional(),
+  AbsenceHoursVacationBased: z.number().optional(),
+  AbsenceWorkdaysNonVacationBased: z.number().optional(),
+  AbsenceWorkdaysVacationBased: z.number().optional(),
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AutoNonRecurringTax: z.boolean().optional(),
+  AverageHourlyWage: z.string().optional(),
+  AverageWeeklyHours: z.string().optional(),
+  BankAccountNo: z.string().optional(),
+  City: z.string().optional(),
+  ClearingNo: z.string().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  CurrentCompBalance: z.number().optional(),
+  CurrentFlexBalance: z.number().optional(),
+  DatedSalarySupplements: z
+    .array(zFortnoxLonDatedSalarySupplementListPayloadItem)
+    .optional(),
+  DatedSchedules: z.array(zFortnoxLonDatedScheduleListPayloadItem).optional(),
+  DatedWages: z.array(zFortnoxLonDatedWageListPayloadItem).optional(),
+  Email: z.string(),
+  EmployedTo: z.iso.date().optional(),
+  EmployeeChildren: z.array(zFortnoxLonEmployeeChildListPayloadItem).optional(),
+  EmployeeId: z.string().min(1).max(15).optional(),
+  EmploymentDate: z.iso.date().optional(),
+  EmploymentForm: z
+    .enum(["TV", "PRO", "TID", "SVT", "VIK", "PRJ", "PRA", "FER", "SES", "NEJ"])
+    .optional(),
+  FirstName: z.string(),
+  ForaType: z
+    .enum([
+      "A",
+      "A51",
+      "A52",
+      "A53",
+      "A54",
+      "A55",
+      "A56",
+      "A57",
+      "A58",
+      "A59",
+      "A60",
+      "A61",
+      "A62",
+      "A63",
+      "A64",
+      "A65",
+      "A66",
+      "A67",
+      "A68",
+      "A69",
+      "A70",
+      "A71",
+      "A72",
+      "A73",
+      "A74",
+      "A75",
+      "A76",
+      "A77",
+      "A78",
+      "A79",
+      "A80",
+      "A81",
+      "A82",
+      "A83",
+      "A84",
+      "A85",
+      "A86",
+      "A3",
+      "A91",
+      "A92",
+      "A93",
+      "A11",
+      "A12",
+      "A13",
+      "A14",
+      "A15",
+      "A16",
+      "A17",
+      "A18",
+      "A19",
+      "A20",
+      "A21",
+      "A22",
+      "A23",
+      "A24",
+      "A25",
+      "A26",
+      "A27",
+      "A28",
+      "A29",
+      "A30",
+      "A41",
+      "A42",
+      "A43",
+      "A44",
+      "A45",
+      "A46",
+      "A47",
+      "A48",
+      "T",
+      "T6",
+      "-",
+    ])
+    .optional(),
+  FullName: z.string().optional(),
+  FullTimeEquivalent: z.number().optional(),
+  HourlyPay: z.string().optional(),
+  Inactive: z.boolean().optional(),
+  IngoingSickLeave: z.array(zFortnoxLonIngoingSickLeaveListItem).optional(),
+  IngoingUsedHolidaySupplement: z.number().optional(),
+  IngoingUsedVacationDays: z.number().optional(),
+  InitialComp: z.number().optional(),
+  InitialFlex: z.number().optional(),
+  JobTitle: z.string().max(30).optional(),
+  LastName: z.string(),
+  MonthlySalary: z.string().optional(),
+  NonRecurringTax: z.string().optional(),
+  NonVacationBasedCalendarDaysPartial: z.number().optional(),
+  NonVacationBasedCalendarDaysWhole: z.number().optional(),
+  OpeningSalaries: z.array(zFortnoxLonOpeningSalaryListPayloadItem).optional(),
+  PayslipType: z.enum(["pdf", "digital", "kivra"]).optional(),
+  PersonalIdentityNumber: z.string().optional(),
+  PersonelType: z.enum(["TJM", "ARB"]).optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PostCode: z.string().optional(),
+  PreliminaryTaxDeducted: z.number().optional(),
+  Project: z.string().optional(),
+  SalaryForm: z.enum(["MAN", "TIM"]).optional(),
+  ScheduleId: z.string().optional(),
+  TaxAllowance: z.enum(["HUV", "EXT", "TMP", "STU", "EJ", "???"]).optional(),
+  TaxColumn: z.int().gte(1).lte(6).optional(),
+  TaxTable: z.string().optional(),
+  VacationBasedAttendanceDays: z.number().optional(),
+  VacationBasedAttendanceHours: z.number().optional(),
+  VacationBasedCalendarDaysWhole: z.number().optional(),
+  VacationBasedSalaryTotal: z.number().optional(),
+  VacationBasedSalaryVariableAddition: z.number().optional(),
+  VacationBasedSalaryWorkedTime: z.number().optional(),
+  VacationCalculationAdvanceVacationDebt: z.number().optional(),
+  VacationCalculationIncludeInCalculation: z.boolean().optional(),
+  VacationCalculationSameWagePercent: z.boolean().optional(),
+  VacationCalculationSoleCustody: z.boolean().optional(),
+  VacationCalculationSumOnlyNoDays: z.boolean().optional(),
+  VacationCalculationTotalVacationSalarySum: z.number().optional(),
+  VacationCalculationVacationEntitlement: z.number().optional(),
+  VacationCalculationVariableAdditionSum: z.number().optional(),
+  VacationDaysPaid: z.number().optional(),
+  VacationDaysPendingPaid: z.number().optional(),
+  VacationDaysPendingPrepaid: z.number().optional(),
+  VacationDaysPendingSaved: z.number().optional(),
+  VacationDaysPendingSavedYear1: z.number().optional(),
+  VacationDaysPendingSavedYear2: z.number().optional(),
+  VacationDaysPendingSavedYear3: z.number().optional(),
+  VacationDaysPendingSavedYear4: z.number().optional(),
+  VacationDaysPendingSavedYear5: z.number().optional(),
+  VacationDaysPendingSavedYear6Plus: z.number().optional(),
+  VacationDaysPendingUnpaid: z.number().optional(),
+  VacationDaysPrepaid: z.number().optional(),
+  VacationDaysRegisteredPaid: z.number().optional(),
+  VacationDaysRegisteredPrepaid: z.number().optional(),
+  VacationDaysRegisteredSaved: z.number().optional(),
+  VacationDaysRegisteredSavedYear1: z.number().optional(),
+  VacationDaysRegisteredSavedYear2: z.number().optional(),
+  VacationDaysRegisteredSavedYear3: z.number().optional(),
+  VacationDaysRegisteredSavedYear4: z.number().optional(),
+  VacationDaysRegisteredSavedYear5: z.number().optional(),
+  VacationDaysRegisteredSavedYear6Plus: z.number().optional(),
+  VacationDaysRegisteredUnpaid: z.number().optional(),
+  VacationDaysSaved: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear1: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear2: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear3: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear4: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear5: z.number().optional(),
+  VacationDaysSavedEmploymentRateYear6Plus: z.number().optional(),
+  VacationDaysSavedYear1: z.number().optional(),
+  VacationDaysSavedYear2: z.number().optional(),
+  VacationDaysSavedYear3: z.number().optional(),
+  VacationDaysSavedYear4: z.number().optional(),
+  VacationDaysSavedYear5: z.number().optional(),
+  VacationDaysSavedYear6Plus: z.number().optional(),
+  VacationDaysUnpaid: z.number().optional(),
+  WorkingTimeEnumeration: z.string().optional(),
+});
+
+export const zFortnoxLonEmployeeSinglePayloadItemWrap = z.object({
+  Employee: zFortnoxLonEmployeeSinglePayloadItem,
+});
+
+export const zFortnoxLonSalaryTransactionsListItem = z.object({
+  "@url": z.string().optional(),
+  Amount: z.string().optional(),
+  CostCenter: z.string().optional(),
+  Date: z.iso.date(),
+  EmployeeId: z.string(),
+  Expense: z.string().max(6).optional(),
+  Number: z.string().optional(),
+  Project: z.string().optional(),
+  SalaryCode: z.string(),
+  SalaryRow: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TextRow: z.string().max(40).optional(),
+  Total: z.string().optional(),
+  VAT: z.string().optional(),
+});
+
+export const zFortnoxLonSalaryTransactionsSingleItem = z.object({
+  Amount: z.string().optional(),
+  CostCenter: z.string().optional(),
+  Date: z.iso.date(),
+  EmployeeId: z.string(),
+  Expense: z.string().max(6).optional(),
+  Number: z.string().optional(),
+  Project: z.string().optional(),
+  SalaryCode: z.string(),
+  SalaryRow: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TextRow: z.string().max(40).optional(),
+  Total: z.string().optional(),
+  VAT: z.string().optional(),
+});
+
+export const zFortnoxLonSalaryTransactionsSingleItemWrap = z.object({
+  SalaryTransaction: zFortnoxLonSalaryTransactionsSingleItem,
+});
+
+export const zFortnoxLonSalaryTransactionsSinglePayloadItem = z.object({
+  Amount: z.string().optional(),
+  CostCenter: z.string().optional(),
+  Date: z.iso.date(),
+  EmployeeId: z.string(),
+  Expense: z.string().max(6).optional(),
+  Number: z.string().optional(),
+  Project: z.string().optional(),
+  SalaryCode: z.string(),
+  SalaryRow: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TextRow: z.string().max(40).optional(),
+  Total: z.string().optional(),
+  VAT: z.string().optional(),
+});
+
+export const zFortnoxLonSalaryTransactionsSinglePayloadItemWrap = z.object({
+  SalaryTransaction: zFortnoxLonSalaryTransactionsSinglePayloadItem,
+});
+
+export const zFortnoxLonScheduleTimeSingleItem = z.object({
+  Date: z.iso.date().optional(),
+  EmployeeId: z.string().optional(),
+  Hours: z.string().optional(),
+  IWH1: z.string().optional(),
+  IWH2: z.string().optional(),
+  IWH3: z.string().optional(),
+  IWH4: z.string().optional(),
+  IWH5: z.string().optional(),
+  ScheduleId: z.string().optional(),
+});
+
+export const zFortnoxLonScheduleTimeSingleItemWrap = z.object({
+  ScheduleTime: zFortnoxLonScheduleTimeSingleItem,
+});
+
+export const zFortnoxLonScheduleTimeSinglePayloadItem = z.object({
+  Date: z.iso.date().optional(),
+  EmployeeId: z.string().optional(),
+  Hours: z.string().optional(),
+  IWH1: z.string().optional(),
+  IWH2: z.string().optional(),
+  IWH3: z.string().optional(),
+  IWH4: z.string().optional(),
+  IWH5: z.string().optional(),
+  ScheduleId: z.string().optional(),
+});
+
+export const zFortnoxLonScheduleTimeSinglePayloadItemWrap = z.object({
+  ScheduleTime: zFortnoxLonScheduleTimeSinglePayloadItem,
+});
+
+export const zFortnoxMeSingleItem = z.object({
+  Email: z.string().optional(),
+  Id: z.string().optional(),
+  Locale: z.string().optional(),
+  Name: z.string().optional(),
+  SysAdmin: z.boolean().optional(),
+});
+
+export const zFortnoxMeSingleItemWrap = z.object({
+  Me: zFortnoxMeSingleItem,
+});
+
+export const zFortnoxMetaInformation = z.object({
+  "@CurrentPage": z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  "@TotalPages": z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  "@TotalResources": z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+});
+
+export const zFortnoxAnlAssetTypesListResponseWrap = z.object({
+  MetaInformation: zFortnoxMetaInformation,
+  Types: z.array(zFortnoxAnlAssetTypesResponse),
+});
+
+export const zFortnoxAnlAssetsListItemWrap = z.object({
+  Assets: z.array(zFortnoxAnlAssetsListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxArticleListItemWrap = z.object({
+  Articles: z.array(zFortnoxArticleListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxArticleV2ListItemWrap = z.object({
+  Articles: z.array(zFortnoxArticleV2ListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxBfAccountChartListItemWrap = z.object({
+  AccountCharts: z.array(zFortnoxBfAccountChartSingleItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxBfAccountListItemWrap = z.object({
+  Accounts: z.array(zFortnoxBfAccountListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxBfFinancialYearListItemWrap = z.object({
+  FinancialYears: z.array(zFortnoxBfFinancialYearListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxBfPreDefinedVoucherSeriesListItemWrap = z.object({
+  PreDefinedVoucherSeriesCollection: z.array(
+    zFortnoxBfPreDefinedVoucherSeriesSingleItem,
+  ),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxBfVoucherListItemWrap = z.object({
+  MetaInformation: zFortnoxMetaInformation,
+  Vouchers: z.array(zFortnoxBfVoucherListItem),
+});
+
+export const zFortnoxBfVoucherSeriesListItemWrap = z.object({
+  MetaInformation: zFortnoxMetaInformation,
+  VoucherSeriesCollection: z.array(zFortnoxBfVoucherSeriesListItem),
+});
+
+export const zFortnoxBflcClientListListItemWrap = z.object({
+  Clients: z.array(zFortnoxBflcClientListListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxContractInvoiceContractAccrualListItemWrap = z.object({
+  ContractAccruals: z.array(zFortnoxContractInvoiceContractAccrualListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxContractInvoiceContractListResponseWrap = z.object({
+  Contracts: z.array(zFortnoxContractInvoiceContractListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxContractInvoiceContractTemplateListResponseWrap = z.object(
+  {
+    ContractTemplates: z.array(zFortnoxContractInvoiceContractTemplateListItem),
+    MetaInformation: zFortnoxMetaInformation,
+  },
+);
+
+export const zFortnoxCostCenterListItemWrap = z.object({
+  CostCenters: z.array(zFortnoxCostCenterSingleItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxCurrencyListItemWrap = z.object({
+  Currencies: z.array(zFortnoxCurrencySingleItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxDaArticleFileConnectionListItemWrap = z.object({
+  ArticleFileConnections: z.array(zFortnoxDaArticleFileConnectionSingleItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxDaAssetFileConnectionListItemWrap = z.object({
+  AssetFileConnections: z.array(zFortnoxDaAssetFileConnectionSingleItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxDaEmailSendersWrap = z.object({
+  EmailSenders: zFortnoxDaEmailSenders,
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxDaSupplierInvoiceFileConnectionListItemWrap = z.object({
+  SupplierInvoiceFileConnections: z.array(
+    zFortnoxDaSupplierInvoiceFileConnectionSingleItem,
+  ),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxDaVoucherFileConnectionListItemWrap = z.object({
+  VoucherFileConnections: z.array(zFortnoxDaVoucherFileConnectionSingleItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxDocumentTagListItemWrap = z.object({
+  Labels: z.array(zFortnoxDocumentTagSingleItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxItemUrlConnectionListItemWrap = z.object({
+  ArticleUrlConnections: z.array(zFortnoxItemUrlConnectionSingleItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxKfCustomerListItemWrap = z.object({
+  Customers: z.array(zFortnoxKfCustomerListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxKfInvoiceAccrualListItemWrap = z.object({
+  InvoiceAccruals: z.array(zFortnoxKfInvoiceAccrualListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxKfTermsOfDeliveryListItemWrap = z.object({
+  TermsOfDeliveries: z.array(zFortnoxKfTermsOfDeliverySingleItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxLfSupplierInvoiceAccrualListItemWrap = z.object({
+  MetaInformation: zFortnoxMetaInformation,
+  SupplierInvoiceAccruals: z.array(zFortnoxLfSupplierInvoiceAccrualListItem),
+});
+
+export const zFortnoxLfSupplierInvoiceListItemWrap = z.object({
+  MetaInformation: zFortnoxMetaInformation,
+  SupplierInvoices: z.array(zFortnoxLfSupplierInvoiceListItem),
+});
+
+export const zFortnoxLfSupplierListItemWrap = z.object({
+  MetaInformation: zFortnoxMetaInformation,
+  Suppliers: z.array(zFortnoxLfSupplierListItem),
+});
+
+export const zFortnoxLonAbsenceTransactionsListItemWrap = z.object({
+  AbsenceTransactions: z.array(zFortnoxLonAbsenceTransactionsListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxLonAttendanceTransactionsListItemWrap = z.object({
+  AttendanceTransactions: z.array(zFortnoxLonAttendanceTransactionsListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxLonEmployeeListItemWrap = z.object({
+  Employees: z.array(zFortnoxLonEmployeeListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxLonExpensesListItemWrap = z.object({
+  Expenses: z.array(zFortnoxLonExpensesListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxLonSalaryTransactionsListItemWrap = z.object({
+  MetaInformation: zFortnoxMetaInformation,
+  SalaryTransactions: z.array(zFortnoxLonSalaryTransactionsListItem),
+});
+
+export const zFortnoxModeOfPaymentSingleItem = z.object({
+  "@url": z.string().optional(),
+  AccountNumber: z.string().length(4),
+  Code: z.string().optional(),
+  Description: z.string().optional(),
+});
+
+export const zFortnoxModeOfPaymentListItemWrap = z.object({
+  ModesOfPayments: z.array(zFortnoxModeOfPaymentSingleItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxModeOfPaymentSingleItemWrap = z.object({
+  ModeOfPayment: zFortnoxModeOfPaymentSingleItem,
+});
+
+export const zFortnoxModeOfPaymentSinglePayloadItem = z.object({
+  AccountNumber: z.string().length(4),
+  Code: z.string().optional(),
+  Description: z.string().optional(),
+});
+
+export const zFortnoxModeOfPaymentSinglePayloadItemWrap = z.object({
+  ModeOfPayment: zFortnoxModeOfPaymentSinglePayloadItem,
+});
+
+export const zFortnoxOofDocumentTagsOnDocumentSingleItem = z.object({
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxKfInvoiceListItem = z.object({
+  "@url": z.string(),
+  "@urlTaxReductionList": z.string(),
+  AccountingMethod: z.string(),
+  Address1: z.string(),
+  Address2: z.string(),
+  AdministrationFee: z.number(),
+  AdministrationFeeVAT: z.number(),
   Balance: z.number(),
+  BasisTaxReduction: z.number(),
   Booked: z.boolean(),
   Cancelled: z.boolean(),
+  City: z.string(),
+  Comments: z.string(),
+  ContractReference: z.string(),
+  ContributionPercent: z.number(),
+  ContributionValue: z.number(),
   CostCenter: z.string(),
+  Country: z.string(),
+  Credit: z.string(),
+  CreditInvoiceReference: z.string(),
   Currency: z.string(),
   CurrencyRate: z.number(),
   CurrencyUnit: z.number(),
   CustomerName: z.string(),
   CustomerNumber: z.string(),
+  DeliveryAddress1: z.string(),
+  DeliveryAddress2: z.string(),
+  DeliveryCity: z.string(),
+  DeliveryCountry: z.string(),
+  DeliveryDate: z.iso.date(),
+  DeliveryName: z.string(),
+  DeliveryZipCode: z.string(),
   DocumentNumber: z.string(),
   DueDate: z.iso.date(),
+  EDIInformation: zFortnoxDocumentEdiFieldSingleItem,
+  EUQuarterlyReport: z.boolean(),
+  EmailInformation: zFortnoxDocumentEmailFieldSingleItem,
   ExternalInvoiceReference1: z.string(),
   ExternalInvoiceReference2: z.string(),
   FinalPayDate: z.iso.date(),
+  Freight: z.number(),
+  FreightVAT: z.number(),
+  Gross: z.number(),
+  HouseWork: z.boolean(),
   InvoiceDate: z.iso.date(),
+  InvoicePeriodEnd: z.string(),
+  InvoicePeriodStart: z.string(),
+  InvoiceReference: z.string(),
+  InvoiceRows: z.array(zFortnoxKfInvoiceRowSingleItem),
   InvoiceType: z.enum([
     "INVOICE",
     "AGREEMENTINVOICE",
@@ -4562,12 +8647,44 @@ export const zFortnoxInvoiceListItem = z.object({
     "SUMMARYINVOICE",
     "CASHINVOICE",
   ]),
+  Labels: z.array(zFortnoxOofDocumentTagsOnDocumentSingleItem),
+  Language: z.string(),
+  LastRemindDate: z.iso.date(),
+  Net: z.number(),
+  NotCompleted: z.boolean(),
   NoxFinans: z.boolean(),
   OCR: z.string(),
+  OfferReference: z.string(),
+  OrderReference: z.string(),
+  OrganisationNumber: z.string(),
+  OurReference: z.string(),
+  OutboundDate: z.string(),
+  PaymentWay: z.string(),
+  Phone1: z.string(),
+  Phone2: z.string(),
+  PriceList: z.string(),
+  PrintTemplate: z.string(),
   Project: z.string(),
+  Remarks: z.string(),
+  Reminders: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  RoundOff: z.number(),
   Sent: z.boolean(),
+  TaxReduction: z.number(),
+  TaxReductionType: z.string(),
+  TermsOfDelivery: z.string(),
   TermsOfPayment: z.string(),
+  TimeBasisReference: z.string(),
   Total: z.number(),
+  TotalToPay: z.number(),
+  TotalVAT: z.number(),
+  VATIncluded: z.boolean(),
   VoucherNumber: z
     .int()
     .min(-2147483648, {
@@ -4585,48 +8702,649 @@ export const zFortnoxInvoiceListItem = z.object({
     .max(2147483647, {
       error: "Invalid value: Expected int32 to be <= 2147483647",
     }),
+  WarehouseReady: z.boolean(),
   WayOfDelivery: z.string(),
+  YourOrderNumber: z.string(),
+  YourReference: z.string(),
+  ZipCode: z.string(),
 });
 
-export const zFortnoxInvoiceListItemWrap = z.object({
-  Invoices: z.array(zFortnoxInvoiceListItem),
+export const zFortnoxKfInvoiceListResponseWrap = z.object({
+  Invoices: z.array(zFortnoxKfInvoiceListItem),
+  MetaInformation: zFortnoxMetaInformation,
 });
 
-export const zFortnoxInvoicePayloadV2EdiInformation = z.object({
-  EDIGlobalLocationNumber: z.string().max(13).optional(),
-  EDIGlobalLocationNumberDelivery: z.string().max(13).optional(),
-  EDIInvoiceExtra1: z.string().optional(),
-  EDIInvoiceExtra2: z.string().optional(),
-  EDIOurElectronicReference: z.string().optional(),
-  EDIYourElectronicReference: z.string().optional(),
-});
-
-export const zFortnoxInvoicePayloadV2EmailInformation = z.object({
-  EmailAddressBCC: z.string().optional(),
-  EmailAddressCC: z.string().optional(),
-  EmailAddressFrom: z.string().optional(),
-  EmailAddressTo: z.string().optional(),
-  EmailBody: z.string().max(20000).optional(),
-  EmailSubject: z.string().max(100).optional(),
-});
-
-export const zFortnoxInvoicePayloadV2InvoiceBundleSubRow = z.object({
-  AccountNumber: z.int().gte(1000).lte(9999).optional(),
-  ArticleNumber: z.string().optional(),
-  BundleSubItem: zFortnoxBundleSubItem.optional(),
-  CostCenter: z.string().optional(),
-  DeliveredQuantity: z.string().optional(),
-  Description: z.string().optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z
+export const zFortnoxKfInvoiceSingleItem = z.object({
+  "@url": z.string().optional(),
+  "@urlTaxReductionList": z.string().optional(),
+  AccountingMethod: z.enum(["ACCRUAL", "CASH"]).optional(),
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AdministrationFee: z.number().optional(),
+  AdministrationFeeVAT: z.number().optional(),
+  Balance: z.number().optional(),
+  BasisTaxReduction: z.number().optional(),
+  Booked: z.boolean().optional(),
+  Cancelled: z.boolean().optional(),
+  City: z.string().max(1024).optional(),
+  Comments: z.string().max(1024).optional(),
+  ContractReference: z
     .int()
     .min(-2147483648, {
       error: "Invalid value: Expected int32 to be >= -2147483648",
     })
-    .lte(999)
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
     .optional(),
+  ContributionPercent: z.number().optional(),
+  ContributionValue: z.number().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  Credit: z.string().optional(),
+  CreditInvoiceReference: z.string().optional(),
+  Currency: z.string().optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().max(1024).optional(),
+  DeliveryAddress2: z.string().max(1024).optional(),
+  DeliveryCity: z.string().max(1024).optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().max(1024).optional(),
+  DeliveryZipCode: z.string().max(1024).optional(),
+  DocumentNumber: z.string().optional(),
+  DueDate: z.iso.date().optional(),
+  EDIInformation: zFortnoxDocumentEdiFieldSingleItem.optional(),
+  EUQuarterlyReport: z.boolean().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSingleItem.optional(),
+  ExternalInvoiceReference1: z.string().max(80).optional(),
+  ExternalInvoiceReference2: z.string().max(80).optional(),
+  FinalPayDate: z.iso.date().optional(),
+  Freight: z.number().optional(),
+  FreightVAT: z.number().optional(),
+  Gross: z.number().optional(),
+  HouseWork: z.boolean().optional(),
+  InvoiceDate: z.iso.date().optional(),
+  InvoicePeriodEnd: z.iso.date().optional(),
+  InvoicePeriodReference: z.string().optional(),
+  InvoicePeriodStart: z.iso.date().optional(),
+  InvoiceReference: z.string().optional(),
+  InvoiceRows: z.array(zFortnoxKfInvoiceRowSingleItem).optional(),
+  InvoiceType: z
+    .enum([
+      "INVOICE",
+      "AGREEMENTINVOICE",
+      "INTRESTINVOICE",
+      "SUMMARYINVOICE",
+      "CASHINVOICE",
+    ])
+    .optional(),
+  Labels: z.array(zFortnoxOofDocumentTagsOnDocumentSingleItem).optional(),
+  Language: z.enum(["SV", "EN"]).optional(),
+  LastRemindDate: z.iso.date().optional(),
+  Net: z.number().optional(),
+  NotCompleted: z.boolean().optional(),
+  NoxFinans: z.boolean().optional(),
+  OCR: z.string().optional(),
+  OfferReference: z.string().optional(),
+  OrderReference: z.string().optional(),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().max(50).optional(),
+  OutboundDate: z.iso.date().optional(),
+  PaymentWay: z.enum(["CASH", "CARD", "AG"]).optional(),
+  Phone1: z.string().max(1024).optional(),
+  Phone2: z.string().max(1024).optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().max(1024).optional(),
+  Reminders: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  RoundOff: z.number().optional(),
+  Sent: z.boolean().optional(),
+  TaxReduction: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  TimeBasisReference: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Total: z.number().optional(),
+  TotalToPay: z.number().optional(),
+  TotalVAT: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VoucherSeries: z.string().optional(),
+  VoucherYear: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  WarehouseReady: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourOrderNumber: z.string().max(75).optional(),
+  YourReference: z.string().max(50).optional(),
+  ZipCode: z.string().max(1024).optional(),
+});
+
+export const zFortnoxKfInvoiceResponseWrap = z.object({
+  Invoice: zFortnoxKfInvoiceSingleItem,
+});
+
+export const zFortnoxKfInvoiceV2ListItem = z.object({
+  "@url": z.string(),
+  "@urlTaxReductionList": z.string(),
+  AccountingMethod: z.string(),
+  Address1: z.string(),
+  Address2: z.string(),
+  AdministrationFee: z.number(),
+  AdministrationFeeVAT: z.number(),
+  Balance: z.number(),
+  BasisTaxReduction: z.number(),
+  Booked: z.boolean(),
+  Cancelled: z.boolean(),
+  City: z.string(),
+  Comments: z.string(),
+  ContractReference: z.string(),
+  ContributionPercent: z.number(),
+  ContributionValue: z.number(),
+  CostCenter: z.string(),
+  Country: z.string(),
+  Credit: z.string(),
+  CreditInvoiceReference: z.string(),
+  Currency: z.string(),
+  CurrencyRate: z.number(),
+  CurrencyUnit: z.number(),
+  CustomerName: z.string(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string(),
+  DeliveryAddress2: z.string(),
+  DeliveryCity: z.string(),
+  DeliveryCountry: z.string(),
+  DeliveryDate: z.iso.date(),
+  DeliveryName: z.string(),
+  DeliveryZipCode: z.string(),
+  DocumentNumber: z.string(),
+  DueDate: z.iso.date(),
+  EDIInformation: zFortnoxDocumentEdiFieldSingleItem,
+  EUQuarterlyReport: z.boolean(),
+  EmailInformation: zFortnoxDocumentEmailFieldSingleItem,
+  ExternalInvoiceReference1: z.string(),
+  ExternalInvoiceReference2: z.string(),
+  FinalPayDate: z.iso.date(),
+  Freight: z.number(),
+  FreightVAT: z.number(),
+  Gross: z.number(),
+  HouseWork: z.boolean(),
+  InvoiceDate: z.iso.date(),
+  InvoicePeriodEnd: z.string(),
+  InvoicePeriodStart: z.string(),
+  InvoiceReference: z.string(),
+  InvoiceRows: z.array(zFortnoxKfInvoiceRowV2SingleItem),
+  InvoiceType: z.enum([
+    "INVOICE",
+    "AGREEMENTINVOICE",
+    "INTRESTINVOICE",
+    "SUMMARYINVOICE",
+    "CASHINVOICE",
+  ]),
+  Labels: z.array(zFortnoxOofDocumentTagsOnDocumentSingleItem),
+  Language: z.string(),
+  LastRemindDate: z.iso.date(),
+  Net: z.number(),
+  NotCompleted: z.boolean(),
+  NoxFinans: z.boolean(),
+  OCR: z.string(),
+  OfferReference: z.string(),
+  OrderReference: z.string(),
+  OrganisationNumber: z.string(),
+  OurReference: z.string(),
+  OutboundDate: z.string(),
+  PaymentWay: z.string(),
+  Phone1: z.string(),
+  Phone2: z.string(),
+  PriceList: z.string(),
+  PrintTemplate: z.string(),
+  Project: z.string(),
+  Remarks: z.string(),
+  Reminders: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  RoundOff: z.number(),
+  Sent: z.boolean(),
+  TaxReduction: z.number(),
+  TaxReductionType: z.string(),
+  TermsOfDelivery: z.string(),
+  TermsOfPayment: z.string(),
+  TimeBasisReference: z.string(),
+  Total: z.number(),
+  TotalToPay: z.number(),
+  TotalVAT: z.number(),
+  VATIncluded: z.boolean(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  VoucherSeries: z.string(),
+  VoucherYear: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  WarehouseReady: z.boolean(),
+  WayOfDelivery: z.string(),
+  YourOrderNumber: z.string(),
+  YourReference: z.string(),
+  ZipCode: z.string(),
+});
+
+export const zFortnoxKfInvoiceV2ListResponseWrap = z.object({
+  Invoices: z.array(zFortnoxKfInvoiceV2ListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxKfInvoiceV2SingleItem = z.object({
+  "@url": z.string().optional(),
+  "@urlTaxReductionList": z.string().optional(),
+  AccountingMethod: z.enum(["ACCRUAL", "CASH"]).optional(),
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AdministrationFee: z.number().optional(),
+  AdministrationFeeVAT: z.number().optional(),
+  Balance: z.number().optional(),
+  BasisTaxReduction: z.number().optional(),
+  Booked: z.boolean().optional(),
+  Cancelled: z.boolean().optional(),
+  City: z.string().max(1024).optional(),
+  Comments: z.string().max(1024).optional(),
+  ContractReference: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ContributionPercent: z.number().optional(),
+  ContributionValue: z.number().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  Credit: z.string().optional(),
+  CreditInvoiceReference: z.string().optional(),
+  Currency: z.string().optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().max(1024).optional(),
+  DeliveryAddress2: z.string().max(1024).optional(),
+  DeliveryCity: z.string().max(1024).optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().max(1024).optional(),
+  DeliveryZipCode: z.string().max(1024).optional(),
+  DocumentNumber: z.string().optional(),
+  DueDate: z.iso.date().optional(),
+  EDIInformation: zFortnoxDocumentEdiFieldSingleItem.optional(),
+  EUQuarterlyReport: z.boolean().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSingleItem.optional(),
+  ExternalInvoiceReference1: z.string().max(80).optional(),
+  ExternalInvoiceReference2: z.string().max(80).optional(),
+  FinalPayDate: z.iso.date().optional(),
+  Freight: z.number().optional(),
+  FreightVAT: z.number().optional(),
+  Gross: z.number().optional(),
+  HouseWork: z.boolean().optional(),
+  InvoiceDate: z.iso.date().optional(),
+  InvoicePeriodEnd: z.iso.date().optional(),
+  InvoicePeriodReference: z.string().optional(),
+  InvoicePeriodStart: z.iso.date().optional(),
+  InvoiceReference: z.string().optional(),
+  InvoiceRows: z.array(zFortnoxKfInvoiceRowV2SingleItem).optional(),
+  InvoiceType: z
+    .enum([
+      "INVOICE",
+      "AGREEMENTINVOICE",
+      "INTRESTINVOICE",
+      "SUMMARYINVOICE",
+      "CASHINVOICE",
+    ])
+    .optional(),
+  Labels: z.array(zFortnoxOofDocumentTagsOnDocumentSingleItem).optional(),
+  Language: z.enum(["SV", "EN"]).optional(),
+  LastRemindDate: z.iso.date().optional(),
+  Net: z.number().optional(),
+  NotCompleted: z.boolean().optional(),
+  NoxFinans: z.boolean().optional(),
+  OCR: z.string().optional(),
+  OfferReference: z.string().optional(),
+  OrderReference: z.string().optional(),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().max(50).optional(),
+  OutboundDate: z.iso.date().optional(),
+  PaymentWay: z.enum(["CASH", "CARD", "AG"]).optional(),
+  Phone1: z.string().max(1024).optional(),
+  Phone2: z.string().max(1024).optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().max(1024).optional(),
+  Reminders: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  RoundOff: z.number().optional(),
+  Sent: z.boolean().optional(),
+  TaxReduction: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  TimeBasisReference: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Total: z.number().optional(),
+  TotalToPay: z.number().optional(),
+  TotalVAT: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VoucherSeries: z.string().optional(),
+  VoucherYear: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  WarehouseReady: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourOrderNumber: z.string().max(75).optional(),
+  YourReference: z.string().max(50).optional(),
+  ZipCode: z.string().max(1024).optional(),
+});
+
+export const zFortnoxKfInvoiceV2ResponseWrap = z.object({
+  Invoice: zFortnoxKfInvoiceV2SingleItem,
+});
+
+export const zFortnoxOofDocumentTagsOnDocumentSinglePayloadItem = z.object({
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxKfInvoiceSinglePayloadItem = z.object({
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AdministrationFee: z.number().optional(),
+  City: z.string().max(1024).optional(),
+  Comments: z.string().max(1024).optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  CreditInvoiceReference: z.string().optional(),
+  Currency: z.string().optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().max(1024).optional(),
+  DeliveryAddress2: z.string().max(1024).optional(),
+  DeliveryCity: z.string().max(1024).optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().max(1024).optional(),
+  DeliveryZipCode: z.string().max(1024).optional(),
+  DocumentNumber: z.string().optional(),
+  DueDate: z.iso.date().optional(),
+  EDIInformation: zFortnoxDocumentEdiFieldSinglePayloadItem.optional(),
+  EUQuarterlyReport: z.boolean().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSinglePayloadItem.optional(),
+  ExternalInvoiceReference1: z.string().max(80).optional(),
+  ExternalInvoiceReference2: z.string().max(80).optional(),
+  Freight: z.number().optional(),
+  InvoiceDate: z.iso.date().optional(),
+  InvoiceRows: z.array(zFortnoxKfInvoiceRowSinglePayloadItem).optional(),
+  InvoiceType: z
+    .enum([
+      "INVOICE",
+      "AGREEMENTINVOICE",
+      "INTRESTINVOICE",
+      "SUMMARYINVOICE",
+      "CASHINVOICE",
+    ])
+    .optional(),
+  Labels: z
+    .array(zFortnoxOofDocumentTagsOnDocumentSinglePayloadItem)
+    .optional(),
+  Language: z.enum(["SV", "EN"]).optional(),
+  NotCompleted: z.boolean().optional(),
+  OCR: z.string().optional(),
+  OurReference: z.string().max(50).optional(),
+  OutboundDate: z.iso.date().optional(),
+  PaymentWay: z.string().optional(),
+  Phone1: z.string().max(1024).optional(),
+  Phone2: z.string().max(1024).optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().max(1024).optional(),
+  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  VATIncluded: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourOrderNumber: z.string().max(75).optional(),
+  YourReference: z.string().max(50).optional(),
+  ZipCode: z.string().max(1024).optional(),
+});
+
+export const zFortnoxKfInvoiceSinglePayloadItemWrap = z.object({
+  Invoice: zFortnoxKfInvoiceSinglePayloadItem,
+});
+
+export const zFortnoxKfInvoiceV2SinglePayloadItem = z.object({
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AdministrationFee: z.number().optional(),
+  City: z.string().max(1024).optional(),
+  Comments: z.string().max(1024).optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  CreditInvoiceReference: z.string().optional(),
+  Currency: z.string().optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().max(1024).optional(),
+  DeliveryAddress2: z.string().max(1024).optional(),
+  DeliveryCity: z.string().max(1024).optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().max(1024).optional(),
+  DeliveryZipCode: z.string().max(1024).optional(),
+  DocumentNumber: z.string().optional(),
+  DueDate: z.iso.date().optional(),
+  EDIInformation: zFortnoxDocumentEdiFieldSinglePayloadItem.optional(),
+  EUQuarterlyReport: z.boolean().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSinglePayloadItem.optional(),
+  ExternalInvoiceReference1: z.string().max(80).optional(),
+  ExternalInvoiceReference2: z.string().max(80).optional(),
+  Freight: z.number().optional(),
+  InvoiceDate: z.iso.date().optional(),
+  InvoiceRows: z.array(zFortnoxKfInvoiceRowV2SinglePayloadItem).optional(),
+  InvoiceType: z
+    .enum([
+      "INVOICE",
+      "AGREEMENTINVOICE",
+      "INTRESTINVOICE",
+      "SUMMARYINVOICE",
+      "CASHINVOICE",
+    ])
+    .optional(),
+  Labels: z
+    .array(zFortnoxOofDocumentTagsOnDocumentSinglePayloadItem)
+    .optional(),
+  Language: z.enum(["SV", "EN"]).optional(),
+  NotCompleted: z.boolean().optional(),
+  OCR: z.string().optional(),
+  OurReference: z.string().max(50).optional(),
+  OutboundDate: z.iso.date().optional(),
+  PaymentWay: z.string().optional(),
+  Phone1: z.string().max(1024).optional(),
+  Phone2: z.string().max(1024).optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().max(1024).optional(),
+  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  VATIncluded: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourOrderNumber: z.string().max(75).optional(),
+  YourReference: z.string().max(50).optional(),
+  ZipCode: z.string().max(1024).optional(),
+});
+
+export const zFortnoxKfInvoiceV2SinglePayloadItemWrap = z.object({
+  Invoice: zFortnoxKfInvoiceV2SinglePayloadItem,
+});
+
+export const zFortnoxOfferOfferRowSingleItem = z.object({
+  AccountNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ArticleNumber: z.string().optional(),
+  ContributionPercent: z.string().optional(),
+  ContributionValue: z.string().optional(),
+  CostCenter: z.string().nullish(),
+  Description: z.string().max(255).optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
   HouseWorkType: z
     .enum([
       "CONSTRUCTION",
@@ -4636,27 +9354,20 @@ export const zFortnoxInvoicePayloadV2InvoiceBundleSubRow = z.object({
       "MASONRY",
       "PAINTINGWALLPAPERING",
       "HVAC",
-      "MAJORAPPLIANCEREPAIR",
-      "MOVINGSERVICES",
-      "ITSERVICES",
       "CLEANING",
       "TEXTILECLOTHING",
+      "COOKING",
       "SNOWPLOWING",
       "GARDENING",
       "BABYSITTING",
       "OTHERCARE",
+      "TUTORING",
       "OTHERCOSTS",
-      "SOLARCELLS",
-      "STORAGESELFPRODUCEDELECTRICITY",
-      "CHARGINGSTATIONELECTRICVEHICLE",
-      "HOMEMAINTENANCE",
-      "FURNISHING",
-      "TRANSPORTATIONSERVICES",
-      "WASHINGANDCAREOFCLOTHING",
     ])
     .optional(),
   Price: z.number().optional(),
   Project: z.string().optional(),
+  Quantity: z.string().optional(),
   RowId: z
     .int()
     .min(-2147483648, {
@@ -4666,8 +9377,8 @@ export const zFortnoxInvoicePayloadV2InvoiceBundleSubRow = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
-  StockPointCode: z.string().optional(),
-  Unit: z.string().optional(),
+  Total: z.number().nullish(),
+  Unit: z.string().max(20).optional(),
   VAT: z
     .int()
     .min(-2147483648, {
@@ -4680,7 +9391,78 @@ export const zFortnoxInvoicePayloadV2InvoiceBundleSubRow = z.object({
   VATCode: z.string().optional(),
 });
 
-export const zFortnoxInvoicePayloadV2Bundle = z.object({
+export const zFortnoxOfferBundleSubItemInstanceSingleItem = z.object({
+  AccountNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  AmountInBundle: z.number().optional(),
+  ArticleNumber: z.string().optional(),
+  ContributionPercent: z.string().optional(),
+  ContributionValue: z.string().optional(),
+  CostCenter: z.string().nullish(),
+  Description: z.string().optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  DocumentRow: zFortnoxOfferOfferRowSingleItem.optional(),
+  FixedPrice: z.boolean().optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "COOKING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "TUTORING",
+      "OTHERCOSTS",
+    ])
+    .optional(),
+  Price: z.number().optional(),
+  PriceAdjustment: z.boolean().optional(),
+  Project: z.string().optional(),
+  Quantity: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SalesPriceInBundle: z.number().optional(),
+  Total: z.number().nullish(),
+  Unit: z.string().optional(),
+  UserPrice: z.boolean().optional(),
+  VAT: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxOfferBundleInstanceSingleItem = z.object({
   Revision: z
     .int()
     .min(-2147483648, {
@@ -4690,366 +9472,1620 @@ export const zFortnoxInvoicePayloadV2Bundle = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
-  SubRows: z.array(zFortnoxInvoicePayloadV2InvoiceBundleSubRow).optional(),
+  SubRows: z.array(zFortnoxOfferBundleSubItemInstanceSingleItem).optional(),
 });
 
-export const zFortnoxInvoicePayloadV2InvoiceRow = z.object({
-  AccountNumber: z.int().gte(1000).lte(9999).optional(),
-  ArticleNumber: z.string().optional(),
-  Bundle: zFortnoxInvoicePayloadV2Bundle.optional(),
-  CostCenter: z.string().optional(),
-  DeliveredQuantity: z.string().optional(),
-  Description: z.string().optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .lte(999)
-    .optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "HVAC",
-      "MAJORAPPLIANCEREPAIR",
-      "MOVINGSERVICES",
-      "ITSERVICES",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "OTHERCOSTS",
-      "SOLARCELLS",
-      "STORAGESELFPRODUCEDELECTRICITY",
-      "CHARGINGSTATIONELECTRICVEHICLE",
-      "HOMEMAINTENANCE",
-      "FURNISHING",
-      "TRANSPORTATIONSERVICES",
-      "WASHINGANDCAREOFCLOTHING",
-    ])
-    .optional(),
-  Price: z.number().optional(),
-  Project: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  StockPointCode: z.string().optional(),
-  Unit: z.string().optional(),
-  VAT: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxInvoicePayloadV2Label = z.object({
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxInvoicePayloadV2 = z.object({
-  Address1: z.string().optional(),
-  Address2: z.string().optional(),
-  AdministrationFee: z.number().optional(),
-  City: z.string().max(1024).optional(),
-  Comments: z.string().max(1024).optional(),
-  CostCenter: z.string().optional(),
-  Country: z.string().optional(),
-  CreditInvoiceReference: z.string().optional(),
-  Currency: z.string().optional(),
-  CurrencyRate: z.number().optional(),
-  CurrencyUnit: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  CustomerName: z.string().optional(),
-  CustomerNumber: z.string(),
-  DeliveryAddress1: z.string().max(1024).optional(),
-  DeliveryAddress2: z.string().max(1024).optional(),
-  DeliveryCity: z.string().max(1024).optional(),
-  DeliveryCountry: z.string().optional(),
-  DeliveryDate: z.iso.date().optional(),
-  DeliveryName: z.string().max(1024).optional(),
-  DeliveryZipCode: z.string().max(1024).optional(),
-  DocumentNumber: z.string().optional(),
-  DueDate: z.iso.date().optional(),
-  EDIInformation: zFortnoxInvoicePayloadV2EdiInformation.optional(),
-  EUQuarterlyReport: z.boolean().optional(),
-  EmailInformation: zFortnoxInvoicePayloadV2EmailInformation.optional(),
-  ExternalInvoiceReference1: z.string().max(80).optional(),
-  ExternalInvoiceReference2: z.string().max(80).optional(),
-  Freight: z.number().optional(),
-  InvoiceDate: z.iso.date().optional(),
-  InvoiceRows: z.array(zFortnoxInvoicePayloadV2InvoiceRow).optional(),
-  InvoiceType: z
-    .enum([
-      "INVOICE",
-      "AGREEMENTINVOICE",
-      "INTRESTINVOICE",
-      "SUMMARYINVOICE",
-      "CASHINVOICE",
-    ])
-    .optional(),
-  Labels: z.array(zFortnoxInvoicePayloadV2Label).optional(),
-  Language: z.enum(["SV", "EN"]).optional(),
-  NotCompleted: z.boolean().optional(),
-  OCR: z.string().optional(),
-  OurReference: z.string().max(50).optional(),
-  OutboundDate: z.iso.date().optional(),
-  PaymentWay: z.string().optional(),
-  Phone1: z.string().max(1024).optional(),
-  Phone2: z.string().max(1024).optional(),
-  PriceList: z.string().optional(),
-  PrintTemplate: z.string().optional(),
-  Project: z.string().optional(),
-  Remarks: z.string().max(1024).optional(),
-  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
-  TermsOfDelivery: z.string().optional(),
-  TermsOfPayment: z.string().optional(),
-  VATIncluded: z.boolean().optional(),
-  WayOfDelivery: z.string().optional(),
-  YourOrderNumber: z.string().max(75).optional(),
-  YourReference: z.string().max(50).optional(),
-  ZipCode: z.string().max(1024).optional(),
-});
-
-export const zFortnoxInvoicePayloadV2Wrap = z.object({
-  Invoice: zFortnoxInvoicePayloadV2,
-});
-
-export const zFortnoxInvoicePayloadEdiInformation = z.object({
-  EDIGlobalLocationNumber: z.string().max(13).optional(),
-  EDIGlobalLocationNumberDelivery: z.string().max(13).optional(),
-  EDIInvoiceExtra1: z.string().optional(),
-  EDIInvoiceExtra2: z.string().optional(),
-  EDIOurElectronicReference: z.string().optional(),
-  EDIYourElectronicReference: z.string().optional(),
-});
-
-export const zFortnoxInvoicePayloadEmailInformation = z.object({
-  EmailAddressBCC: z.string().optional(),
-  EmailAddressCC: z.string().optional(),
-  EmailAddressFrom: z.string().optional(),
-  EmailAddressTo: z.string().optional(),
-  EmailBody: z.string().max(20000).optional(),
-  EmailSubject: z.string().max(100).optional(),
-});
-
-export const zFortnoxInvoicePayloadInvoiceRow = z.object({
-  AccountNumber: z.int().gte(1000).lte(9999).optional(),
-  ArticleNumber: z.string().optional(),
-  CostCenter: z.string().optional(),
-  DeliveredQuantity: z.string().optional(),
-  Description: z.string().optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .lte(999)
-    .optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "HVAC",
-      "MAJORAPPLIANCEREPAIR",
-      "MOVINGSERVICES",
-      "ITSERVICES",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "OTHERCOSTS",
-      "SOLARCELLS",
-      "STORAGESELFPRODUCEDELECTRICITY",
-      "CHARGINGSTATIONELECTRICVEHICLE",
-      "HOMEMAINTENANCE",
-      "FURNISHING",
-      "TRANSPORTATIONSERVICES",
-      "WASHINGANDCAREOFCLOTHING",
-    ])
-    .optional(),
-  Price: z.number().optional(),
-  Project: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  StockPointCode: z.string().optional(),
-  Unit: z.string().optional(),
-  VAT: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxInvoicePayloadLabel = z.object({
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxInvoicePayload = z.object({
-  Address1: z.string().optional(),
-  Address2: z.string().optional(),
-  AdministrationFee: z.number().optional(),
-  City: z.string().max(1024).optional(),
-  Comments: z.string().max(1024).optional(),
-  CostCenter: z.string().optional(),
-  Country: z.string().optional(),
-  CreditInvoiceReference: z.string().optional(),
-  Currency: z.string().optional(),
-  CurrencyRate: z.number().optional(),
-  CurrencyUnit: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  CustomerName: z.string().optional(),
-  CustomerNumber: z.string(),
-  DeliveryAddress1: z.string().max(1024).optional(),
-  DeliveryAddress2: z.string().max(1024).optional(),
-  DeliveryCity: z.string().max(1024).optional(),
-  DeliveryCountry: z.string().optional(),
-  DeliveryDate: z.iso.date().optional(),
-  DeliveryName: z.string().max(1024).optional(),
-  DeliveryZipCode: z.string().max(1024).optional(),
-  DocumentNumber: z.string().optional(),
-  DueDate: z.iso.date().optional(),
-  EDIInformation: zFortnoxInvoicePayloadEdiInformation.optional(),
-  EUQuarterlyReport: z.boolean().optional(),
-  EmailInformation: zFortnoxInvoicePayloadEmailInformation.optional(),
-  ExternalInvoiceReference1: z.string().max(80).optional(),
-  ExternalInvoiceReference2: z.string().max(80).optional(),
-  Freight: z.number().optional(),
-  InvoiceDate: z.iso.date().optional(),
-  InvoiceRows: z.array(zFortnoxInvoicePayloadInvoiceRow).optional(),
-  InvoiceType: z
-    .enum([
-      "INVOICE",
-      "AGREEMENTINVOICE",
-      "INTRESTINVOICE",
-      "SUMMARYINVOICE",
-      "CASHINVOICE",
-    ])
-    .optional(),
-  Labels: z.array(zFortnoxInvoicePayloadLabel).optional(),
-  Language: z.enum(["SV", "EN"]).optional(),
-  NotCompleted: z.boolean().optional(),
-  OCR: z.string().optional(),
-  OurReference: z.string().max(50).optional(),
-  OutboundDate: z.iso.date().optional(),
-  PaymentWay: z.string().optional(),
-  Phone1: z.string().max(1024).optional(),
-  Phone2: z.string().max(1024).optional(),
-  PriceList: z.string().optional(),
-  PrintTemplate: z.string().optional(),
-  Project: z.string().optional(),
-  Remarks: z.string().max(1024).optional(),
-  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
-  TermsOfDelivery: z.string().optional(),
-  TermsOfPayment: z.string().optional(),
-  VATIncluded: z.boolean().optional(),
-  WayOfDelivery: z.string().optional(),
-  YourOrderNumber: z.string().max(75).optional(),
-  YourReference: z.string().max(50).optional(),
-  ZipCode: z.string().max(1024).optional(),
-});
-
-export const zFortnoxInvoicePayloadWrap = z.object({
-  Invoice: zFortnoxInvoicePayload,
-});
-
-export const zFortnoxInvoicePaymentListItem = z.object({
+export const zFortnoxOfferOfferListItem = z.object({
   "@url": z.string().optional(),
-  Amount: z.number().optional(),
-  Booked: z.boolean().optional(),
-  Currency: z.string().length(3).optional(),
+  "@urlTaxReductionList": z.string().optional(),
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AdministrationFee: z.number().optional(),
+  AdministrationFeeVAT: z.number().optional(),
+  BasisTaxReduction: z.number().optional(),
+  Cancelled: z.boolean().optional(),
+  City: z.string().optional(),
+  Comments: z.string().optional(),
+  ContributionPercent: z.number().optional(),
+  ContributionValue: z.number().optional(),
+  CopyRemarks: z.boolean().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  Currency: z.string().optional(),
   CurrencyRate: z.number().optional(),
   CurrencyUnit: z.number().optional(),
-  InvoiceNumber: z
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().optional(),
+  DeliveryAddress2: z.string().optional(),
+  DeliveryCity: z.string().optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().optional(),
+  DeliveryZipCode: z.string().optional(),
+  DocumentNumber: z.string().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSingleItem.optional(),
+  ExpireDate: z.iso.date().optional(),
+  Freight: z.number().optional(),
+  FreightVAT: z.number().optional(),
+  Gross: z.number().optional(),
+  HouseWork: z.boolean().optional(),
+  InvoiceReference: z.string().optional(),
+  Labels: z.array(zFortnoxOofDocumentTagsOnDocumentSingleItem).optional(),
+  Language: z.string().optional(),
+  Net: z.number().optional(),
+  NotCompleted: z.boolean().optional(),
+  OfferDate: z.iso.date().optional(),
+  OfferRows: z.array(zFortnoxOfferOfferRowSingleItem).optional(),
+  OrderReference: z.string().optional(),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().optional(),
+  RoundOff: z.number().optional(),
+  Sent: z.boolean().optional(),
+  TaxReduction: z.number().optional(),
+  TaxReductionType: z.string().optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  Total: z.number().optional(),
+  TotalToPay: z.number().optional(),
+  TotalVAT: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourReference: z.string().optional(),
+  YourReferenceNumber: z.string().optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxOfferOfferListResponseWrap = z.object({
+  Offers: z.array(zFortnoxOfferOfferListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxOfferOfferRowSinglePayloadItem = z.object({
+  AccountNumber: z
     .int()
     .min(-2147483648, {
       error: "Invalid value: Expected int32 to be >= -2147483648",
     })
     .max(2147483647, {
       error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-  Number: z.string().optional(),
-  PaymentDate: z.iso.date().optional(),
-  Source: z.string().optional(),
-  WriteOffExist: z.boolean().optional(),
+    })
+    .optional(),
+  ArticleNumber: z.string().optional(),
+  ContributionPercent: z.string().optional(),
+  ContributionValue: z.string().optional(),
+  CostCenter: z.string().nullish(),
+  Description: z.string().max(255).optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "COOKING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "TUTORING",
+      "OTHERCOSTS",
+    ])
+    .optional(),
+  Price: z.number().optional(),
+  Project: z.string().optional(),
+  Quantity: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Total: z.number().nullish(),
+  Unit: z.string().max(20).optional(),
+  VAT: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VATCode: z.string().optional(),
 });
 
-export const zFortnoxInvoicePaymentListItemList = z.object({
-  InvoicePayments: z.array(zFortnoxInvoicePaymentListItem),
+export const zFortnoxOfferBundleSubItemInstanceSinglePayloadItem = z.object({
+  AccountNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  AmountInBundle: z.number().optional(),
+  ArticleNumber: z.string().optional(),
+  CostCenter: z.string().nullish(),
+  Description: z.string().optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  DocumentRow: zFortnoxOfferOfferRowSinglePayloadItem.optional(),
+  FixedPrice: z.boolean().optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "COOKING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "TUTORING",
+      "OTHERCOSTS",
+    ])
+    .optional(),
+  Price: z.number().optional(),
+  PriceAdjustment: z.boolean().optional(),
+  Project: z.string().optional(),
+  Quantity: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SalesPriceInBundle: z.number().optional(),
+  Unit: z.string().optional(),
+  UserPrice: z.boolean().optional(),
+  VAT: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VATCode: z.string().optional(),
 });
 
-export const zFortnoxInvoicePaymentWriteOff = z.object({
+export const zFortnoxOfferBundleInstanceSinglePayloadItem = z.object({
+  Revision: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SubRows: z
+    .array(zFortnoxOfferBundleSubItemInstanceSinglePayloadItem)
+    .optional(),
+});
+
+export const zFortnoxOfferOfferRowV2SingleItem = z.object({
+  AccountNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ArticleNumber: z.string().optional(),
+  Bundle: zFortnoxOfferBundleInstanceSingleItem.optional(),
+  ContributionPercent: z.string().optional(),
+  ContributionValue: z.string().optional(),
+  CostCenter: z.string().nullish(),
+  Description: z.string().max(255).optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "COOKING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "TUTORING",
+      "OTHERCOSTS",
+    ])
+    .optional(),
+  Price: z.number().optional(),
+  Project: z.string().optional(),
+  Quantity: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Total: z.number().nullish(),
+  Unit: z.string().max(20).optional(),
+  VAT: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxOfferOfferRowV2SinglePayloadItem = z.object({
+  AccountNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ArticleNumber: z.string().optional(),
+  Bundle: zFortnoxOfferBundleInstanceSinglePayloadItem.optional(),
+  CostCenter: z.string().nullish(),
+  Description: z.string().max(255).optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "COOKING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "TUTORING",
+      "OTHERCOSTS",
+    ])
+    .optional(),
+  Price: z.number().optional(),
+  Project: z.string().optional(),
+  Quantity: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Unit: z.string().max(20).optional(),
+  VAT: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxOfferOfferSingleItem = z.object({
+  "@url": z.string().optional(),
+  "@urlTaxReductionList": z.string().optional(),
+  Address1: z.string().max(1024).optional(),
+  Address2: z.string().max(1024).optional(),
+  AdministrationFee: z.number().optional(),
+  AdministrationFeeVAT: z.number().optional(),
+  BasisTaxReduction: z.number().optional(),
+  Cancelled: z.boolean().optional(),
+  City: z.string().max(1024).optional(),
+  Comments: z.string().max(1024).optional(),
+  ContributionPercent: z.number().optional(),
+  ContributionValue: z.number().optional(),
+  CopyRemarks: z.boolean().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  Currency: z.string().optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().max(1024).optional(),
+  DeliveryAddress2: z.string().max(1024).optional(),
+  DeliveryCity: z.string().max(1024).optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().max(1024).optional(),
+  DeliveryZipCode: z.string().optional(),
+  DocumentNumber: z.string().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSingleItem.optional(),
+  ExpireDate: z.iso.date().optional(),
+  Freight: z.number().optional(),
+  FreightVAT: z.number().optional(),
+  Gross: z.number().optional(),
+  HouseWork: z.boolean().optional(),
+  InvoiceReference: z.string().optional(),
+  Labels: z.array(zFortnoxOofDocumentTagsOnDocumentSingleItem).optional(),
+  Language: z.string().optional(),
+  Net: z.number().optional(),
+  NotCompleted: z.boolean().optional(),
+  OfferDate: z.iso.date().optional(),
+  OfferRows: z.array(zFortnoxOfferOfferRowSingleItem).optional(),
+  OrderReference: z.string().optional(),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().optional(),
+  RoundOff: z.number().optional(),
+  Sent: z.boolean().optional(),
+  TaxReduction: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  Total: z.number().optional(),
+  TotalToPay: z.number().optional(),
+  TotalVAT: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourReference: z.string().optional(),
+  YourReferenceNumber: z.string().optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxOfferOfferResponseWrap = z.object({
+  Offer: zFortnoxOfferOfferSingleItem,
+});
+
+export const zFortnoxOfferOfferSinglePayloadItem = z.object({
+  Address1: z.string().max(1024).optional(),
+  Address2: z.string().max(1024).optional(),
+  AdministrationFee: z.number().optional(),
+  City: z.string().max(1024).optional(),
+  Comments: z.string().max(1024).optional(),
+  CopyRemarks: z.boolean().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  Currency: z.string().optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().max(1024).optional(),
+  DeliveryAddress2: z.string().max(1024).optional(),
+  DeliveryCity: z.string().max(1024).optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().max(1024).optional(),
+  DeliveryZipCode: z.string().optional(),
+  DocumentNumber: z.string().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSinglePayloadItem.optional(),
+  ExpireDate: z.iso.date().optional(),
+  Freight: z.number().optional(),
+  Labels: z
+    .array(zFortnoxOofDocumentTagsOnDocumentSinglePayloadItem)
+    .optional(),
+  Language: z.string().optional(),
+  NotCompleted: z.boolean().optional(),
+  OfferDate: z.iso.date().optional(),
+  OfferRows: z.array(zFortnoxOfferOfferRowSinglePayloadItem).optional(),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().optional(),
+  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  VATIncluded: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourReference: z.string().optional(),
+  YourReferenceNumber: z.string().optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxOfferOfferSinglePayloadItemWrap = z.object({
+  Offer: zFortnoxOfferOfferSinglePayloadItem,
+});
+
+export const zFortnoxOfferOfferV2ListItem = z.object({
+  "@url": z.string().optional(),
+  "@urlTaxReductionList": z.string().optional(),
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AdministrationFee: z.number().optional(),
+  AdministrationFeeVAT: z.number().optional(),
+  BasisTaxReduction: z.number().optional(),
+  Cancelled: z.boolean().optional(),
+  City: z.string().optional(),
+  Comments: z.string().optional(),
+  ContributionPercent: z.number().optional(),
+  ContributionValue: z.number().optional(),
+  CopyRemarks: z.boolean().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  Currency: z.string().optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z.number().optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().optional(),
+  DeliveryAddress2: z.string().optional(),
+  DeliveryCity: z.string().optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().optional(),
+  DeliveryZipCode: z.string().optional(),
+  DocumentNumber: z.string().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSingleItem.optional(),
+  ExpireDate: z.iso.date().optional(),
+  Freight: z.number().optional(),
+  FreightVAT: z.number().optional(),
+  Gross: z.number().optional(),
+  HouseWork: z.boolean().optional(),
+  InvoiceReference: z.string().optional(),
+  Labels: z.array(zFortnoxOofDocumentTagsOnDocumentSingleItem).optional(),
+  Language: z.string().optional(),
+  Net: z.number().optional(),
+  NotCompleted: z.boolean().optional(),
+  OfferDate: z.iso.date().optional(),
+  OfferRows: z.array(zFortnoxOfferOfferRowV2SingleItem).optional(),
+  OrderReference: z.string().optional(),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().optional(),
+  RoundOff: z.number().optional(),
+  Sent: z.boolean().optional(),
+  TaxReduction: z.number().optional(),
+  TaxReductionType: z.string().optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  Total: z.number().optional(),
+  TotalToPay: z.number().optional(),
+  TotalVAT: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourReference: z.string().optional(),
+  YourReferenceNumber: z.string().optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxOfferOfferV2ListResponseWrap = z.object({
+  Offers: z.array(zFortnoxOfferOfferV2ListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxOfferOfferV2SingleItem = z.object({
+  "@url": z.string().optional(),
+  "@urlTaxReductionList": z.string().optional(),
+  Address1: z.string().max(1024).optional(),
+  Address2: z.string().max(1024).optional(),
+  AdministrationFee: z.number().optional(),
+  AdministrationFeeVAT: z.number().optional(),
+  BasisTaxReduction: z.number().optional(),
+  Cancelled: z.boolean().optional(),
+  City: z.string().max(1024).optional(),
+  Comments: z.string().max(1024).optional(),
+  ContributionPercent: z.number().optional(),
+  ContributionValue: z.number().optional(),
+  CopyRemarks: z.boolean().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  Currency: z.string().optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().max(1024).optional(),
+  DeliveryAddress2: z.string().max(1024).optional(),
+  DeliveryCity: z.string().max(1024).optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().max(1024).optional(),
+  DeliveryZipCode: z.string().optional(),
+  DocumentNumber: z.string().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSingleItem.optional(),
+  ExpireDate: z.iso.date().optional(),
+  Freight: z.number().optional(),
+  FreightVAT: z.number().optional(),
+  Gross: z.number().optional(),
+  HouseWork: z.boolean().optional(),
+  InvoiceReference: z.string().optional(),
+  Labels: z.array(zFortnoxOofDocumentTagsOnDocumentSingleItem).optional(),
+  Language: z.string().optional(),
+  Net: z.number().optional(),
+  NotCompleted: z.boolean().optional(),
+  OfferDate: z.iso.date().optional(),
+  OfferRows: z.array(zFortnoxOfferOfferRowV2SingleItem).optional(),
+  OrderReference: z.string().optional(),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().optional(),
+  RoundOff: z.number().optional(),
+  Sent: z.boolean().optional(),
+  TaxReduction: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  Total: z.number().optional(),
+  TotalToPay: z.number().optional(),
+  TotalVAT: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourReference: z.string().optional(),
+  YourReferenceNumber: z.string().optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxOfferOfferV2ResponseWrap = z.object({
+  Offer: zFortnoxOfferOfferV2SingleItem,
+});
+
+export const zFortnoxOfferOfferV2SinglePayloadItem = z.object({
+  Address1: z.string().max(1024).optional(),
+  Address2: z.string().max(1024).optional(),
+  AdministrationFee: z.number().optional(),
+  City: z.string().max(1024).optional(),
+  Comments: z.string().max(1024).optional(),
+  CopyRemarks: z.boolean().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  Currency: z.string().optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().max(1024).optional(),
+  DeliveryAddress2: z.string().max(1024).optional(),
+  DeliveryCity: z.string().max(1024).optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().max(1024).optional(),
+  DeliveryZipCode: z.string().optional(),
+  DocumentNumber: z.string().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSinglePayloadItem.optional(),
+  ExpireDate: z.iso.date().optional(),
+  Freight: z.number().optional(),
+  Labels: z
+    .array(zFortnoxOofDocumentTagsOnDocumentSinglePayloadItem)
+    .optional(),
+  Language: z.string().optional(),
+  NotCompleted: z.boolean().optional(),
+  OfferDate: z.iso.date().optional(),
+  OfferRows: z.array(zFortnoxOfferOfferRowV2SinglePayloadItem).optional(),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().optional(),
+  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  VATIncluded: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourReference: z.string().optional(),
+  YourReferenceNumber: z.string().optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxOfferOfferV2SinglePayloadItemWrap = z.object({
+  Offer: zFortnoxOfferOfferV2SinglePayloadItem,
+});
+
+export const zFortnoxOrderOrderRowSingleItem = z.object({
+  AccountNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ArticleNumber: z.string().optional(),
+  ContributionPercent: z.string().optional(),
+  ContributionValue: z.string().optional(),
+  Cost: z.number().gte(-9999999999).lte(9999999999).nullish(),
+  CostCenter: z.string().nullish(),
+  DeliveredQuantity: z.string().optional(),
+  Description: z.string().max(255).optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "MAJORAPPLIANCEREPAIR",
+      "MOVINGSERVICES",
+      "ITSERVICES",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "OTHERCOSTS",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "HOMEMAINTENANCE",
+      "FURNISHING",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+    ])
+    .optional(),
+  OrderedQuantity: z.string().optional(),
+  Price: z.number().optional(),
+  Project: z.string().optional(),
+  ReservedQuantity: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockPointCode: z.string().optional(),
+  StockPointId: z.string().optional(),
+  Total: z.number().nullish(),
+  Unit: z.string().max(20).optional(),
+  VAT: z.number().optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxOrderBundleSubItemInstanceSingleItem = z.object({
+  AccountNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  AmountInBundle: z.number().optional(),
+  ArticleNumber: z.string().optional(),
+  ContributionPercent: z.string().optional(),
+  ContributionValue: z.string().optional(),
+  CostCenter: z.string().nullish(),
+  DeliveredQuantity: z.string().optional(),
+  Description: z.string().optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  DocumentRow: zFortnoxOrderOrderRowSingleItem.optional(),
+  FixedPrice: z.boolean().optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "MAJORAPPLIANCEREPAIR",
+      "MOVINGSERVICES",
+      "ITSERVICES",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "OTHERCOSTS",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "HOMEMAINTENANCE",
+      "FURNISHING",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+    ])
+    .optional(),
+  OrderedQuantity: z.string().optional(),
+  Price: z.number().optional(),
+  PriceAdjustment: z.boolean().optional(),
+  Project: z.string().optional(),
+  ReservedQuantity: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SalesPriceInBundle: z.number().optional(),
+  StockPointCode: z.string().optional(),
+  StockPointId: z.string().optional(),
+  Total: z.number().nullish(),
+  Unit: z.string().optional(),
+  UserPrice: z.boolean().optional(),
+  VAT: z.number().optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxOrderBundleInstanceSingleItem = z.object({
+  Revision: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SubRows: z.array(zFortnoxOrderBundleSubItemInstanceSingleItem).optional(),
+});
+
+export const zFortnoxOrderOrderListItem = z.object({
+  "@url": z.string().optional(),
+  "@urlTaxReductionList": z.string().optional(),
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AdministrationFee: z.number().optional(),
+  AdministrationFeeVAT: z.number().optional(),
+  BasisTaxReduction: z.number().optional(),
+  Cancelled: z.boolean().optional(),
+  City: z.string().optional(),
+  Comments: z.string().optional(),
+  ContributionPercent: z.number().optional(),
+  ContributionValue: z.number().optional(),
+  CopyRemarks: z.boolean().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  Currency: z.string().max(3).optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z.number().optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().optional(),
+  DeliveryAddress2: z.string().optional(),
+  DeliveryCity: z.string().optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().optional(),
+  DeliveryState: z.string().optional(),
+  DeliveryZipCode: z.string().optional(),
+  DocumentNumber: z.string().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSingleItem.optional(),
+  ExternalInvoiceReference1: z.string().optional(),
+  ExternalInvoiceReference2: z.string().optional(),
+  Freight: z.number().optional(),
+  FreightVAT: z.number().optional(),
+  Gross: z.number().optional(),
+  HouseWork: z.boolean().optional(),
+  InvoiceReference: z.string().optional(),
+  Labels: z.array(zFortnoxOofDocumentTagsOnDocumentSingleItem).optional(),
+  Language: z.string().optional(),
+  Net: z.number().optional(),
+  NotCompleted: z.boolean().optional(),
+  OfferReference: z.string().optional(),
+  OrderDate: z.iso.date().optional(),
+  OrderRows: z.array(zFortnoxOrderOrderRowSingleItem).optional(),
+  OrderType: z.string().optional(),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().optional(),
+  OutboundDate: z.string().optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().optional(),
+  RoundOff: z.number().optional(),
+  Sent: z.boolean().optional(),
+  StockPointCode: z.string().optional(),
+  StockPointId: z.string().optional(),
+  TaxReduction: z.number().optional(),
+  TaxReductionType: z.string().optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  TimeBasisReference: z.string().optional(),
+  Total: z.number().optional(),
+  TotalToPay: z.number().optional(),
+  TotalVAT: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
+  WarehouseReady: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourOrderNumber: z.string().optional(),
+  YourReference: z.string().optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxOrderOrderListResponseWrap = z.object({
+  Orders: z.array(zFortnoxOrderOrderListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxOrderOrderRowSinglePayloadItem = z.object({
+  AccountNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ArticleNumber: z.string().optional(),
+  Cost: z.number().gte(-9999999999).lte(9999999999).nullish(),
+  CostCenter: z.string().nullish(),
+  DeliveredQuantity: z.string().optional(),
+  Description: z.string().max(255).optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "MAJORAPPLIANCEREPAIR",
+      "MOVINGSERVICES",
+      "ITSERVICES",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "OTHERCOSTS",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "HOMEMAINTENANCE",
+      "FURNISHING",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+    ])
+    .optional(),
+  OrderedQuantity: z.string().optional(),
+  Price: z.number().optional(),
+  Project: z.string().optional(),
+  StockPointCode: z.string().optional(),
+  StockPointId: z.string().optional(),
+  Unit: z.string().max(20).optional(),
+  VAT: z.number().optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxOrderBundleSubItemInstanceSinglePayloadItem = z.object({
+  AccountNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  AmountInBundle: z.number().optional(),
+  ArticleNumber: z.string().optional(),
+  CostCenter: z.string().nullish(),
+  DeliveredQuantity: z.string().optional(),
+  Description: z.string().optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  DocumentRow: zFortnoxOrderOrderRowSinglePayloadItem.optional(),
+  FixedPrice: z.boolean().optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "MAJORAPPLIANCEREPAIR",
+      "MOVINGSERVICES",
+      "ITSERVICES",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "OTHERCOSTS",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "HOMEMAINTENANCE",
+      "FURNISHING",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+    ])
+    .optional(),
+  OrderedQuantity: z.string().optional(),
+  Price: z.number().optional(),
+  PriceAdjustment: z.boolean().optional(),
+  Project: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SalesPriceInBundle: z.number().optional(),
+  StockPointCode: z.string().optional(),
+  StockPointId: z.string().optional(),
+  Unit: z.string().optional(),
+  UserPrice: z.boolean().optional(),
+  VAT: z.number().optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxOrderBundleInstanceSinglePayloadItem = z.object({
+  Revision: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  SubRows: z
+    .array(zFortnoxOrderBundleSubItemInstanceSinglePayloadItem)
+    .optional(),
+});
+
+export const zFortnoxOrderOrderRowV2SingleItem = z.object({
+  AccountNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ArticleNumber: z.string().optional(),
+  Bundle: zFortnoxOrderBundleInstanceSingleItem.optional(),
+  ContributionPercent: z.string().optional(),
+  ContributionValue: z.string().optional(),
+  Cost: z.number().gte(-9999999999).lte(9999999999).nullish(),
+  CostCenter: z.string().nullish(),
+  DeliveredQuantity: z.string().optional(),
+  Description: z.string().max(255).optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "MAJORAPPLIANCEREPAIR",
+      "MOVINGSERVICES",
+      "ITSERVICES",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "OTHERCOSTS",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "HOMEMAINTENANCE",
+      "FURNISHING",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+    ])
+    .optional(),
+  OrderedQuantity: z.string().optional(),
+  Price: z.number().optional(),
+  Project: z.string().optional(),
+  ReservedQuantity: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockPointCode: z.string().optional(),
+  StockPointId: z.string().optional(),
+  Total: z.number().nullish(),
+  Unit: z.string().max(20).optional(),
+  VAT: z.number().optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxOrderOrderRowV2SinglePayloadItem = z.object({
+  AccountNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  ArticleNumber: z.string().optional(),
+  Bundle: zFortnoxOrderBundleInstanceSinglePayloadItem.optional(),
+  Cost: z.number().gte(-9999999999).lte(9999999999).nullish(),
+  CostCenter: z.string().nullish(),
+  DeliveredQuantity: z.string().optional(),
+  Description: z.string().max(255).optional(),
+  Discount: z.number().optional(),
+  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
+  HouseWork: z.boolean().optional(),
+  HouseWorkHoursToReport: z.int().gte(0).lte(999).nullish(),
+  HouseWorkType: z
+    .enum([
+      "CONSTRUCTION",
+      "ELECTRICITY",
+      "GLASSMETALWORK",
+      "GROUNDDRAINAGEWORK",
+      "MASONRY",
+      "PAINTINGWALLPAPERING",
+      "HVAC",
+      "MAJORAPPLIANCEREPAIR",
+      "MOVINGSERVICES",
+      "ITSERVICES",
+      "CLEANING",
+      "TEXTILECLOTHING",
+      "SNOWPLOWING",
+      "GARDENING",
+      "BABYSITTING",
+      "OTHERCARE",
+      "OTHERCOSTS",
+      "SOLARCELLS",
+      "STORAGESELFPRODUCEDELECTRICITY",
+      "CHARGINGSTATIONELECTRICVEHICLE",
+      "HOMEMAINTENANCE",
+      "FURNISHING",
+      "TRANSPORTATIONSERVICES",
+      "WASHINGANDCAREOFCLOTHING",
+    ])
+    .optional(),
+  OrderedQuantity: z.string().optional(),
+  Price: z.number().optional(),
+  Project: z.string().optional(),
+  RowId: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  StockPointCode: z.string().optional(),
+  StockPointId: z.string().optional(),
+  Unit: z.string().max(20).optional(),
+  VAT: z.number().optional(),
+  VATCode: z.string().optional(),
+});
+
+export const zFortnoxOrderOrderSingleItem = z.object({
+  "@url": z.string().optional(),
+  "@urlTaxReductionList": z.string().optional(),
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AdministrationFee: z.number().optional(),
+  AdministrationFeeVAT: z.number().optional(),
+  BasisTaxReduction: z.number().optional(),
+  Cancelled: z.boolean().optional(),
+  City: z.string().optional(),
+  Comments: z.string().optional(),
+  ContributionPercent: z.number().optional(),
+  ContributionValue: z.number().optional(),
+  CopyRemarks: z.boolean().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  Currency: z.string().max(3).optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z.number().optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().optional(),
+  DeliveryAddress2: z.string().optional(),
+  DeliveryCity: z.string().optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().optional(),
+  DeliveryState: z.enum(["registration", "reservation", "delivery"]).optional(),
+  DeliveryZipCode: z.string().optional(),
+  DocumentNumber: z.string().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSingleItem.optional(),
+  ExternalInvoiceReference1: z.string().optional(),
+  ExternalInvoiceReference2: z.string().optional(),
+  Freight: z.number().optional(),
+  FreightVAT: z.number().optional(),
+  Gross: z.number().optional(),
+  HouseWork: z.boolean().optional(),
+  InvoiceReference: z.string().optional(),
+  Labels: z.array(zFortnoxOofDocumentTagsOnDocumentSingleItem).optional(),
+  Language: z.string().optional(),
+  Net: z.number().optional(),
+  NotCompleted: z.boolean().optional(),
+  OfferReference: z.string().optional(),
+  OrderDate: z.iso.date().optional(),
+  OrderRows: z.array(zFortnoxOrderOrderRowSingleItem).optional(),
+  OrderType: z.string().optional(),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().max(50).optional(),
+  OutboundDate: z.iso.date().optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().max(1024).optional(),
+  RoundOff: z.number().optional(),
+  Sent: z.boolean().optional(),
+  StockPointCode: z.string().optional(),
+  StockPointId: z.string().optional(),
+  TaxReduction: z.number().optional(),
+  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  TimeBasisReference: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Total: z.number().optional(),
+  TotalToPay: z.number().optional(),
+  TotalVAT: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
+  WarehouseReady: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourOrderNumber: z.string().max(75).optional(),
+  YourReference: z.string().max(50).optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxOrderOrderResponseWrap = z.object({
+  Order: zFortnoxOrderOrderSingleItem,
+});
+
+export const zFortnoxOrderOrderSinglePayloadItem = z.object({
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AdministrationFee: z.number().optional(),
+  City: z.string().optional(),
+  Comments: z.string().optional(),
+  CopyRemarks: z.boolean().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  Currency: z.string().max(3).optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z.number().optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().optional(),
+  DeliveryAddress2: z.string().optional(),
+  DeliveryCity: z.string().optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().optional(),
+  DeliveryState: z.enum(["registration", "reservation", "delivery"]).optional(),
+  DeliveryZipCode: z.string().optional(),
+  DocumentNumber: z.string().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSinglePayloadItem.optional(),
+  ExternalInvoiceReference1: z.string().optional(),
+  ExternalInvoiceReference2: z.string().optional(),
+  Freight: z.number().optional(),
+  Labels: z
+    .array(zFortnoxOofDocumentTagsOnDocumentSinglePayloadItem)
+    .optional(),
+  Language: z.string().optional(),
+  NotCompleted: z.boolean().optional(),
+  OrderDate: z.iso.date().optional(),
+  OrderRows: z.array(zFortnoxOrderOrderRowSinglePayloadItem).optional(),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().max(50).optional(),
+  OutboundDate: z.iso.date().optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().max(1024).optional(),
+  StockPointCode: z.string().optional(),
+  StockPointId: z.string().optional(),
+  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  VATIncluded: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourOrderNumber: z.string().max(75).optional(),
+  YourReference: z.string().max(50).optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxOrderOrderSinglePayloadItemWrap = z.object({
+  Order: zFortnoxOrderOrderSinglePayloadItem,
+});
+
+export const zFortnoxOrderOrderV2ListItem = z.object({
+  "@url": z.string().optional(),
+  "@urlTaxReductionList": z.string().optional(),
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AdministrationFee: z.number().optional(),
+  AdministrationFeeVAT: z.number().optional(),
+  BasisTaxReduction: z.number().optional(),
+  Cancelled: z.boolean().optional(),
+  City: z.string().optional(),
+  Comments: z.string().optional(),
+  ContributionPercent: z.number().optional(),
+  ContributionValue: z.number().optional(),
+  CopyRemarks: z.boolean().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  Currency: z.string().max(3).optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z.number().optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().optional(),
+  DeliveryAddress2: z.string().optional(),
+  DeliveryCity: z.string().optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().optional(),
+  DeliveryState: z.string().optional(),
+  DeliveryZipCode: z.string().optional(),
+  DocumentNumber: z.string().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSingleItem.optional(),
+  ExternalInvoiceReference1: z.string().optional(),
+  ExternalInvoiceReference2: z.string().optional(),
+  Freight: z.number().optional(),
+  FreightVAT: z.number().optional(),
+  Gross: z.number().optional(),
+  HouseWork: z.boolean().optional(),
+  InvoiceReference: z.string().optional(),
+  Labels: z.array(zFortnoxOofDocumentTagsOnDocumentSingleItem).optional(),
+  Language: z.string().optional(),
+  Net: z.number().optional(),
+  NotCompleted: z.boolean().optional(),
+  OfferReference: z.string().optional(),
+  OrderDate: z.iso.date().optional(),
+  OrderRows: z.array(zFortnoxOrderOrderRowV2SingleItem).optional(),
+  OrderType: z.string().optional(),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().optional(),
+  OutboundDate: z.string().optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().optional(),
+  RoundOff: z.number().optional(),
+  Sent: z.boolean().optional(),
+  StockPointCode: z.string().optional(),
+  StockPointId: z.string().optional(),
+  TaxReduction: z.number().optional(),
+  TaxReductionType: z.string().optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  TimeBasisReference: z.string().optional(),
+  Total: z.number().optional(),
+  TotalToPay: z.number().optional(),
+  TotalVAT: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
+  WarehouseReady: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourOrderNumber: z.string().optional(),
+  YourReference: z.string().optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxOrderOrderV2ListResponseWrap = z.object({
+  Orders: z.array(zFortnoxOrderOrderV2ListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxOrderOrderV2SingleItem = z.object({
+  "@url": z.string().optional(),
+  "@urlTaxReductionList": z.string().optional(),
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AdministrationFee: z.number().optional(),
+  AdministrationFeeVAT: z.number().optional(),
+  BasisTaxReduction: z.number().optional(),
+  Cancelled: z.boolean().optional(),
+  City: z.string().optional(),
+  Comments: z.string().optional(),
+  ContributionPercent: z.number().optional(),
+  ContributionValue: z.number().optional(),
+  CopyRemarks: z.boolean().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  Currency: z.string().max(3).optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z.number().optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().optional(),
+  DeliveryAddress2: z.string().optional(),
+  DeliveryCity: z.string().optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().optional(),
+  DeliveryState: z.enum(["registration", "reservation", "delivery"]).optional(),
+  DeliveryZipCode: z.string().optional(),
+  DocumentNumber: z.string().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSingleItem.optional(),
+  ExternalInvoiceReference1: z.string().optional(),
+  ExternalInvoiceReference2: z.string().optional(),
+  Freight: z.number().optional(),
+  FreightVAT: z.number().optional(),
+  Gross: z.number().optional(),
+  HouseWork: z.boolean().optional(),
+  InvoiceReference: z.string().optional(),
+  Labels: z.array(zFortnoxOofDocumentTagsOnDocumentSingleItem).optional(),
+  Language: z.string().optional(),
+  Net: z.number().optional(),
+  NotCompleted: z.boolean().optional(),
+  OfferReference: z.string().optional(),
+  OrderDate: z.iso.date().optional(),
+  OrderRows: z.array(zFortnoxOrderOrderRowV2SingleItem).optional(),
+  OrderType: z.string().optional(),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().max(50).optional(),
+  OutboundDate: z.iso.date().optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().max(1024).optional(),
+  RoundOff: z.number().optional(),
+  Sent: z.boolean().optional(),
+  StockPointCode: z.string().optional(),
+  StockPointId: z.string().optional(),
+  TaxReduction: z.number().optional(),
+  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  TimeBasisReference: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  Total: z.number().optional(),
+  TotalToPay: z.number().optional(),
+  TotalVAT: z.number().optional(),
+  VATIncluded: z.boolean().optional(),
+  WarehouseReady: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourOrderNumber: z.string().max(75).optional(),
+  YourReference: z.string().max(50).optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxOrderOrderV2ResponseWrap = z.object({
+  Order: zFortnoxOrderOrderV2SingleItem,
+});
+
+export const zFortnoxOrderOrderV2SinglePayloadItem = z.object({
+  Address1: z.string().optional(),
+  Address2: z.string().optional(),
+  AdministrationFee: z.number().optional(),
+  City: z.string().optional(),
+  Comments: z.string().optional(),
+  CopyRemarks: z.boolean().optional(),
+  CostCenter: z.string().optional(),
+  Country: z.string().optional(),
+  Currency: z.string().max(3).optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z.number().optional(),
+  CustomerName: z.string().optional(),
+  CustomerNumber: z.string(),
+  DeliveryAddress1: z.string().optional(),
+  DeliveryAddress2: z.string().optional(),
+  DeliveryCity: z.string().optional(),
+  DeliveryCountry: z.string().optional(),
+  DeliveryDate: z.iso.date().optional(),
+  DeliveryName: z.string().optional(),
+  DeliveryState: z.enum(["registration", "reservation", "delivery"]).optional(),
+  DeliveryZipCode: z.string().optional(),
+  DocumentNumber: z.string().optional(),
+  EmailInformation: zFortnoxDocumentEmailFieldSinglePayloadItem.optional(),
+  ExternalInvoiceReference1: z.string().optional(),
+  ExternalInvoiceReference2: z.string().optional(),
+  Freight: z.number().optional(),
+  Labels: z
+    .array(zFortnoxOofDocumentTagsOnDocumentSinglePayloadItem)
+    .optional(),
+  Language: z.string().optional(),
+  NotCompleted: z.boolean().optional(),
+  OrderDate: z.iso.date().optional(),
+  OrderRows: z.array(zFortnoxOrderOrderRowV2SinglePayloadItem).optional(),
+  OrganisationNumber: z.string().optional(),
+  OurReference: z.string().max(50).optional(),
+  OutboundDate: z.iso.date().optional(),
+  Phone1: z.string().optional(),
+  Phone2: z.string().optional(),
+  PriceList: z.string().optional(),
+  PrintTemplate: z.string().optional(),
+  Project: z.string().optional(),
+  Remarks: z.string().max(1024).optional(),
+  StockPointCode: z.string().optional(),
+  StockPointId: z.string().optional(),
+  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
+  TermsOfDelivery: z.string().optional(),
+  TermsOfPayment: z.string().optional(),
+  VATIncluded: z.boolean().optional(),
+  WayOfDelivery: z.string().optional(),
+  YourOrderNumber: z.string().max(75).optional(),
+  YourReference: z.string().max(50).optional(),
+  ZipCode: z.string().optional(),
+});
+
+export const zFortnoxOrderOrderV2SinglePayloadItemWrap = z.object({
+  Order: zFortnoxOrderOrderV2SinglePayloadItem,
+});
+
+export const zFortnoxPaymentWriteOffSingleItem = z.object({
   AccountNumber: z.int().gte(1000).lte(9999).optional(),
   Amount: z.number().optional(),
   CostCenter: z.string().optional(),
@@ -5059,7 +11095,63 @@ export const zFortnoxInvoicePaymentWriteOff = z.object({
   TransactionInformation: z.string().optional(),
 });
 
-export const zFortnoxInvoicePayment = z.object({
+export const zFortnoxKfInvoicePaymentListItem = z.object({
+  "@url": z.string().optional(),
+  Amount: z.number().optional(),
+  AmountCurrency: z.number().optional(),
+  Booked: z.boolean().optional(),
+  Currency: z.string().length(3).optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z.number().optional(),
+  ExternalInvoiceReference1: z.string().optional(),
+  ExternalInvoiceReference2: z.string().optional(),
+  InvoiceCustomerName: z.string().optional(),
+  InvoiceCustomerNumber: z.string().optional(),
+  InvoiceDueDate: z.iso.date().optional(),
+  InvoiceNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  InvoiceOCR: z.string().optional(),
+  InvoiceTotal: z.number().optional(),
+  ModeOfPayment: z.string().optional(),
+  ModeOfPaymentAccount: z.string().optional(),
+  Number: z.string().optional(),
+  PaymentDate: z.iso.date().optional(),
+  Source: z.string().optional(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VoucherSeries: z.string().optional(),
+  VoucherYear: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  WriteOffExist: z.boolean().optional(),
+  WriteOffs: z.array(zFortnoxPaymentWriteOffSingleItem).optional(),
+});
+
+export const zFortnoxKfInvoicePaymentListItemWrap = z.object({
+  InvoicePayments: z.array(zFortnoxKfInvoicePaymentListItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxKfInvoicePaymentSingleItem = z.object({
   "@url": z.string().optional(),
   Amount: z.number().optional(),
   AmountCurrency: z.number().optional(),
@@ -5106,2673 +11198,29 @@ export const zFortnoxInvoicePayment = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
-  WriteOffs: z.array(zFortnoxInvoicePaymentWriteOff).optional(),
+  WriteOffs: z.array(zFortnoxPaymentWriteOffSingleItem).optional(),
 });
 
-export const zFortnoxInvoicePaymentWrap = z.object({
-  InvoicePayment: zFortnoxInvoicePayment,
+export const zFortnoxKfInvoicePaymentSingleItemWrap = z.object({
+  InvoicePayment: zFortnoxKfInvoicePaymentSingleItem,
 });
 
-export const zFortnoxInvoiceResponse = z.object({
-  "@url": z.string(),
-  BalanceIncludeFees: z.number(),
-  BalanceIncludeFeesCurrency: z.number(),
-  CurrentCapitalBalance: z.number(),
-  CurrentCapitalBalanceCurrency: z.number(),
-  InvoiceDocumentURL: z.string().optional(),
-  InvoiceNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-  NextEvent: z.string(),
-  NextEventDate: z.iso.date(),
-  OCRNumber: z.string(),
-  Service: z.string(),
-  ServiceName: z.string(),
-  Status: z.string(),
-});
-
-export const zFortnoxInvoiceResponseWrap = z.object({
-  NoxFinansInvoice: zFortnoxInvoiceResponse,
-});
-
-export const zFortnoxInvoiceV2EdiInformation = z.object({
-  EDIGlobalLocationNumber: z.string().max(13).optional(),
-  EDIGlobalLocationNumberDelivery: z.string().max(13).optional(),
-  EDIInvoiceExtra1: z.string().optional(),
-  EDIInvoiceExtra2: z.string().optional(),
-  EDIOurElectronicReference: z.string().optional(),
-  EDIStatus: z.string().optional(),
-  EDIYourElectronicReference: z.string().optional(),
-});
-
-export const zFortnoxInvoiceV2EmailInformation = z.object({
-  EmailAddressBCC: z.string().optional(),
-  EmailAddressCC: z.string().optional(),
-  EmailAddressFrom: z.string().optional(),
-  EmailAddressTo: z.string().optional(),
-  EmailBody: z.string().max(20000).optional(),
-  EmailSubject: z.string().max(100).optional(),
-});
-
-export const zFortnoxInvoiceV2InvoiceBundleSubRow = z.object({
-  AccountNumber: z.int().gte(1000).lte(9999).optional(),
-  ArticleNumber: z.string().optional(),
-  BundleSubItem: zFortnoxBundleSubItem.optional(),
-  ContributionPercent: z.string().optional(),
-  ContributionValue: z.string().optional(),
-  CostCenter: z.string().optional(),
-  DeliveredQuantity: z.string().optional(),
-  Description: z.string().max(255).optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .lte(999)
-    .optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "HVAC",
-      "MAJORAPPLIANCEREPAIR",
-      "MOVINGSERVICES",
-      "ITSERVICES",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "OTHERCOSTS",
-      "SOLARCELLS",
-      "STORAGESELFPRODUCEDELECTRICITY",
-      "CHARGINGSTATIONELECTRICVEHICLE",
-      "HOMEMAINTENANCE",
-      "FURNISHING",
-      "TRANSPORTATIONSERVICES",
-      "WASHINGANDCAREOFCLOTHING",
-    ])
-    .optional(),
-  Price: z.number().optional(),
-  PriceExcludingVAT: z.number().optional(),
-  Project: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  StockPointCode: z.string().optional(),
-  Total: z.number().optional(),
-  TotalExcludingVAT: z.number().optional(),
-  Unit: z.string().optional(),
-  VAT: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxInvoiceV2Bundle = z.object({
-  Revision: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  SubRows: z.array(zFortnoxInvoiceV2InvoiceBundleSubRow).optional(),
-});
-
-export const zFortnoxInvoiceV2InvoiceRow = z.object({
-  AccountNumber: z.int().gte(1000).lte(9999).optional(),
-  ArticleNumber: z.string().optional(),
-  Bundle: zFortnoxInvoiceV2Bundle.optional(),
-  ContributionPercent: z.string().optional(),
-  ContributionValue: z.string().optional(),
-  CostCenter: z.string().optional(),
-  DeliveredQuantity: z.string().optional(),
-  Description: z.string().max(255).optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .lte(999)
-    .optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "HVAC",
-      "MAJORAPPLIANCEREPAIR",
-      "MOVINGSERVICES",
-      "ITSERVICES",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "OTHERCOSTS",
-      "SOLARCELLS",
-      "STORAGESELFPRODUCEDELECTRICITY",
-      "CHARGINGSTATIONELECTRICVEHICLE",
-      "HOMEMAINTENANCE",
-      "FURNISHING",
-      "TRANSPORTATIONSERVICES",
-      "WASHINGANDCAREOFCLOTHING",
-    ])
-    .optional(),
-  Price: z.number().optional(),
-  PriceExcludingVAT: z.number().optional(),
-  Project: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  StockPointCode: z.string().optional(),
-  Total: z.number().optional(),
-  TotalExcludingVAT: z.number().optional(),
-  Unit: z.string().optional(),
-  VAT: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxInvoiceV2Label = z.object({
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxInvoiceV2 = z.object({
-  "@url": z.string().optional(),
-  "@urlTaxReductionList": z.string().optional(),
-  AccountingMethod: z.enum(["ACCRUAL", "CASH"]).optional(),
-  Address1: z.string().optional(),
-  Address2: z.string().optional(),
-  AdministrationFee: z.number().optional(),
-  AdministrationFeeVAT: z.number().optional(),
-  Balance: z.number().optional(),
-  BasisTaxReduction: z.number().optional(),
-  Booked: z.boolean().optional(),
-  Cancelled: z.boolean().optional(),
-  City: z.string().max(1024).optional(),
-  Comments: z.string().max(1024).optional(),
-  ContractReference: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ContributionPercent: z.number().optional(),
-  ContributionValue: z.number().optional(),
-  CostCenter: z.string().optional(),
-  Country: z.string().optional(),
-  Credit: z.string().optional(),
-  CreditInvoiceReference: z.string().optional(),
-  Currency: z.string().optional(),
-  CurrencyRate: z.number().optional(),
-  CurrencyUnit: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  CustomerName: z.string().optional(),
-  CustomerNumber: z.string(),
-  DeliveryAddress1: z.string().max(1024).optional(),
-  DeliveryAddress2: z.string().max(1024).optional(),
-  DeliveryCity: z.string().max(1024).optional(),
-  DeliveryCountry: z.string().optional(),
-  DeliveryDate: z.iso.date().optional(),
-  DeliveryName: z.string().max(1024).optional(),
-  DeliveryZipCode: z.string().max(1024).optional(),
-  DocumentNumber: z.string().optional(),
-  DueDate: z.iso.date().optional(),
-  EDIInformation: zFortnoxInvoiceV2EdiInformation.optional(),
-  EUQuarterlyReport: z.boolean().optional(),
-  EmailInformation: zFortnoxInvoiceV2EmailInformation.optional(),
-  ExternalInvoiceReference1: z.string().max(80).optional(),
-  ExternalInvoiceReference2: z.string().max(80).optional(),
-  FinalPayDate: z.iso.date().optional(),
-  Freight: z.number().optional(),
-  FreightVAT: z.number().optional(),
-  Gross: z.number().optional(),
-  HouseWork: z.boolean().optional(),
-  InvoiceDate: z.iso.date().optional(),
-  InvoicePeriodEnd: z.iso.date().optional(),
-  InvoicePeriodReference: z.string().optional(),
-  InvoicePeriodStart: z.iso.date().optional(),
-  InvoiceRows: z.array(zFortnoxInvoiceV2InvoiceRow).optional(),
-  InvoiceType: z
-    .enum([
-      "INVOICE",
-      "AGREEMENTINVOICE",
-      "INTRESTINVOICE",
-      "SUMMARYINVOICE",
-      "CASHINVOICE",
-    ])
-    .optional(),
-  Labels: z.array(zFortnoxInvoiceV2Label).optional(),
-  Language: z.enum(["SV", "EN"]).optional(),
-  LastRemindDate: z.iso.date().optional(),
-  Net: z.number().optional(),
-  NotCompleted: z.boolean().optional(),
-  NoxFinans: z.boolean().optional(),
-  OCR: z.string().optional(),
-  OfferReference: z.string().optional(),
-  OrderReference: z.string().optional(),
-  OrganisationNumber: z.string().optional(),
-  OurReference: z.string().max(50).optional(),
-  OutboundDate: z.iso.date().optional(),
-  PaymentWay: z.enum(["CASH", "CARD", "AG"]).optional(),
-  Phone1: z.string().max(1024).optional(),
-  Phone2: z.string().max(1024).optional(),
-  PriceList: z.string().optional(),
-  PrintTemplate: z.string().optional(),
-  Project: z.string().optional(),
-  Remarks: z.string().max(1024).optional(),
-  Reminders: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  RoundOff: z.number().optional(),
-  Sent: z.boolean().optional(),
-  TaxReduction: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
-  TermsOfDelivery: z.string().optional(),
-  TermsOfPayment: z.string().optional(),
-  TimeBasisReference: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Total: z.number().optional(),
-  TotalToPay: z.number().optional(),
-  TotalVAT: z.number().optional(),
-  VATIncluded: z.boolean().optional(),
-  VoucherNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VoucherSeries: z.string().optional(),
-  VoucherYear: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  WarehouseReady: z.boolean().optional(),
-  WayOfDelivery: z.string().optional(),
-  YourOrderNumber: z.string().max(75).optional(),
-  YourReference: z.string().max(50).optional(),
-  ZipCode: z.string().max(1024).optional(),
-});
-
-export const zFortnoxInvoiceV2Wrap = z.object({
-  Invoice: zFortnoxInvoiceV2,
-});
-
-export const zFortnoxInvoiceEdiInformation = z.object({
-  EDIGlobalLocationNumber: z.string().max(13).optional(),
-  EDIGlobalLocationNumberDelivery: z.string().max(13).optional(),
-  EDIInvoiceExtra1: z.string().optional(),
-  EDIInvoiceExtra2: z.string().optional(),
-  EDIOurElectronicReference: z.string().optional(),
-  EDIStatus: z.string().optional(),
-  EDIYourElectronicReference: z.string().optional(),
-});
-
-export const zFortnoxInvoiceEmailInformation = z.object({
-  EmailAddressBCC: z.string().optional(),
-  EmailAddressCC: z.string().optional(),
-  EmailAddressFrom: z.string().optional(),
-  EmailAddressTo: z.string().optional(),
-  EmailBody: z.string().max(20000).optional(),
-  EmailSubject: z.string().max(100).optional(),
-});
-
-export const zFortnoxInvoiceInvoiceRow = z.object({
-  AccountNumber: z.int().gte(1000).lte(9999).optional(),
-  ArticleNumber: z.string().optional(),
-  ContributionPercent: z.string().optional(),
-  ContributionValue: z.string().optional(),
-  CostCenter: z.string().optional(),
-  DeliveredQuantity: z.string().optional(),
-  Description: z.string().max(255).optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .lte(999)
-    .optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "HVAC",
-      "MAJORAPPLIANCEREPAIR",
-      "MOVINGSERVICES",
-      "ITSERVICES",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "OTHERCOSTS",
-      "SOLARCELLS",
-      "STORAGESELFPRODUCEDELECTRICITY",
-      "CHARGINGSTATIONELECTRICVEHICLE",
-      "HOMEMAINTENANCE",
-      "FURNISHING",
-      "TRANSPORTATIONSERVICES",
-      "WASHINGANDCAREOFCLOTHING",
-    ])
-    .optional(),
-  Price: z.number().optional(),
-  PriceExcludingVAT: z.number().optional(),
-  Project: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  StockPointCode: z.string().optional(),
-  Total: z.number().optional(),
-  TotalExcludingVAT: z.number().optional(),
-  Unit: z.string().optional(),
-  VAT: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxInvoiceLabel = z.object({
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxInvoice = z.object({
-  "@url": z.string().optional(),
-  "@urlTaxReductionList": z.string().optional(),
-  AccountingMethod: z.enum(["ACCRUAL", "CASH"]).optional(),
-  Address1: z.string().optional(),
-  Address2: z.string().optional(),
-  AdministrationFee: z.number().optional(),
-  AdministrationFeeVAT: z.number().optional(),
-  Balance: z.number().optional(),
-  BasisTaxReduction: z.number().optional(),
-  Booked: z.boolean().optional(),
-  Cancelled: z.boolean().optional(),
-  City: z.string().max(1024).optional(),
-  Comments: z.string().max(1024).optional(),
-  ContractReference: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ContributionPercent: z.number().optional(),
-  ContributionValue: z.number().optional(),
-  CostCenter: z.string().optional(),
-  Country: z.string().optional(),
-  Credit: z.string().optional(),
-  CreditInvoiceReference: z.string().optional(),
-  Currency: z.string().optional(),
-  CurrencyRate: z.number().optional(),
-  CurrencyUnit: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  CustomerName: z.string().optional(),
-  CustomerNumber: z.string(),
-  DeliveryAddress1: z.string().max(1024).optional(),
-  DeliveryAddress2: z.string().max(1024).optional(),
-  DeliveryCity: z.string().max(1024).optional(),
-  DeliveryCountry: z.string().optional(),
-  DeliveryDate: z.iso.date().optional(),
-  DeliveryName: z.string().max(1024).optional(),
-  DeliveryZipCode: z.string().max(1024).optional(),
-  DocumentNumber: z.string().optional(),
-  DueDate: z.iso.date().optional(),
-  EDIInformation: zFortnoxInvoiceEdiInformation.optional(),
-  EUQuarterlyReport: z.boolean().optional(),
-  EmailInformation: zFortnoxInvoiceEmailInformation.optional(),
-  ExternalInvoiceReference1: z.string().max(80).optional(),
-  ExternalInvoiceReference2: z.string().max(80).optional(),
-  FinalPayDate: z.iso.date().optional(),
-  Freight: z.number().optional(),
-  FreightVAT: z.number().optional(),
-  Gross: z.number().optional(),
-  HouseWork: z.boolean().optional(),
-  InvoiceDate: z.iso.date().optional(),
-  InvoicePeriodEnd: z.iso.date().optional(),
-  InvoicePeriodReference: z.string().optional(),
-  InvoicePeriodStart: z.iso.date().optional(),
-  InvoiceRows: z.array(zFortnoxInvoiceInvoiceRow).optional(),
-  InvoiceType: z
-    .enum([
-      "INVOICE",
-      "AGREEMENTINVOICE",
-      "INTRESTINVOICE",
-      "SUMMARYINVOICE",
-      "CASHINVOICE",
-    ])
-    .optional(),
-  Labels: z.array(zFortnoxInvoiceLabel).optional(),
-  Language: z.enum(["SV", "EN"]).optional(),
-  LastRemindDate: z.iso.date().optional(),
-  Net: z.number().optional(),
-  NotCompleted: z.boolean().optional(),
-  NoxFinans: z.boolean().optional(),
-  OCR: z.string().optional(),
-  OfferReference: z.string().optional(),
-  OrderReference: z.string().optional(),
-  OrganisationNumber: z.string().optional(),
-  OurReference: z.string().max(50).optional(),
-  OutboundDate: z.iso.date().optional(),
-  PaymentWay: z.enum(["CASH", "CARD", "AG"]).optional(),
-  Phone1: z.string().max(1024).optional(),
-  Phone2: z.string().max(1024).optional(),
-  PriceList: z.string().optional(),
-  PrintTemplate: z.string().optional(),
-  Project: z.string().optional(),
-  Remarks: z.string().max(1024).optional(),
-  Reminders: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  RoundOff: z.number().optional(),
-  Sent: z.boolean().optional(),
-  TaxReduction: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
-  TermsOfDelivery: z.string().optional(),
-  TermsOfPayment: z.string().optional(),
-  TimeBasisReference: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Total: z.number().optional(),
-  TotalToPay: z.number().optional(),
-  TotalVAT: z.number().optional(),
-  VATIncluded: z.boolean().optional(),
-  VoucherNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VoucherSeries: z.string().optional(),
-  VoucherYear: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  WarehouseReady: z.boolean().optional(),
-  WayOfDelivery: z.string().optional(),
-  YourOrderNumber: z.string().max(75).optional(),
-  YourReference: z.string().max(50).optional(),
-  ZipCode: z.string().max(1024).optional(),
-});
-
-export const zFortnoxInvoiceWrap = z.object({
-  Invoice: zFortnoxInvoice,
-});
-
-export const zFortnoxLabel = z.object({
-  Description: z.string().min(1).max(25),
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxLabelList = z.object({
-  Labels: z.array(zFortnoxLabel),
-});
-
-export const zFortnoxLabelWrap = z.object({
-  Label: zFortnoxLabel,
-});
-
-export const zFortnoxListAsset = z.object({
-  "@url": z.string().optional(),
-  AcquisitionDate: z.string().optional(),
-  AcquisitionValue: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  DepreciatedTo: z.string().optional(),
-  DepreciationFinal: z.string().optional(),
-  Description: z.string().optional(),
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Number: z.string().optional(),
-  Status: z.string().optional(),
-  StatusId: z.string().optional(),
-  Type: z.string().optional(),
-  TypeId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxListAssetWrap = z.object({
-  Assets: z.array(zFortnoxListAsset),
-});
-
-export const zFortnoxLockedPeriod = z.object({
-  EndDate: z.iso.date().optional(),
-});
-
-export const zFortnoxLockedPeriodWrap = z.object({
-  LockedPeriod: zFortnoxLockedPeriod,
-});
-
-export const zFortnoxManualObAsset = z.object({
-  Amount: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Comment: z.string().optional(),
-});
-
-export const zFortnoxMe = z.object({
-  Email: z.string().optional(),
-  Id: z.string().optional(),
-  Locale: z.string().optional(),
-  Name: z.string().optional(),
-  SysAdmin: z.boolean().optional(),
-});
-
-export const zFortnoxMeWrap = z.object({
-  MeInformation: zFortnoxMe,
-});
-
-export const zFortnoxMetaInformation = z.object({
-  "@CurrentPage": z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  "@TotalPages": z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  "@TotalResources": z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxAssetFileConnectionResponse = z.object({
-  AssetFileConnections: z.array(zFortnoxAssetFileConnection).optional(),
-  MetaInformation: zFortnoxMetaInformation.optional(),
-});
-
-export const zFortnoxAssetTypeWrapList = z.object({
-  MetaInformation: zFortnoxMetaInformation,
-  Types: z.array(zFortnoxAssetType),
-});
-
-export const zFortnoxCurrencyList = z.object({
-  Currencies: z.array(zFortnoxCurrency),
-  MetaInformation: zFortnoxMetaInformation,
-});
-
-export const zFortnoxModeOfPayment = z.object({
-  "@url": z.string().optional(),
-  AccountNumber: z.string().length(4),
-  Code: z.string().optional(),
-  Description: z.string().optional(),
-});
-
-export const zFortnoxModeOfPaymentList = z.object({
-  ModesOfPayments: z.array(zFortnoxModeOfPayment),
-});
-
-export const zFortnoxModeOfPaymentWrap = z.object({
-  ModeOfPayment: zFortnoxModeOfPayment,
-});
-
-export const zFortnoxOfferListItem = z.object({
-  "@url": z.string().optional(),
-  Cancelled: z.boolean().optional(),
-  Currency: z.string().optional(),
-  CustomerName: z.string().optional(),
-  CustomerNumber: z.string(),
-  DocumentNumber: z.string().optional(),
-  OfferDate: z.iso.date().optional(),
-  Project: z.string().optional(),
-  Sent: z.boolean().optional(),
-  Total: z.number().optional(),
-});
-
-export const zFortnoxOfferListItemList = z.object({
-  Offers: z.array(zFortnoxOfferListItem),
-});
-
-export const zFortnoxOfferPayloadV2EmailInformation = z.object({
-  EmailAddressBCC: z.string().optional(),
-  EmailAddressCC: z.string().optional(),
-  EmailAddressFrom: z.string().optional(),
-  EmailAddressTo: z.string().optional(),
-  EmailBody: z.string().max(20000).optional(),
-  EmailSubject: z.string().max(100).optional(),
-});
-
-export const zFortnoxOfferPayloadV2Label = z.object({
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxOfferPayloadV2OfferBundleSubRow = z.object({
-  AccountNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ArticleNumber: z.string().optional(),
-  BundleSubItem: zFortnoxBundleSubItem.optional(),
-  CostCenter: z.string().optional(),
-  Description: z.string().optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z.number().lte(999).optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "HVAC",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "COOKING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "TUTORING",
-      "OTHERCOSTS",
-    ])
-    .optional(),
-  Price: z.number().optional(),
-  Project: z.string().optional(),
-  Quantity: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Unit: z.string().optional(),
-  VAT: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxOfferPayloadV2Bundle = z.object({
-  Revision: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  SubRows: z.array(zFortnoxOfferPayloadV2OfferBundleSubRow).optional(),
-});
-
-export const zFortnoxOfferPayloadV2OfferRow = z.object({
-  AccountNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ArticleNumber: z.string().optional(),
-  Bundle: zFortnoxOfferPayloadV2Bundle.optional(),
-  CostCenter: z.string().optional(),
-  Description: z.string().optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z.number().lte(999).optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "HVAC",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "COOKING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "TUTORING",
-      "OTHERCOSTS",
-    ])
-    .optional(),
-  Price: z.number().optional(),
-  Project: z.string().optional(),
-  Quantity: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Unit: z.string().optional(),
-  VAT: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxOfferPayloadV2 = z.object({
-  Address1: z.string().max(1024).optional(),
-  Address2: z.string().max(1024).optional(),
-  AdministrationFee: z.number().optional(),
-  City: z.string().max(1024).optional(),
-  Comments: z.string().max(1024).optional(),
-  CopyRemarks: z.boolean().optional(),
-  CostCenter: z.string().optional(),
-  Country: z.string().optional(),
-  Currency: z.string().optional(),
-  CurrencyRate: z.number().optional(),
-  CurrencyUnit: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  CustomerName: z.string().optional(),
-  CustomerNumber: z.string(),
-  DeliveryAddress1: z.string().max(1024).optional(),
-  DeliveryAddress2: z.string().max(1024).optional(),
-  DeliveryCity: z.string().max(1024).optional(),
-  DeliveryCountry: z.string().optional(),
-  DeliveryDate: z.iso.date().optional(),
-  DeliveryName: z.string().max(1024).optional(),
-  DeliveryZipCode: z.string().optional(),
-  DocumentNumber: z.string().optional(),
-  EmailInformation: zFortnoxOfferPayloadV2EmailInformation.optional(),
-  ExpireDate: z.iso.date().optional(),
-  Freight: z.number().optional(),
-  Labels: z.array(zFortnoxOfferPayloadV2Label).optional(),
-  Language: z.string().optional(),
-  NotCompleted: z.boolean().optional(),
-  OfferDate: z.iso.date().optional(),
-  OfferRows: z.array(zFortnoxOfferPayloadV2OfferRow).optional(),
-  OrganisationNumber: z.string().optional(),
-  OurReference: z.string().optional(),
-  Phone1: z.string().optional(),
-  Phone2: z.string().optional(),
-  PriceList: z.string().optional(),
-  PrintTemplate: z.string().optional(),
-  Project: z.string().optional(),
-  Remarks: z.string().optional(),
-  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
-  TermsOfDelivery: z.string().optional(),
-  TermsOfPayment: z.string().optional(),
-  VATIncluded: z.boolean().optional(),
-  WayOfDelivery: z.string().optional(),
-  YourReference: z.string().optional(),
-  YourReferenceNumber: z.string().optional(),
-  ZipCode: z.string().optional(),
-});
-
-export const zFortnoxOfferPayloadV2Wrap = z.object({
-  Offer: zFortnoxOfferPayloadV2,
-});
-
-export const zFortnoxOfferV2EmailInformation = z.object({
-  EmailAddressBCC: z.string().optional(),
-  EmailAddressCC: z.string().optional(),
-  EmailAddressFrom: z.string().optional(),
-  EmailAddressTo: z.string().optional(),
-  EmailBody: z.string().max(20000).optional(),
-  EmailSubject: z.string().max(100).optional(),
-});
-
-export const zFortnoxOfferV2Label = z.object({
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxOfferV2OfferBundleSubRow = z.object({
-  AccountNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ArticleNumber: z.string().optional(),
-  BundleSubItem: zFortnoxBundleSubItem.optional(),
-  ContributionPercent: z.string().optional(),
-  ContributionValue: z.string().optional(),
-  CostCenter: z.string().optional(),
-  Description: z.string().optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z.number().lte(999).optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "HVAC",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "COOKING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "TUTORING",
-      "OTHERCOSTS",
-    ])
-    .optional(),
-  Price: z.number().optional(),
-  Project: z.string().optional(),
-  Quantity: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Total: z.number().optional(),
-  Unit: z.string().optional(),
-  VAT: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxOfferV2Bundle = z.object({
-  Revision: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  SubRows: z.array(zFortnoxOfferV2OfferBundleSubRow).optional(),
-});
-
-export const zFortnoxOfferV2OfferRow = z.object({
-  AccountNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ArticleNumber: z.string().optional(),
-  Bundle: zFortnoxOfferV2Bundle.optional(),
-  ContributionPercent: z.string().optional(),
-  ContributionValue: z.string().optional(),
-  CostCenter: z.string().optional(),
-  Description: z.string().optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z.number().lte(999).optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "HVAC",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "COOKING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "TUTORING",
-      "OTHERCOSTS",
-    ])
-    .optional(),
-  Price: z.number().optional(),
-  Project: z.string().optional(),
-  Quantity: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Total: z.number().optional(),
-  Unit: z.string().optional(),
-  VAT: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxOfferV2 = z.object({
-  "@url": z.string().optional(),
-  "@urlTaxReductionList": z.string().optional(),
-  Address1: z.string().max(1024).optional(),
-  Address2: z.string().max(1024).optional(),
-  AdministrationFee: z.number().optional(),
-  AdministrationFeeVAT: z.number().optional(),
-  BasisTaxReduction: z.number().optional(),
-  Cancelled: z.boolean().optional(),
-  City: z.string().max(1024).optional(),
-  Comments: z.string().max(1024).optional(),
-  ContributionPercent: z.number().optional(),
-  ContributionValue: z.number().optional(),
-  CopyRemarks: z.boolean().optional(),
-  CostCenter: z.string().optional(),
-  Country: z.string().optional(),
-  Currency: z.string().optional(),
-  CurrencyRate: z.number().optional(),
-  CurrencyUnit: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  CustomerName: z.string().optional(),
-  CustomerNumber: z.string(),
-  DeliveryAddress1: z.string().max(1024).optional(),
-  DeliveryAddress2: z.string().max(1024).optional(),
-  DeliveryCity: z.string().max(1024).optional(),
-  DeliveryCountry: z.string().optional(),
-  DeliveryDate: z.iso.date().optional(),
-  DeliveryName: z.string().max(1024).optional(),
-  DeliveryZipCode: z.string().optional(),
-  DocumentNumber: z.string().optional(),
-  EmailInformation: zFortnoxOfferV2EmailInformation.optional(),
-  ExpireDate: z.iso.date().optional(),
-  Freight: z.number().optional(),
-  FreightVAT: z.number().optional(),
-  Gross: z.number().optional(),
-  HouseWork: z.boolean().optional(),
-  InvoiceReference: z.string().optional(),
-  Labels: z.array(zFortnoxOfferV2Label).optional(),
-  Language: z.string().optional(),
-  Net: z.number().optional(),
-  NotCompleted: z.boolean().optional(),
-  OfferDate: z.iso.date().optional(),
-  OfferRows: z.array(zFortnoxOfferV2OfferRow).optional(),
-  OrderReference: z.string().optional(),
-  OrganisationNumber: z.string().optional(),
-  OurReference: z.string().optional(),
-  Phone1: z.string().optional(),
-  Phone2: z.string().optional(),
-  PriceList: z.string().optional(),
-  PrintTemplate: z.string().optional(),
-  Project: z.string().optional(),
-  Remarks: z.string().optional(),
-  RoundOff: z.number().optional(),
-  Sent: z.boolean().optional(),
-  TaxReduction: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
-  TermsOfDelivery: z.string().optional(),
-  TermsOfPayment: z.string().optional(),
-  Total: z.number().optional(),
-  TotalToPay: z.number().optional(),
-  TotalVAT: z.number().optional(),
-  VATIncluded: z.boolean().optional(),
-  WayOfDelivery: z.string().optional(),
-  YourReference: z.string().optional(),
-  YourReferenceNumber: z.string().optional(),
-  ZipCode: z.string().optional(),
-});
-
-export const zFortnoxOfferV2Wrap = z.object({
-  Offer: zFortnoxOfferV2,
-});
-
-export const zFortnoxOfferEmailInformation = z.object({
-  EmailAddressBCC: z.string().optional(),
-  EmailAddressCC: z.string().optional(),
-  EmailAddressFrom: z.string().optional(),
-  EmailAddressTo: z.string().optional(),
-  EmailBody: z.string().max(20000).optional(),
-  EmailSubject: z.string().max(100).optional(),
-});
-
-export const zFortnoxOfferLabel = z.object({
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxOfferOfferRow = z.object({
-  AccountNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ArticleNumber: z.string().optional(),
-  ContributionPercent: z.string().optional(),
-  ContributionValue: z.string().optional(),
-  CostCenter: z.string().optional(),
-  Description: z.string().optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z.number().lte(999).optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "HVAC",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "COOKING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "TUTORING",
-      "OTHERCOSTS",
-    ])
-    .optional(),
-  Price: z.number().optional(),
-  Project: z.string().optional(),
-  Quantity: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Total: z.number().optional(),
-  Unit: z.string().optional(),
-  VAT: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxOffer = z.object({
-  "@url": z.string().optional(),
-  "@urlTaxReductionList": z.string().optional(),
-  Address1: z.string().max(1024).optional(),
-  Address2: z.string().max(1024).optional(),
-  AdministrationFee: z.number().optional(),
-  AdministrationFeeVAT: z.number().optional(),
-  BasisTaxReduction: z.number().optional(),
-  Cancelled: z.boolean().optional(),
-  City: z.string().max(1024).optional(),
-  Comments: z.string().max(1024).optional(),
-  ContributionPercent: z.number().optional(),
-  ContributionValue: z.number().optional(),
-  CopyRemarks: z.boolean().optional(),
-  CostCenter: z.string().optional(),
-  Country: z.string().optional(),
-  Currency: z.string().optional(),
-  CurrencyRate: z.number().optional(),
-  CurrencyUnit: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  CustomerName: z.string().optional(),
-  CustomerNumber: z.string(),
-  DeliveryAddress1: z.string().max(1024).optional(),
-  DeliveryAddress2: z.string().max(1024).optional(),
-  DeliveryCity: z.string().max(1024).optional(),
-  DeliveryCountry: z.string().optional(),
-  DeliveryDate: z.iso.date().optional(),
-  DeliveryName: z.string().max(1024).optional(),
-  DeliveryZipCode: z.string().optional(),
-  DocumentNumber: z.string().optional(),
-  EmailInformation: zFortnoxOfferEmailInformation.optional(),
-  ExpireDate: z.iso.date().optional(),
-  Freight: z.number().optional(),
-  FreightVAT: z.number().optional(),
-  Gross: z.number().optional(),
-  HouseWork: z.boolean().optional(),
-  InvoiceReference: z.string().optional(),
-  Labels: z.array(zFortnoxOfferLabel).optional(),
-  Language: z.string().optional(),
-  Net: z.number().optional(),
-  NotCompleted: z.boolean().optional(),
-  OfferDate: z.iso.date().optional(),
-  OfferRows: z.array(zFortnoxOfferOfferRow).optional(),
-  OrderReference: z.string().optional(),
-  OrganisationNumber: z.string().optional(),
-  OurReference: z.string().optional(),
-  Phone1: z.string().optional(),
-  Phone2: z.string().optional(),
-  PriceList: z.string().optional(),
-  PrintTemplate: z.string().optional(),
-  Project: z.string().optional(),
-  Remarks: z.string().optional(),
-  RoundOff: z.number().optional(),
-  Sent: z.boolean().optional(),
-  TaxReduction: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
-  TermsOfDelivery: z.string().optional(),
-  TermsOfPayment: z.string().optional(),
-  Total: z.number().optional(),
-  TotalToPay: z.number().optional(),
-  TotalVAT: z.number().optional(),
-  VATIncluded: z.boolean().optional(),
-  WayOfDelivery: z.string().optional(),
-  YourReference: z.string().optional(),
-  YourReferenceNumber: z.string().optional(),
-  ZipCode: z.string().optional(),
-});
-
-export const zFortnoxOfferWrap = z.object({
-  Offer: zFortnoxOffer,
-});
-
-export const zFortnoxOrderListItem = z.object({
-  "@url": z.string().optional(),
-  Cancelled: z.boolean().optional(),
-  Currency: z.string().max(3).optional(),
-  CustomerName: z.string().optional(),
-  CustomerNumber: z.string(),
-  DeliveryDate: z.iso.date().optional(),
-  DocumentNumber: z.string().optional(),
-  ExternalInvoiceReference1: z.string().optional(),
-  ExternalInvoiceReference2: z.string().optional(),
-  OrderDate: z.iso.date().optional(),
-  OrderType: z.string().optional(),
-  Project: z.string().optional(),
-  Sent: z.boolean().optional(),
-  Total: z.number().optional(),
-});
-
-export const zFortnoxOrderListItemList = z.object({
-  Orders: z.array(zFortnoxOrderListItem),
-});
-
-export const zFortnoxOrderPayloadV2EmailInformation = z.object({
-  EmailAddressBCC: z.string().optional(),
-  EmailAddressCC: z.string().optional(),
-  EmailAddressFrom: z.string().optional(),
-  EmailAddressTo: z.string().optional(),
-  EmailBody: z.string().optional(),
-  EmailSubject: z.string().optional(),
-});
-
-export const zFortnoxOrderPayloadV2Label = z.object({
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxOrderPayloadV2OrderBundleSubRow = z.object({
-  AccountNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ArticleNumber: z.string().optional(),
-  BundleSubItem: zFortnoxBundleSubItem.optional(),
-  CostCenter: z.string().optional(),
-  DeliveredQuantity: z.string().optional(),
-  Description: z.string().optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "MOVINGSERVICES",
-      "ITSERVICES",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "OTHERCOSTS",
-    ])
-    .optional(),
-  OrderedQuantity: z.string().optional(),
-  Price: z.number().optional(),
-  Project: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  StockPointCode: z.string().optional(),
-  StockPointId: z.string().optional(),
-  Unit: z.string().optional(),
-  VAT: z.number().optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxOrderPayloadV2Bundle = z.object({
-  Revision: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  SubRows: z.array(zFortnoxOrderPayloadV2OrderBundleSubRow).optional(),
-});
-
-export const zFortnoxOrderPayloadV2OrderRow = z.object({
-  AccountNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ArticleNumber: z.string().optional(),
-  Bundle: zFortnoxOrderPayloadV2Bundle.optional(),
-  CostCenter: z.string().optional(),
-  DeliveredQuantity: z.string().optional(),
-  Description: z.string().optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "MOVINGSERVICES",
-      "ITSERVICES",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "OTHERCOSTS",
-    ])
-    .optional(),
-  OrderedQuantity: z.string().optional(),
-  Price: z.number().optional(),
-  Project: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  StockPointCode: z.string().optional(),
-  StockPointId: z.string().optional(),
-  Unit: z.string().optional(),
-  VAT: z.number().optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxOrderPayloadV2 = z.object({
-  Address1: z.string().optional(),
-  Address2: z.string().optional(),
-  AdministrationFee: z.number().optional(),
-  City: z.string().optional(),
-  Comments: z.string().optional(),
-  CopyRemarks: z.boolean().optional(),
-  CostCenter: z.string().optional(),
-  Country: z.string().optional(),
-  Currency: z.string().max(3).optional(),
-  CurrencyRate: z.number().optional(),
-  CurrencyUnit: z.number().optional(),
-  CustomerName: z.string().optional(),
-  CustomerNumber: z.string(),
-  DeliveryAddress1: z.string().optional(),
-  DeliveryAddress2: z.string().optional(),
-  DeliveryCity: z.string().optional(),
-  DeliveryCountry: z.string().optional(),
-  DeliveryDate: z.iso.date().optional(),
-  DeliveryName: z.string().optional(),
-  DeliveryState: z.enum(["registration", "reservation", "delivery"]).optional(),
-  DeliveryZipCode: z.string().optional(),
-  DocumentNumber: z.string().optional(),
-  EmailInformation: zFortnoxOrderPayloadV2EmailInformation.optional(),
-  ExternalInvoiceReference1: z.string().optional(),
-  ExternalInvoiceReference2: z.string().optional(),
-  Freight: z.number().optional(),
-  Labels: z.array(zFortnoxOrderPayloadV2Label).optional(),
-  Language: z.string().optional(),
-  NotCompleted: z.boolean().optional(),
-  OrderDate: z.iso.date().optional(),
-  OrderRows: z.array(zFortnoxOrderPayloadV2OrderRow).optional(),
-  OrganisationNumber: z.string().optional(),
-  OurReference: z.string().max(50).optional(),
-  OutboundDate: z.iso.date().optional(),
-  Phone1: z.string().optional(),
-  Phone2: z.string().optional(),
-  PriceList: z.string().optional(),
-  PrintTemplate: z.string().optional(),
-  Project: z.string().optional(),
-  Remarks: z.string().max(1024).optional(),
-  StockPointCode: z.string().optional(),
-  StockPointId: z.string().optional(),
-  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
-  TermsOfDelivery: z.string().optional(),
-  TermsOfPayment: z.string().optional(),
-  VATIncluded: z.boolean().optional(),
-  WayOfDelivery: z.string().optional(),
-  YourOrderNumber: z.string().max(75).optional(),
-  YourReference: z.string().max(50).optional(),
-  ZipCode: z.string().optional(),
-});
-
-export const zFortnoxOrderPayloadV2Wrap = z.object({
-  Order: zFortnoxOrderPayloadV2,
-});
-
-export const zFortnoxOrderV2EmailInformation = z.object({
-  EmailAddressBCC: z.string().optional(),
-  EmailAddressCC: z.string().optional(),
-  EmailAddressFrom: z.string().optional(),
-  EmailAddressTo: z.string().optional(),
-  EmailBody: z.string().optional(),
-  EmailSubject: z.string().optional(),
-});
-
-export const zFortnoxOrderV2Label = z.object({
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxOrderV2OrderBundleSubRow = z.object({
-  AccountNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ArticleNumber: z.string().optional(),
-  BundleSubItem: zFortnoxBundleSubItem.optional(),
-  ContributionPercent: z.string().optional(),
-  ContributionValue: z.string().optional(),
-  CostCenter: z.string().optional(),
-  DeliveredQuantity: z.string().optional(),
-  Description: z.string().optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "MOVINGSERVICES",
-      "ITSERVICES",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "OTHERCOSTS",
-    ])
-    .optional(),
-  OrderedQuantity: z.string().optional(),
-  Price: z.number().optional(),
-  Project: z.string().optional(),
-  ReservedQuantity: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  StockPointCode: z.string().optional(),
-  StockPointId: z.string().optional(),
-  Total: z.number().optional(),
-  Unit: z.string().optional(),
-  VAT: z.number().optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxOrderV2Bundle = z.object({
-  Revision: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  SubRows: z.array(zFortnoxOrderV2OrderBundleSubRow).optional(),
-});
-
-export const zFortnoxOrderV2OrderRow = z.object({
-  AccountNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ArticleNumber: z.string().optional(),
-  Bundle: zFortnoxOrderV2Bundle.optional(),
-  ContributionPercent: z.string().optional(),
-  ContributionValue: z.string().optional(),
-  CostCenter: z.string().optional(),
-  DeliveredQuantity: z.string().optional(),
-  Description: z.string().optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "MOVINGSERVICES",
-      "ITSERVICES",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "OTHERCOSTS",
-    ])
-    .optional(),
-  OrderedQuantity: z.string().optional(),
-  Price: z.number().optional(),
-  Project: z.string().optional(),
-  ReservedQuantity: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  StockPointCode: z.string().optional(),
-  StockPointId: z.string().optional(),
-  Total: z.number().optional(),
-  Unit: z.string().optional(),
-  VAT: z.number().optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxOrderV2 = z.object({
-  "@url": z.string().optional(),
-  "@urlTaxReductionList": z.string().optional(),
-  Address1: z.string().optional(),
-  Address2: z.string().optional(),
-  AdministrationFee: z.number().optional(),
-  AdministrationFeeVAT: z.number().optional(),
-  BasisTaxReduction: z.number().optional(),
-  Cancelled: z.boolean().optional(),
-  City: z.string().optional(),
-  Comments: z.string().optional(),
-  ContributionPercent: z.number().optional(),
-  ContributionValue: z.number().optional(),
-  CopyRemarks: z.boolean().optional(),
-  CostCenter: z.string().optional(),
-  Country: z.string().optional(),
-  Currency: z.string().max(3).optional(),
-  CurrencyRate: z.number().optional(),
-  CurrencyUnit: z.number().optional(),
-  CustomerName: z.string().optional(),
-  CustomerNumber: z.string(),
-  DeliveryAddress1: z.string().optional(),
-  DeliveryAddress2: z.string().optional(),
-  DeliveryCity: z.string().optional(),
-  DeliveryCountry: z.string().optional(),
-  DeliveryDate: z.iso.date().optional(),
-  DeliveryName: z.string().optional(),
-  DeliveryState: z.enum(["registration", "reservation", "delivery"]).optional(),
-  DeliveryZipCode: z.string().optional(),
-  DocumentNumber: z.string().optional(),
-  EmailInformation: zFortnoxOrderV2EmailInformation.optional(),
-  ExternalInvoiceReference1: z.string().optional(),
-  ExternalInvoiceReference2: z.string().optional(),
-  Freight: z.number().optional(),
-  FreightVAT: z.number().optional(),
-  Gross: z.number().optional(),
-  HouseWork: z.boolean().optional(),
-  InvoiceReference: z.string().optional(),
-  Labels: z.array(zFortnoxOrderV2Label).optional(),
-  Language: z.string().optional(),
-  Net: z.number().optional(),
-  NotCompleted: z.boolean().optional(),
-  OfferReference: z.string().optional(),
-  OrderDate: z.iso.date().optional(),
-  OrderRows: z.array(zFortnoxOrderV2OrderRow).optional(),
-  OrderType: z.string().optional(),
-  OrganisationNumber: z.string().optional(),
-  OurReference: z.string().max(50).optional(),
-  OutboundDate: z.iso.date().optional(),
-  Phone1: z.string().optional(),
-  Phone2: z.string().optional(),
-  PriceList: z.string().optional(),
-  PrintTemplate: z.string().optional(),
-  Project: z.string().optional(),
-  Remarks: z.string().max(1024).optional(),
-  RoundOff: z.number().optional(),
-  Sent: z.boolean().optional(),
-  StockPointCode: z.string().optional(),
-  StockPointId: z.string().optional(),
-  TaxReduction: z.number().optional(),
-  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
-  TermsOfDelivery: z.string().optional(),
-  TermsOfPayment: z.string().optional(),
-  TimeBasisReference: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Total: z.number().optional(),
-  TotalToPay: z.number().optional(),
-  TotalVAT: z.number().optional(),
-  VATIncluded: z.boolean().optional(),
-  WarehouseReady: z.boolean().optional(),
-  WayOfDelivery: z.string().optional(),
-  YourOrderNumber: z.string().max(75).optional(),
-  YourReference: z.string().max(50).optional(),
-  ZipCode: z.string().optional(),
-});
-
-export const zFortnoxOrderV2Wrap = z.object({
-  Order: zFortnoxOrderV2,
-});
-
-export const zFortnoxOrderEmailInformation = z.object({
-  EmailAddressBCC: z.string().optional(),
-  EmailAddressCC: z.string().optional(),
-  EmailAddressFrom: z.string().optional(),
-  EmailAddressTo: z.string().optional(),
-  EmailBody: z.string().optional(),
-  EmailSubject: z.string().optional(),
-});
-
-export const zFortnoxOrderLabel = z.object({
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxOrderOrderRow = z.object({
-  AccountNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ArticleNumber: z.string().optional(),
-  ContributionPercent: z.string().optional(),
-  ContributionValue: z.string().optional(),
-  CostCenter: z.string().optional(),
-  DeliveredQuantity: z.string().optional(),
-  Description: z.string().optional(),
-  Discount: z.number().optional(),
-  DiscountType: z.enum(["AMOUNT", "PERCENT"]).optional(),
-  HouseWork: z.boolean().optional(),
-  HouseWorkHoursToReport: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  HouseWorkType: z
-    .enum([
-      "CONSTRUCTION",
-      "ELECTRICITY",
-      "GLASSMETALWORK",
-      "GROUNDDRAINAGEWORK",
-      "MASONRY",
-      "PAINTINGWALLPAPERING",
-      "MOVINGSERVICES",
-      "ITSERVICES",
-      "CLEANING",
-      "TEXTILECLOTHING",
-      "SNOWPLOWING",
-      "GARDENING",
-      "BABYSITTING",
-      "OTHERCARE",
-      "OTHERCOSTS",
-    ])
-    .optional(),
-  OrderedQuantity: z.string().optional(),
-  Price: z.number().optional(),
-  Project: z.string().optional(),
-  ReservedQuantity: z.string().optional(),
-  RowId: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  StockPointCode: z.string().optional(),
-  StockPointId: z.string().optional(),
-  Total: z.number().optional(),
-  Unit: z.string().optional(),
-  VAT: z.number().optional(),
-  VATCode: z.string().optional(),
-});
-
-export const zFortnoxOrder = z.object({
-  "@url": z.string().optional(),
-  "@urlTaxReductionList": z.string().optional(),
-  Address1: z.string().optional(),
-  Address2: z.string().optional(),
-  AdministrationFee: z.number().optional(),
-  AdministrationFeeVAT: z.number().optional(),
-  BasisTaxReduction: z.number().optional(),
-  Cancelled: z.boolean().optional(),
-  City: z.string().optional(),
-  Comments: z.string().optional(),
-  ContributionPercent: z.number().optional(),
-  ContributionValue: z.number().optional(),
-  CopyRemarks: z.boolean().optional(),
-  CostCenter: z.string().optional(),
-  Country: z.string().optional(),
-  Currency: z.string().max(3).optional(),
-  CurrencyRate: z.number().optional(),
-  CurrencyUnit: z.number().optional(),
-  CustomerName: z.string().optional(),
-  CustomerNumber: z.string(),
-  DeliveryAddress1: z.string().optional(),
-  DeliveryAddress2: z.string().optional(),
-  DeliveryCity: z.string().optional(),
-  DeliveryCountry: z.string().optional(),
-  DeliveryDate: z.iso.date().optional(),
-  DeliveryName: z.string().optional(),
-  DeliveryState: z.enum(["registration", "reservation", "delivery"]).optional(),
-  DeliveryZipCode: z.string().optional(),
-  DocumentNumber: z.string().optional(),
-  EmailInformation: zFortnoxOrderEmailInformation.optional(),
-  ExternalInvoiceReference1: z.string().optional(),
-  ExternalInvoiceReference2: z.string().optional(),
-  Freight: z.number().optional(),
-  FreightVAT: z.number().optional(),
-  Gross: z.number().optional(),
-  HouseWork: z.boolean().optional(),
-  InvoiceReference: z.string().optional(),
-  Labels: z.array(zFortnoxOrderLabel).optional(),
-  Language: z.string().optional(),
-  Net: z.number().optional(),
-  NotCompleted: z.boolean().optional(),
-  OfferReference: z.string().optional(),
-  OrderDate: z.iso.date().optional(),
-  OrderRows: z.array(zFortnoxOrderOrderRow).optional(),
-  OrderType: z.string().optional(),
-  OrganisationNumber: z.string().optional(),
-  OurReference: z.string().max(50).optional(),
-  OutboundDate: z.iso.date().optional(),
-  Phone1: z.string().optional(),
-  Phone2: z.string().optional(),
-  PriceList: z.string().optional(),
-  PrintTemplate: z.string().optional(),
-  Project: z.string().optional(),
-  Remarks: z.string().max(1024).optional(),
-  RoundOff: z.number().optional(),
-  Sent: z.boolean().optional(),
-  StockPointCode: z.string().optional(),
-  StockPointId: z.string().optional(),
-  TaxReduction: z.number().optional(),
-  TaxReductionType: z.enum(["none", "rot", "rut", "green"]).optional(),
-  TermsOfDelivery: z.string().optional(),
-  TermsOfPayment: z.string().optional(),
-  TimeBasisReference: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Total: z.number().optional(),
-  TotalToPay: z.number().optional(),
-  TotalVAT: z.number().optional(),
-  VATIncluded: z.boolean().optional(),
-  WarehouseReady: z.boolean().optional(),
-  WayOfDelivery: z.string().optional(),
-  YourOrderNumber: z.string().max(75).optional(),
-  YourReference: z.string().max(50).optional(),
-  ZipCode: z.string().optional(),
-});
-
-export const zFortnoxOrderWrap = z.object({
-  Order: zFortnoxOrder,
-});
-
-export const zFortnoxPagedClientInfo = z.object({
-  Clients: z.array(zFortnoxClientInfo).optional(),
-  MetaInformation: zFortnoxMetaInformation.optional(),
-});
-
-export const zFortnoxPausePayload = z.object({
-  PausedUntilDate: z.iso.date(),
-});
-
-export const zFortnoxPausePayloadWrap = z.object({
-  NoxFinansInvoice: zFortnoxPausePayload,
-});
-
-export const zFortnoxPredefinedAccount = z.object({
-  "@url": z.string().optional(),
-  Account: z.int().gte(1000).lte(9999),
-  Name: z.string().optional(),
-});
-
-export const zFortnoxPredefinedAccountList = z.object({
-  PreDefinedAccounts: z.array(zFortnoxPredefinedAccount),
-});
-
-export const zFortnoxPredefinedAccountWrap = z.object({
-  PreDefinedAccount: zFortnoxPredefinedAccount,
-});
-
-export const zFortnoxPredefinedVoucherSeries = z.object({
-  "@url": z.string().optional(),
-  Name: z.string().optional(),
-  VoucherSeries: z.string().max(1),
-});
-
-export const zFortnoxPredefinedVoucherSeriesList = z.object({
-  PreDefinedVoucherSeriesCollection: z.array(zFortnoxPredefinedVoucherSeries),
-});
-
-export const zFortnoxPredefinedVoucherSeriesWrap = z.object({
-  PreDefinedVoucherSeries: zFortnoxPredefinedVoucherSeries,
-});
-
-export const zFortnoxPrice = z.object({
-  "@url": z.string().optional(),
-  ArticleNumber: z.string(),
-  Date: z.iso.datetime().optional(),
-  FromQuantity: z.number().optional(),
-  Percent: z.number().optional(),
-  Price: z.number().optional(),
-  PriceList: z.string(),
-});
-
-export const zFortnoxPriceList = z.object({
-  "@url": z.string().optional(),
-  Code: z.string().min(1).max(100),
-  Comments: z.string().optional(),
-  Description: z.string().min(1).max(50),
-  PreSelected: z.boolean().optional(),
-});
-
-export const zFortnoxPriceListItem = z.object({
-  "@url": z.string().optional(),
-  ArticleNumber: z.string(),
-  FromQuantity: z.number().optional(),
-  Price: z.number().optional(),
-  PriceList: z.string(),
-});
-
-export const zFortnoxPriceListItemList = z.object({
-  Prices: z.array(zFortnoxPriceListItem),
-});
-
-export const zFortnoxPriceListList = z.object({
-  PriceLists: z.array(zFortnoxPriceList),
-});
-
-export const zFortnoxPriceListWrap = z.object({
-  PriceList: zFortnoxPriceList,
-});
-
-export const zFortnoxPriceWrap = z.object({
-  Price: zFortnoxPrice,
-});
-
-export const zFortnoxPrintTemplate = z.object({
-  Name: z.string().min(1).max(25).optional(),
-  Template: z.string(),
-});
-
-export const zFortnoxPrintTemplateList = z.object({
-  PrintTemplates: z.array(zFortnoxPrintTemplate),
-});
-
-export const zFortnoxProject = z.object({
-  "@url": z.string().optional(),
-  Comments: z.string().max(512).optional(),
-  ContactPerson: z.string().max(50).optional(),
-  Description: z.string().min(1).max(50),
-  EndDate: z.iso.date().optional(),
-  ProjectLeader: z.string().max(50).optional(),
-  ProjectNumber: z.string().max(20).optional(),
-  StartDate: z.iso.date().optional(),
-  Status: z.enum(["NOTSTARTED", "ONGOING", "COMPLETED"]).optional(),
-});
-
-export const zFortnoxProjectListItem = z.object({
-  "@url": z.string().optional(),
-  Description: z.string().min(1).max(50),
-  EndDate: z.iso.date().optional(),
-  ProjectLeader: z.string().max(50).optional(),
-  ProjectNumber: z.string().max(20).optional(),
-  StartDate: z.iso.date().optional(),
-  Status: z.enum(["NOTSTARTED", "ONGOING", "COMPLETED"]).optional(),
-});
-
-export const zFortnoxProjectListItemList = z.object({
-  Projects: z.array(zFortnoxProjectListItem),
-});
-
-export const zFortnoxProjectWrap = z.object({
-  Project: zFortnoxProject,
-});
-
-export const zFortnoxReportPaymentPayload = z.object({
-  BookkeepPaymentInFortnox: z.boolean(),
-  ClientTakesFees: z.boolean(),
-  PaymentAmount: z.number(),
-  PaymentMethodAccount: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-  PaymentMethodCode: z.string(),
-  ReportToFinance: z.boolean(),
-});
-
-export const zFortnoxReportPaymentPayloadWrap = z.object({
-  NoxFinansInvoice: zFortnoxReportPaymentPayload,
-});
-
-export const zFortnoxSalaryTransaction = z.object({
-  Amount: z.string().optional(),
-  CostCenter: z.string().optional(),
-  Date: z.iso.date(),
-  EmployeeId: z.string(),
-  Expense: z.string().max(6).optional(),
-  Number: z.string().optional(),
-  Project: z.string().optional(),
-  SalaryCode: z.string(),
-  SalaryRow: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  TextRow: z.string().max(40).optional(),
-  Total: z.string().optional(),
-  VAT: z.string().optional(),
-});
-
-export const zFortnoxSalaryTransactionListItem = z.object({
-  "@url": z.string().optional(),
-  Amount: z.string().optional(),
-  CostCenter: z.string().optional(),
-  Date: z.iso.date(),
-  EmployeeId: z.string(),
-  Expense: z.string().max(6).optional(),
-  Number: z.string().optional(),
-  Project: z.string().optional(),
-  SalaryCode: z.string(),
-  SalaryRow: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  TextRow: z.string().max(40).optional(),
-  Total: z.string().optional(),
-  VAT: z.string().optional(),
-});
-
-export const zFortnoxSalaryTransactionListItemList = z.object({
-  SalaryTransactions: z.array(zFortnoxSalaryTransactionListItem),
-});
-
-export const zFortnoxSalaryTransactionWrap = z.object({
-  SalaryTransaction: zFortnoxSalaryTransaction,
-});
-
-export const zFortnoxScheduleTime = z.object({
-  Date: z.iso.date().optional(),
-  EmployeeId: z.string().optional(),
-  Hours: z.string().optional(),
-  IWH1: z.string().optional(),
-  IWH2: z.string().optional(),
-  IWH3: z.string().optional(),
-  IWH4: z.string().optional(),
-  IWH5: z.string().optional(),
-  ScheduleId: z.string().optional(),
-});
-
-export const zFortnoxScheduleTimeWrap = z.object({
-  ScheduleTime: zFortnoxScheduleTime,
-});
-
-export const zFortnoxScrap = z.object({
-  Comment: z.string().optional(),
-  Date: z.string().optional(),
-  Percentage: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxScrapWrap = z.object({
-  Asset: zFortnoxScrap,
-});
-
-export const zFortnoxSell = z.object({
-  Comment: z.string().optional(),
-  Date: z.string().optional(),
-  Percentage: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Price: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxSellWrap = z.object({
-  Asset: zFortnoxSell,
-});
-
-export const zFortnoxSupplier = z.object({
-  "@url": z.string().optional(),
-  Active: z.boolean().optional(),
-  Address1: z.string().optional(),
-  Address2: z.string().optional(),
-  BG: z.string().optional(),
-  BIC: z.string().optional(),
-  Bank: z.string().optional(),
-  BankAccountNumber: z.string().optional(),
-  BranchCode: z.string().optional(),
-  City: z.string().max(1024).optional(),
-  ClearingNumber: z.string().optional(),
-  Comments: z.string().max(1024).optional(),
-  CostCenter: z.string().optional(),
-  Country: z.string().optional(),
-  CountryCode: z.string().max(2).optional(),
-  Currency: z.string().max(3).optional(),
-  DisablePaymentFile: z.boolean().optional(),
-  Email: z.string().optional(),
-  Fax: z.string().optional(),
-  IBAN: z.string().optional(),
-  Name: z.string().min(1).max(1024),
-  OrganisationNumber: z.string().optional(),
-  OurCustomerNumber: z.string().optional(),
-  OurReference: z.string().optional(),
-  PG: z.string().optional(),
-  Phone1: z.string().max(1024).optional(),
-  Phone2: z.string().max(1024).optional(),
-  PreDefinedAccount: z.string().length(4).optional(),
-  Project: z.string().optional(),
-  SupplierNumber: z.string().optional(),
-  TermsOfPayment: z.string().optional(),
-  VATNumber: z.string().optional(),
-  VATType: z.string().optional(),
-  VisitingAddress: z.string().optional(),
-  VisitingCity: z.string().optional(),
-  VisitingCountry: z.string().optional(),
-  VisitingCountryCode: z.string().optional(),
-  VisitingZipCode: z.string().optional(),
-  WWW: z.string().optional(),
-  WorkPlace: z.string().optional(),
-  YourReference: z.string().optional(),
-  ZipCode: z.string().optional(),
-});
-
-export const zFortnoxSupplierInvoiceAccrualListItem = z.object({
-  "@url": z.string().optional(),
-  Description: z.string().optional(),
-  Period: z.enum([
-    "MONTHLY",
-    "BIMONTHLY",
-    "QUARTERLY",
-    "SEMIANNUALLY",
-    "ANNUALLY",
-    "1_MONTHS",
-    "2_MONTHS",
-    "3_MONTHS",
-    "6_MONTHS",
-    "12_MONTHS",
-  ]),
-  SupplierInvoiceNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxSupplierInvoiceAccrualListItemList = z.object({
-  SupplierInvoiceAccruals: z.array(zFortnoxSupplierInvoiceAccrualListItem),
-});
-
-export const zFortnoxSupplierInvoiceAccrualSupplierInvoiceAccrualRows =
-  z.object({
-    Account: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .optional(),
-    CostCenter: z.string().optional(),
-    Credit: z.number().optional(),
-    Debit: z.number().optional(),
-    Project: z.string().optional(),
-    TransactionInformation: z.string().optional(),
-  });
-
-export const zFortnoxSupplierInvoiceAccrual = z.object({
-  "@url": z.string().optional(),
-  AccrualAccount: z.int().gte(1000).lte(9999),
-  CostAccount: z.int().gte(1000).lte(9999),
-  Description: z.string().optional(),
-  EndDate: z.iso.date(),
-  Period: z.enum([
-    "MONTHLY",
-    "BIMONTHLY",
-    "QUARTERLY",
-    "SEMIANNUALLY",
-    "ANNUALLY",
-    "1_MONTHS",
-    "2_MONTHS",
-    "3_MONTHS",
-    "6_MONTHS",
-    "12_MONTHS",
-  ]),
-  StartDate: z.iso.date(),
-  SupplierInvoiceAccrualRows: z
-    .array(zFortnoxSupplierInvoiceAccrualSupplierInvoiceAccrualRows)
-    .min(2)
-    .max(2147483647),
-  SupplierInvoiceNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-  Times: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-  Total: z.number(),
-  VATIncluded: z.boolean().optional(),
-});
-
-export const zFortnoxSupplierInvoiceAccrualWrap = z.object({
-  SupplierInvoiceAccrual: zFortnoxSupplierInvoiceAccrual,
-});
-
-export const zFortnoxSupplierInvoiceExternalUrlConnection = z.object({
-  ExternalURLConnection: z.string().optional(),
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  SupplierInvoiceNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Url: z.string().optional(),
-});
-
-export const zFortnoxSupplierInvoiceExternalUrlConnectionUpdate = z.object({
-  ExternalURLConnection: z.string().optional(),
-  SupplierInvoiceNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxSupplierInvoiceExternalUrlConnectionSingle = z.object({
-  SupplierInvoiceExternalURLConnection:
-    zFortnoxSupplierInvoiceExternalUrlConnection.optional(),
-});
-
-export const zFortnoxSupplierInvoiceFileConnection = z.object({
-  "@url": z.string().optional(),
-  FileId: z.string().optional(),
-  Name: z.string().optional(),
-  SupplierInvoiceNumber: z.string().optional(),
-  SupplierName: z.string().optional(),
-});
-
-export const zFortnoxSupplierInvoiceFileConnectionList = z.object({
-  SupplierInvoiceFileConnections: z.array(
-    zFortnoxSupplierInvoiceFileConnection,
-  ),
-});
-
-export const zFortnoxSupplierInvoiceFileConnectionWrap = z.object({
-  SupplierInvoiceFileConnection: zFortnoxSupplierInvoiceFileConnection,
-});
-
-export const zFortnoxSupplierInvoiceListItemVoucher = z.object({
-  Number: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ReferenceType: z.string().optional(),
-  Series: z.string().optional(),
-  Year: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxSupplierInvoiceListItem = z.object({
-  "@url": z.string().optional(),
-  AuthorizerName: z.string().optional(),
-  Balance: z.string().optional(),
-  Booked: z.boolean().optional(),
-  Cancel: z.boolean().optional(),
-  CostCenter: z.string().optional(),
-  Credit: z.boolean().optional(),
-  Currency: z.string().optional(),
-  CurrencyRate: z.string().optional(),
-  CurrencyUnit: z.number().optional(),
-  DueDate: z.iso.date().optional(),
-  ExternalInvoiceNumber: z.string().optional(),
-  ExternalInvoiceSeries: z.string().optional(),
-  FinalPayDate: z.iso.date().optional(),
-  GivenNumber: z.string().optional(),
-  InvoiceDate: z.iso.date().optional(),
-  InvoiceNumber: z.string().optional(),
-  Project: z.string().optional(),
-  SupplierName: z.string().optional(),
-  SupplierNumber: z.string(),
-  Total: z.string().optional(),
-  Vouchers: z.array(zFortnoxSupplierInvoiceListItemVoucher).optional(),
-});
-
-export const zFortnoxSupplierInvoiceListItemWrap = z.object({
-  SupplierInvoices: z.array(zFortnoxSupplierInvoiceListItem),
-});
-
-export const zFortnoxSupplierInvoicePaymentListItem = z.object({
+export const zFortnoxLfSupplierInvoicePaymentListItem = z.object({
   "@url": z.string().optional(),
   Amount: z.number().optional(),
+  AmountCurrency: z.number().optional(),
   Booked: z.boolean().optional(),
   Currency: z.string().length(3).optional(),
   CurrencyRate: z.number().optional(),
   CurrencyUnit: z.number().optional(),
+  Information: z.string().optional(),
+  InvoiceDueDate: z.iso.date().optional(),
   InvoiceNumber: z.string(),
+  InvoiceOCR: z.string().optional(),
+  InvoiceSupplierName: z.string().optional(),
+  InvoiceSupplierNumber: z.string().optional(),
+  InvoiceTotal: z.number().optional(),
+  ModeOfPayment: z.string().optional(),
   Number: z
     .int()
     .min(-2147483648, {
@@ -7784,24 +11232,35 @@ export const zFortnoxSupplierInvoicePaymentListItem = z.object({
     .optional(),
   PaymentDate: z.iso.date().optional(),
   Source: z.enum(["manual", "direct"]).optional(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VoucherSeries: z.string().optional(),
+  VoucherYear: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
   WriteOffExist: z.boolean().optional(),
+  WriteOffs: z.array(zFortnoxPaymentWriteOffSingleItem).optional(),
 });
 
-export const zFortnoxSupplierInvoicePaymentListItemList = z.object({
-  SupplierInvoicePayments: z.array(zFortnoxSupplierInvoicePaymentListItem),
+export const zFortnoxLfSupplierInvoicePaymentListItemWrap = z.object({
+  MetaInformation: zFortnoxMetaInformation,
+  SupplierInvoicePayments: z.array(zFortnoxLfSupplierInvoicePaymentListItem),
 });
 
-export const zFortnoxSupplierInvoicePaymentWriteOff = z.object({
-  AccountNumber: z.int().gte(1000).lte(9999).optional(),
-  Amount: z.number().optional(),
-  CostCenter: z.string().optional(),
-  Currency: z.string().length(3).optional(),
-  Description: z.string().optional(),
-  Project: z.string().optional(),
-  TransactionInformation: z.string().optional(),
-});
-
-export const zFortnoxSupplierInvoicePayment = z.object({
+export const zFortnoxLfSupplierInvoicePaymentSingleItem = z.object({
   "@url": z.string().optional(),
   Amount: z.number().optional(),
   AmountCurrency: z.number().optional(),
@@ -7847,127 +11306,50 @@ export const zFortnoxSupplierInvoicePayment = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
-  WriteOffs: z.array(zFortnoxSupplierInvoicePaymentWriteOff).optional(),
+  WriteOffs: z.array(zFortnoxPaymentWriteOffSingleItem).optional(),
 });
 
-export const zFortnoxSupplierInvoicePaymentWrap = z.object({
-  SupplierInvoicePayment: zFortnoxSupplierInvoicePayment,
+export const zFortnoxLfSupplierInvoicePaymentSingleItemWrap = z.object({
+  SupplierInvoicePayment: zFortnoxLfSupplierInvoicePaymentSingleItem,
 });
 
-export const zFortnoxSupplierInvoiceSupplierInvoiceRow = z.object({
-  Account: z.int().gte(1000).lte(9999).optional(),
-  AccountDescription: z.string().optional(),
-  ArticleNumber: z.string().optional(),
-  Code: z
-    .enum([
-      "TOT",
-      "VAT",
-      "FRT",
-      "AFE",
-      "ROV",
-      "CND",
-      "CNC",
-      "PRD",
-      "PRC",
-      "SRD",
-      "SRC",
-      "PRE",
-      "GWB",
-      "ACC",
-    ])
-    .optional(),
+export const zFortnoxPaymentWriteOffSinglePayloadItem = z.object({
+  AccountNumber: z.int().gte(1000).lte(9999).optional(),
+  Amount: z.number().optional(),
   CostCenter: z.string().optional(),
-  Credit: z.number().optional(),
-  CreditCurrency: z.number().optional(),
-  Debit: z.number().optional(),
-  DebitCurrency: z.number().optional(),
-  ItemDescription: z.string().optional(),
-  Price: z.number().optional(),
+  Currency: z.string().length(3).optional(),
+  Description: z.string().optional(),
   Project: z.string().optional(),
-  Quantity: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  StockLocationCode: z.string().optional(),
-  StockPointCode: z.string().optional(),
-  Total: z.number().optional(),
-  TransactionInformation: z.string().max(100).optional(),
-  Unit: z.string().optional(),
+  TransactionInformation: z.string().optional(),
 });
 
-export const zFortnoxSupplierInvoiceVoucher = z.object({
-  Number: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  ReferenceType: z.string().optional(),
-  Series: z.string().optional(),
-  Year: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxSupplierInvoice = z.object({
-  "@url": z.string().optional(),
-  AccountingMethod: z.enum(["ACCRUAL", "CASH"]).optional(),
-  AdministrationFee: z.string().optional(),
-  Balance: z.string().optional(),
+export const zFortnoxKfInvoicePaymentSinglePayloadItem = z.object({
+  Amount: z.number().optional(),
+  AmountCurrency: z.number().optional(),
   Booked: z.boolean().optional(),
-  Cancelled: z.boolean().optional(),
-  Comments: z.string().max(1000).optional(),
-  CostCenter: z.string().optional(),
-  Credit: z.boolean().optional(),
-  CreditReference: z
+  Currency: z.string().length(3).optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z.number().optional(),
+  ExternalInvoiceReference1: z.string().optional(),
+  ExternalInvoiceReference2: z.string().optional(),
+  InvoiceCustomerName: z.string().optional(),
+  InvoiceCustomerNumber: z.string().optional(),
+  InvoiceDueDate: z.iso.date().optional(),
+  InvoiceNumber: z
     .int()
     .min(-2147483648, {
       error: "Invalid value: Expected int32 to be >= -2147483648",
     })
     .max(2147483647, {
       error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Currency: z.string().optional(),
-  CurrencyRate: z.string().optional(),
-  CurrencyUnit: z.number().optional(),
-  DisablePaymentFile: z.boolean().optional(),
-  DueDate: z.iso.date().optional(),
-  ExternalInvoiceNumber: z.string().optional(),
-  ExternalInvoiceSeries: z.string().optional(),
-  FinalPayDate: z.iso.date().optional(),
-  Freight: z.string().optional(),
-  GivenNumber: z.string().optional(),
-  InvoiceDate: z.iso.date().optional(),
-  InvoiceNumber: z.string().max(64).optional(),
-  OCR: z.string().optional(),
-  OurReference: z.string().max(50).optional(),
-  PaymentPending: z.boolean().optional(),
-  Project: z.string().optional(),
-  RoundOffValue: z.string().optional(),
-  SalesType: z.enum(["STOCK", "SERVICE"]).optional(),
-  SupplierInvoiceRows: z
-    .array(zFortnoxSupplierInvoiceSupplierInvoiceRow)
-    .optional(),
-  SupplierName: z.string().optional(),
-  SupplierNumber: z.string(),
-  Total: z.string().optional(),
-  VAT: z.string().optional(),
-  VATType: z.enum(["NORMAL", "EUINTERNAL", "REVERSE"]).optional(),
+    }),
+  InvoiceOCR: z.string().optional(),
+  InvoiceTotal: z.string().optional(),
+  ModeOfPayment: z.string().optional(),
+  ModeOfPaymentAccount: z.int().gte(1000).lte(9999).optional(),
+  Number: z.string().optional(),
+  PaymentDate: z.iso.date().optional(),
+  Source: z.string().optional(),
   VoucherNumber: z
     .int()
     .min(-2147483648, {
@@ -7987,52 +11369,222 @@ export const zFortnoxSupplierInvoice = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
-  Vouchers: z.array(zFortnoxSupplierInvoiceVoucher).optional(),
-  YourReference: z.string().max(50).optional(),
+  WriteOffs: z.array(zFortnoxPaymentWriteOffSinglePayloadItem).optional(),
 });
 
-export const zFortnoxSupplierInvoiceWrap = z.object({
-  SupplierInvoice: zFortnoxSupplierInvoice,
+export const zFortnoxKfInvoicePaymentSinglePayloadItemWrap = z.object({
+  InvoicePayment: zFortnoxKfInvoicePaymentSinglePayloadItem,
 });
 
-export const zFortnoxSupplierListItem = z.object({
+export const zFortnoxLfSupplierInvoicePaymentSinglePayloadItem = z.object({
+  Amount: z.number().optional(),
+  AmountCurrency: z.number().optional(),
+  Booked: z.boolean().optional(),
+  Currency: z.string().length(3).optional(),
+  CurrencyRate: z.number().optional(),
+  CurrencyUnit: z.number().optional(),
+  Information: z.string().optional(),
+  InvoiceDueDate: z.iso.date().optional(),
+  InvoiceNumber: z.string(),
+  InvoiceOCR: z.string().optional(),
+  InvoiceSupplierName: z.string().optional(),
+  InvoiceSupplierNumber: z.string().optional(),
+  InvoiceTotal: z.string().optional(),
+  ModeOfPayment: z.string().optional(),
+  Number: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  PaymentDate: z.iso.date().optional(),
+  Source: z.enum(["manual", "direct"]).optional(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VoucherSeries: z.string().optional(),
+  VoucherYear: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  WriteOffs: z.array(zFortnoxPaymentWriteOffSinglePayloadItem).optional(),
+});
+
+export const zFortnoxLfSupplierInvoicePaymentSinglePayloadItemWrap = z.object({
+  SupplierInvoicePayment: zFortnoxLfSupplierInvoicePaymentSinglePayloadItem,
+});
+
+export const zFortnoxPreDefinedAccountSingleItem = z.object({
   "@url": z.string().optional(),
-  Active: z.boolean().optional(),
-  Address1: z.string().optional(),
-  Address2: z.string().optional(),
-  BG: z.string().optional(),
-  BIC: z.string().optional(),
-  BankAccountNumber: z.string().optional(),
-  City: z.string().max(1024).optional(),
-  CostCenter: z.string().optional(),
-  CountryCode: z.string().max(2).optional(),
-  Currency: z.string().max(3).optional(),
-  DisablePaymentFile: z.boolean().optional(),
-  Email: z.string().optional(),
-  IBAN: z.string().optional(),
-  Name: z.string().min(1).max(1024),
-  OrganisationNumber: z.string().optional(),
-  PG: z.string().optional(),
-  Phone: z.string().optional(),
-  PreDefinedAccount: z.string().length(4).optional(),
-  Project: z.string().optional(),
-  SupplierNumber: z.string().optional(),
-  TermsOfPayment: z.string().optional(),
-  ZipCode: z.string().optional(),
+  Account: z.int().gte(1000).lte(9999),
+  Name: z.string().optional(),
 });
 
-export const zFortnoxSupplierListItemList = z.object({
-  Suppliers: z.array(zFortnoxSupplierListItem),
+export const zFortnoxPreDefinedAccountListItemWrap = z.object({
+  PreDefinedAccounts: z.array(zFortnoxPreDefinedAccountSingleItem),
+  MetaInformation: zFortnoxMetaInformation,
 });
 
-export const zFortnoxSupplierWrap = z.object({
-  Supplier: zFortnoxSupplier,
+export const zFortnoxPreDefinedAccountSingleItemWrap = z.object({
+  PreDefinedAccount: zFortnoxPreDefinedAccountSingleItem,
 });
 
-export const zFortnoxTaxReductionListItem = z.object({
+export const zFortnoxPreDefinedAccountSinglePayloadItem = z.object({
+  Account: z.int().gte(1000).lte(9999),
+  Name: z.string().optional(),
+});
+
+export const zFortnoxPreDefinedAccountSinglePayloadItemWrap = z.object({
+  PreDefinedAccount: zFortnoxPreDefinedAccountSinglePayloadItem,
+});
+
+export const zFortnoxPriceListItem = z.object({
   "@url": z.string().optional(),
-  ApprovedAmount: z.number().optional(),
-  CustomerName: z.string().min(1).max(2147483647),
+  ArticleNumber: z.string(),
+  Date: z.string().optional(),
+  FromQuantity: z.number().optional(),
+  Percent: z.number().optional(),
+  Price: z.number().optional(),
+  PriceList: z.string(),
+});
+
+export const zFortnoxPriceListItemWrap = z.object({
+  MetaInformation: zFortnoxMetaInformation,
+  Prices: z.array(zFortnoxPriceListItem),
+});
+
+export const zFortnoxPriceListSingleItem = z.object({
+  "@url": z.string().optional(),
+  Code: z.string().min(1).max(100),
+  Comments: z.string().optional(),
+  Description: z.string().min(1).max(50),
+  PreSelected: z.boolean().optional(),
+});
+
+export const zFortnoxPriceListListItemWrap = z.object({
+  PriceLists: z.array(zFortnoxPriceListSingleItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxPriceListSingleItemWrap = z.object({
+  PriceList: zFortnoxPriceListSingleItem,
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxPriceListSinglePayloadItem = z.object({
+  Code: z.string().min(1).max(100),
+  Comments: z.string().optional(),
+  Description: z.string().min(1).max(50),
+  PreSelected: z.boolean().optional(),
+});
+
+export const zFortnoxPriceListSinglePayloadItemWrap = z.object({
+  PriceList: zFortnoxPriceListSinglePayloadItem,
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxPriceSingleItem = z.object({
+  "@url": z.string().optional(),
+  ArticleNumber: z.string(),
+  Date: z.iso.datetime().optional(),
+  FromQuantity: z.number().optional(),
+  Percent: z.number().optional(),
+  Price: z.number().optional(),
+  PriceList: z.string(),
+});
+
+export const zFortnoxPriceSingleItemWrap = z.object({
+  Price: zFortnoxPriceSingleItem,
+});
+
+export const zFortnoxPriceSinglePayloadItem = z.object({
+  ArticleNumber: z.string(),
+  Date: z.iso.datetime().optional(),
+  FromQuantity: z.number().optional(),
+  Percent: z.number().optional(),
+  Price: z.number().optional(),
+  PriceList: z.string(),
+});
+
+export const zFortnoxPriceSinglePayloadItemWrap = z.object({
+  Price: zFortnoxPriceSinglePayloadItem,
+});
+
+export const zFortnoxPrintTemplateSingleItem = z.object({
+  Name: z.string().min(1).max(25).optional(),
+  Template: z.string(),
+});
+
+export const zFortnoxPrintTemplateListItemWrap = z.object({
+  PrintTemplates: z.array(zFortnoxPrintTemplateSingleItem),
+  MetaInformation: zFortnoxMetaInformation,
+});
+
+export const zFortnoxProjectProjectListItem = z.object({
+  "@url": z.string().optional(),
+  Comments: z.string().optional(),
+  ContactPerson: z.string().optional(),
+  Description: z.string().min(1).max(50),
+  EndDate: z.iso.date().optional(),
+  ProjectLeader: z.string().max(50).optional(),
+  ProjectNumber: z.string().max(20).optional(),
+  StartDate: z.iso.date().optional(),
+  Status: z.enum(["NOTSTARTED", "ONGOING", "COMPLETED"]).optional(),
+});
+
+export const zFortnoxProjectProjectListItemWrap = z.object({
+  MetaInformation: zFortnoxMetaInformation,
+  Projects: z.array(zFortnoxProjectProjectListItem),
+});
+
+export const zFortnoxProjectProjectSingleItem = z.object({
+  "@url": z.string().optional(),
+  Comments: z.string().max(512).optional(),
+  ContactPerson: z.string().max(50).optional(),
+  Description: z.string().min(1).max(50),
+  EndDate: z.iso.date().optional(),
+  ProjectLeader: z.string().max(50).optional(),
+  ProjectNumber: z.string().max(20).optional(),
+  StartDate: z.iso.date().optional(),
+  Status: z.enum(["NOTSTARTED", "ONGOING", "COMPLETED"]).optional(),
+});
+
+export const zFortnoxProjectProjectSingleItemWrap = z.object({
+  Project: zFortnoxProjectProjectSingleItem,
+});
+
+export const zFortnoxProjectProjectSinglePayloadItem = z.object({
+  Comments: z.string().max(512).optional(),
+  ContactPerson: z.string().max(50).optional(),
+  Description: z.string().min(1).max(50),
+  EndDate: z.iso.date().optional(),
+  ProjectLeader: z.string().max(50).optional(),
+  ProjectNumber: z.string().max(20).optional(),
+  StartDate: z.iso.date().optional(),
+  Status: z.enum(["NOTSTARTED", "ONGOING", "COMPLETED"]).optional(),
+});
+
+export const zFortnoxProjectProjectSinglePayloadItemWrap = z.object({
+  Project: zFortnoxProjectProjectSinglePayloadItem,
+});
+
+export const zFortnoxSinvoiceExternalUrlConnectionSingleItem = z.object({
+  "@url": z.string().optional(),
+  ExternalURLConnection: z.string().optional(),
   Id: z
     .int()
     .min(-2147483648, {
@@ -8042,23 +11594,37 @@ export const zFortnoxTaxReductionListItem = z.object({
       error: "Invalid value: Expected int32 to be <= 2147483647",
     })
     .optional(),
-  ReferenceDocumentType: z.enum(["OFFER", "ORDER", "INVOICE"]),
-  ReferenceNumber: z
+  SupplierInvoiceNumber: z
     .int()
     .min(-2147483648, {
       error: "Invalid value: Expected int32 to be >= -2147483648",
     })
     .max(2147483647, {
       error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-  SocialSecurityNumber: z.string().min(10).max(13),
+    })
+    .optional(),
+  Url: z.string().optional(),
 });
 
-export const zFortnoxTaxReductionListItemList = z.object({
-  TaxReductions: z.array(zFortnoxTaxReductionListItem),
+export const zFortnoxSinvoiceExternalUrlConnectionSingleItemWrap = z.object({
+  SupplierInvoiceExternalURLConnection:
+    zFortnoxSinvoiceExternalUrlConnectionSingleItem,
 });
 
-export const zFortnoxTaxReductionTaxReductionAmount = z.object({
+export const zFortnoxSinvoiceExternalUrlConnectionSinglePayloadItem = z.object({
+  ExternalURLConnection: z.string().optional(),
+  SupplierInvoiceNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxTaxReductionAmountSingleItem = z.object({
   AskedAmount: z.number().gte(1),
   WorkType: z.enum([
     "SOLARCELLS",
@@ -8067,8 +11633,16 @@ export const zFortnoxTaxReductionTaxReductionAmount = z.object({
   ]),
 });
 
-export const zFortnoxTaxReduction = z.object({
-  "@url": z.string().optional(),
+export const zFortnoxTaxReductionAmountSinglePayloadItem = z.object({
+  AskedAmount: z.number().gte(1),
+  WorkType: z.enum([
+    "SOLARCELLS",
+    "STORAGESELFPRODUCEDELECTRICITY",
+    "CHARGINGSTATIONELECTRICVEHICLE",
+  ]),
+});
+
+export const zFortnoxTaxReductionCreatePayload = z.object({
   ApprovedAmount: z.number().optional(),
   AskedAmount: z.number().gte(1),
   BilledAmount: z.number().optional(),
@@ -8089,7 +11663,7 @@ export const zFortnoxTaxReduction = z.object({
   ResidenceAssociationOrganisationNumber: z.string().optional(),
   SocialSecurityNumber: z.string().min(10).max(13),
   TaxReductionAmounts: z
-    .array(zFortnoxTaxReductionTaxReductionAmount)
+    .array(zFortnoxTaxReductionAmountSinglePayloadItem)
     .optional(),
   VoucherNumber: z
     .int()
@@ -8112,127 +11686,228 @@ export const zFortnoxTaxReduction = z.object({
     .optional(),
 });
 
-export const zFortnoxTaxReductionWrap = z.object({
-  TaxReduction: zFortnoxTaxReduction,
+export const zFortnoxTaxReductionCreatePayloadWrap = z.object({
+  TaxReduction: zFortnoxTaxReductionCreatePayload,
 });
 
-export const zFortnoxTermsOfDelivery = z.object({
+export const zFortnoxTaxReductionListItem = z.object({
   "@url": z.string().optional(),
-  Code: z.string().min(1).max(20),
-  Description: z.string().max(200),
-  DescriptionEnglish: z.string().max(100).optional(),
+  ApprovedAmount: z.number().optional(),
+  AskedAmount: z.number().optional(),
+  BilledAmount: z.number().optional(),
+  CustomerName: z.string().min(1).max(2147483647),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  PropertyDesignation: z.string().optional(),
+  ReferenceDocumentType: z.enum(["OFFER", "ORDER", "INVOICE"]),
+  ReferenceNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    }),
+  RequestSent: z.iso.date().optional(),
+  ResidenceAssociationOrganisationNumber: z.string().optional(),
+  SocialSecurityNumber: z.string().min(10).max(13),
+  TaxReductionAmounts: z.array(zFortnoxTaxReductionAmountSingleItem).optional(),
+  TypeOfReduction: z.string().optional(),
+  VoucherNumber: z.string().optional(),
+  VoucherSeries: z.string().optional(),
+  VoucherYear: z.string().optional(),
+  WorkType: z.string().optional(),
 });
 
-export const zFortnoxTermsOfDeliveryList = z.object({
-  TermsOfDeliveries: z.array(zFortnoxTermsOfDelivery),
+export const zFortnoxTaxReductionListItemWrap = z.object({
+  MetaInformation: zFortnoxMetaInformation,
+  TaxReductions: z.array(zFortnoxTaxReductionListItem),
 });
 
-export const zFortnoxTermsOfDeliveryWrap = z.object({
-  TermsOfDelivery: zFortnoxTermsOfDelivery,
+export const zFortnoxTaxReductionSingleItem = z.object({
+  "@url": z.string().optional(),
+  ApprovedAmount: z.number().optional(),
+  AskedAmount: z.number().gte(1),
+  BilledAmount: z.number().optional(),
+  CustomerName: z.string().min(1).max(2147483647),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  PropertyDesignation: z.string().optional(),
+  ReferenceDocumentType: z.enum(["OFFER", "ORDER", "INVOICE"]),
+  ReferenceNumber: z.string(),
+  RequestSent: z.boolean().optional(),
+  ResidenceAssociationOrganisationNumber: z.string().optional(),
+  SocialSecurityNumber: z.string().min(10).max(13),
+  TaxReductionAmounts: z.array(zFortnoxTaxReductionAmountSingleItem).optional(),
+  TypeOfReduction: z.string().optional(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VoucherSeries: z.string().optional(),
+  VoucherYear: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  WorkType: z.string().optional(),
 });
 
-export const zFortnoxTermsOfPayment = z.object({
+export const zFortnoxTaxReductionSingleItemWrap = z.object({
+  TaxReduction: zFortnoxTaxReductionSingleItem,
+});
+
+export const zFortnoxTaxReductionUpdatePayload = z.object({
+  ApprovedAmount: z.number().optional(),
+  AskedAmount: z.number().gte(1),
+  BilledAmount: z.number().optional(),
+  CustomerName: z.string().min(1).max(2147483647),
+  Id: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  PropertyDesignation: z.string().optional(),
+  ReferenceDocumentType: z.enum(["OFFER", "ORDER", "INVOICE"]),
+  ReferenceNumber: z.string(),
+  RequestSent: z.boolean().optional(),
+  ResidenceAssociationOrganisationNumber: z.string().optional(),
+  SocialSecurityNumber: z.string().min(10).max(13),
+  TaxReductionAmounts: z
+    .array(zFortnoxTaxReductionAmountSinglePayloadItem)
+    .optional(),
+  VoucherNumber: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+  VoucherSeries: z.string().optional(),
+  VoucherYear: z
+    .int()
+    .min(-2147483648, {
+      error: "Invalid value: Expected int32 to be >= -2147483648",
+    })
+    .max(2147483647, {
+      error: "Invalid value: Expected int32 to be <= 2147483647",
+    })
+    .optional(),
+});
+
+export const zFortnoxTaxReductionUpdatePayloadWrap = z.object({
+  TaxReduction: zFortnoxTaxReductionUpdatePayload,
+});
+
+export const zFortnoxTermsOfPaymentListItem = z.object({
   "@url": z.string().optional(),
   Code: z.string().min(1).max(25),
   Description: z.string(),
 });
 
-export const zFortnoxTermsOfPaymentList = z.object({
-  TermsOfPayments: z.array(zFortnoxTermsOfPayment),
+export const zFortnoxTermsOfPaymentListItemWrap = z.object({
+  MetaInformation: zFortnoxMetaInformation,
+  TermsOfPayments: z.array(zFortnoxTermsOfPaymentListItem),
 });
 
-export const zFortnoxTermsOfPaymentWrap = z.object({
-  TermsOfPayment: zFortnoxTermsOfPayment,
+export const zFortnoxTermsOfPaymentSingleItem = z.object({
+  "@url": z.string().optional(),
+  Code: z.string().min(1).max(25),
+  Description: z.string(),
 });
 
-export const zFortnoxTrustedEmailSenderRejectedSender = z.object({
-  Email: z.string(),
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
+export const zFortnoxTermsOfPaymentSingleItemWrap = z.object({
+  TermsOfPayment: zFortnoxTermsOfPaymentSingleItem,
 });
 
-export const zFortnoxTrustedEmailSenderTrustedSender = z.object({
-  Email: z.string(),
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
+export const zFortnoxTermsOfPaymentSinglePayloadItem = z.object({
+  Code: z.string().min(1).max(25),
+  Description: z.string(),
 });
 
-export const zFortnoxTrustedEmailSender = z.object({
-  RejectedSenders: z.array(zFortnoxTrustedEmailSenderRejectedSender).optional(),
-  TrustedSenders: z.array(zFortnoxTrustedEmailSenderTrustedSender).optional(),
+export const zFortnoxTermsOfPaymentSinglePayloadItemWrap = z.object({
+  TermsOfPayment: zFortnoxTermsOfPaymentSinglePayloadItem,
 });
 
-export const zFortnoxTrustedEmailSenderTrustedSenderWrap = z.object({
-  TrustedSender: zFortnoxTrustedEmailSenderTrustedSender,
-});
-
-export const zFortnoxTrustedEmailSenderWrap = z.object({
-  EmailSenders: zFortnoxTrustedEmailSender,
-});
-
-export const zFortnoxUnit = z.object({
+export const zFortnoxUnitSingleItem = z.object({
   "@url": z.string().optional(),
   Code: z.string().min(1).max(20),
   CodeEnglish: z.string().max(100).optional(),
   Description: z.string().min(1).max(100),
 });
 
-export const zFortnoxUnitList = z.object({
-  Units: z.array(zFortnoxUnit),
+export const zFortnoxUnitListItemWrap = z.object({
+  Units: z.array(zFortnoxUnitSingleItem),
+  MetaInformation: zFortnoxMetaInformation,
 });
 
-export const zFortnoxUnitWrap = z.object({
-  Unit: zFortnoxUnit,
+export const zFortnoxUnitSingleItemWrap = z.object({
+  Unit: zFortnoxUnitSingleItem,
 });
 
-export const zFortnoxUpdateAsset = z.object({
-  Description: z.string().optional(),
-  Notes: z.string().optional(),
+export const zFortnoxUnitSinglePayloadItem = z.object({
+  Code: z.string().min(1).max(20),
+  CodeEnglish: z.string().max(100).optional(),
+  Description: z.string().min(1).max(100),
 });
 
-export const zFortnoxUpdateAssetUpdateWrap = z.object({
-  AssetType: zFortnoxUpdateAsset,
+export const zFortnoxUnitSinglePayloadItemWrap = z.object({
+  Unit: zFortnoxUnitSinglePayloadItem,
 });
 
-export const zFortnoxUpdateAssetWrap = z.object({
-  Asset: zFortnoxUpdateAsset,
-});
+export const zFortnoxVacationDebtBasisVacationDebtBasisEmployeeSingleItem =
+  z.object({
+    DaysEarned: z.number().optional(),
+    DaysSaved: z.number().optional(),
+    DaysUnused: z.number().optional(),
+    DebtAdvance: z.number().optional(),
+    DebtEarned: z.number().optional(),
+    DebtSaved: z.number().optional(),
+    DebtUnused: z.number().optional(),
+    EmployeeId: z.string().min(1).max(15),
+    EmployeeName: z.string().optional(),
+    TotalDebtEmployee: z.number().optional(),
+    TotalDebtEmployerContribution: z.number().optional(),
+    VariableEarned: z.number().optional(),
+    VariableUnused: z.number().optional(),
+    WageEarned: z.number().optional(),
+    WageSaved: z.number().optional(),
+    WageUnused: z.number().optional(),
+  });
 
-export const zFortnoxVacationDebtBasisEmployee = z.object({
-  DaysEarned: z.number().optional(),
-  DaysSaved: z.number().optional(),
-  DaysUnused: z.number().optional(),
-  DebtAdvance: z.number().optional(),
-  DebtEarned: z.number().optional(),
-  DebtSaved: z.number().optional(),
-  DebtUnused: z.number().optional(),
-  EmployeeId: z.string().min(1).max(15),
-  EmployeeName: z.string().optional(),
-  TotalDebtEmployee: z.number().optional(),
-  TotalDebtEmployerContribution: z.number().optional(),
-  VariableEarned: z.number().optional(),
-  VariableUnused: z.number().optional(),
-  WageEarned: z.number().optional(),
-  WageSaved: z.number().optional(),
-  WageUnused: z.number().optional(),
-});
-
-export const zFortnoxVacationDebtBasis = z.object({
-  Employees: z.array(zFortnoxVacationDebtBasisEmployee).optional(),
+export const zFortnoxLonVacationDebtBasisSingleItem = z.object({
+  Employees: z
+    .array(zFortnoxVacationDebtBasisVacationDebtBasisEmployeeSingleItem)
+    .optional(),
   LastDay: z.iso.date().optional(),
   Month: z
     .int()
@@ -8271,276 +11946,34 @@ export const zFortnoxVacationDebtBasis = z.object({
     }),
 });
 
-export const zFortnoxVacationDebtBasisWrap = z.object({
-  VacationDebtBasis: zFortnoxVacationDebtBasis,
+export const zFortnoxLonVacationDebtBasisSingleItemWrap = z.object({
+  VacationDebtBasis: zFortnoxLonVacationDebtBasisSingleItem,
 });
 
-export const zFortnoxVoucherFileConnection = z.object({
-  "@url": z.string().optional(),
-  FileId: z.string(),
-  VoucherDescription: z.string().optional(),
-  VoucherNumber: z.string(),
-  VoucherSeries: z.string(),
-  VoucherYear: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxVoucherFileConnectionList = z.object({
-  VoucherFileConnections: z.array(zFortnoxVoucherFileConnection),
-});
-
-export const zFortnoxVoucherFileConnectionWrap = z.object({
-  VoucherFileConnection: zFortnoxVoucherFileConnection,
-});
-
-export const zFortnoxVoucherListItem = z.object({
-  "@url": z.string(),
-  ApprovalState: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-  Comments: z.string(),
-  Description: z.string(),
-  ReferenceNumber: z.string(),
-  ReferenceType: z.enum([
-    "INVOICE",
-    "SUPPLIERINVOICE",
-    "INVOICEPAYMENT",
-    "SUPPLIERPAYMENT",
-    "MANUAL",
-    "CASHINVOICE",
-    "ACCRUAL",
-  ]),
-  TransactionDate: z.iso.date(),
-  VoucherNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-  VoucherSeries: z.string(),
-  Year: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-});
-
-export const zFortnoxVoucherListItemList = z.object({
-  Vouchers: z.array(zFortnoxVoucherListItem),
-});
-
-export const zFortnoxVoucherSeriesListItemApprover = z.object({
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Name: z.string().optional(),
-});
-
-export const zFortnoxVoucherSeriesListItem = z.object({
-  "@url": z.string().optional(),
-  Approver: zFortnoxVoucherSeriesListItemApprover.optional(),
-  Code: z.string().min(1).max(10),
-  Description: z.string().max(200).optional(),
-  Manual: z.boolean().optional(),
-  Year: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxVoucherSeriesListItemList = z.object({
-  VoucherSeriesCollection: z.array(zFortnoxVoucherSeriesListItem),
-});
-
-export const zFortnoxVoucherSeriesApprover = z.object({
-  Id: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Name: z.string().optional(),
-});
-
-export const zFortnoxVoucherSeries = z.object({
-  "@url": z.string().optional(),
-  Approver: zFortnoxVoucherSeriesApprover.optional(),
-  Code: z.string().min(1).max(10),
-  Description: z.string().max(200).optional(),
-  Manual: z.boolean().optional(),
-  NextVoucherNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Year: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-});
-
-export const zFortnoxVoucherSeriesWrap = z.object({
-  VoucherSeries: zFortnoxVoucherSeries,
-});
-
-export const zFortnoxVoucherVoucherRow = z.object({
-  Account: z.int().gte(1000).lte(9999),
-  CostCenter: z.string().optional(),
-  Credit: z.number().optional(),
-  Debit: z.number().optional(),
-  Description: z.string().optional(),
-  Project: z.string().optional(),
-  Quantity: z.number().optional(),
-  Removed: z.boolean().optional(),
-  TransactionInformation: z.string().max(100).optional(),
-});
-
-export const zFortnoxVoucher = z.object({
-  "@url": z.string().optional(),
-  ApprovalState: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Comments: z.string().max(1000).optional(),
-  CostCenter: z.string().optional(),
-  Description: z.string().min(1).max(200),
-  Project: z.string().optional(),
-  ReferenceNumber: z.string().optional(),
-  ReferenceType: z
-    .enum([
-      "INVOICE",
-      "SUPPLIERINVOICE",
-      "INVOICEPAYMENT",
-      "SUPPLIERPAYMENT",
-      "MANUAL",
-      "CASHINVOICE",
-      "ACCRUAL",
-    ])
-    .optional(),
-  TransactionDate: z.iso.date(),
-  VoucherNumber: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  VoucherRows: z
-    .array(zFortnoxVoucherVoucherRow)
-    .min(2)
-    .max(2147483647)
-    .optional(),
-  VoucherSeries: z.string(),
-  Year: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    }),
-});
-
-export const zFortnoxVoucherWrap = z.object({
-  Voucher: zFortnoxVoucher,
-});
-
-export const zFortnoxWayOfDelivery = z.object({
+export const zFortnoxWayOfDeliverySingleItem = z.object({
   "@url": z.string().optional(),
   Code: z.string().min(1).max(50),
   Description: z.string().max(100).optional(),
   DescriptionEnglish: z.string().max(100).optional(),
 });
 
-export const zFortnoxWayOfDeliveryList = z.object({
-  WayOfDeliveries: z.array(zFortnoxWayOfDelivery),
+export const zFortnoxWayOfDeliveryListItemWrap = z.object({
+  WayOfDeliveries: z.array(zFortnoxWayOfDeliverySingleItem),
+  MetaInformation: zFortnoxMetaInformation,
 });
 
-export const zFortnoxWayOfDeliveryWrap = z.object({
-  WayOfDelivery: zFortnoxWayOfDelivery,
+export const zFortnoxWayOfDeliverySingleItemWrap = z.object({
+  WayOfDelivery: zFortnoxWayOfDeliverySingleItem,
 });
 
-export const zFortnoxWriteDown = z.object({
-  Amount: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Comment: z.string().optional(),
-  Date: z.string().optional(),
+export const zFortnoxWayOfDeliverySinglePayloadItem = z.object({
+  Code: z.string().min(1).max(50),
+  Description: z.string().max(100).optional(),
+  DescriptionEnglish: z.string().max(100).optional(),
 });
 
-export const zFortnoxWriteDownWrap = z.object({
-  Asset: zFortnoxWriteDown,
-});
-
-export const zFortnoxWriteUp = z.object({
-  Amount: z
-    .int()
-    .min(-2147483648, {
-      error: "Invalid value: Expected int32 to be >= -2147483648",
-    })
-    .max(2147483647, {
-      error: "Invalid value: Expected int32 to be <= 2147483647",
-    })
-    .optional(),
-  Comment: z.string().optional(),
-  Date: z.string().optional(),
-});
-
-export const zFortnoxWriteUpWrap = z.object({
-  Asset: zFortnoxWriteUp,
+export const zFortnoxWayOfDeliverySinglePayloadItemWrap = z.object({
+  WayOfDelivery: zFortnoxWayOfDeliverySinglePayloadItem,
 });
 
 export const zIntegrationDeveloperIntegrationSalesResponse = z.object({
@@ -9751,7 +13184,77 @@ export const zWarehouseWebException = z.object({
   message: z.string().optional(),
 });
 
-export const zListData = z.object({
+/**
+ * Filter the results
+ */
+export const zFilter = z.string().register(z.globalRegistry, {
+  description: "Filter the results",
+});
+
+/**
+ * Set financial year
+ */
+export const zFinancialyear = z.string().register(z.globalRegistry, {
+  description: "Set financial year",
+});
+
+/**
+ * Set financial year date
+ */
+export const zFinancialyeardate = z.string().register(z.globalRegistry, {
+  description: "Set financial year date",
+});
+
+/**
+ * Set result limit
+ */
+export const zLimit = z.string().register(z.globalRegistry, {
+  description: "Set result limit",
+});
+
+/**
+ * Set Fortnox finans flag
+ */
+export const zNoxfinans = z.string().register(z.globalRegistry, {
+  description: "Set Fortnox finans flag",
+});
+
+/**
+ * Set offset for the results
+ */
+export const zOffset = z.string().register(z.globalRegistry, {
+  description: "Set offset for the results",
+});
+
+/**
+ * Set page number for paginated results
+ */
+export const zPage = z.string().register(z.globalRegistry, {
+  description: "Set page number for paginated results",
+});
+
+/**
+ * Set print template
+ */
+export const zPrinttemplate = z.string().register(z.globalRegistry, {
+  description: "Set print template",
+});
+
+/**
+ * Set field to sort the results by
+ */
+export const zSortby = z.string().register(z.globalRegistry, {
+  description: "Set field to sort the results by",
+});
+
+/**
+ * Set sort order for results (asc or desc)
+ */
+export const zSortorder = z.string().register(z.globalRegistry, {
+  description: "Set sort order for results (asc or desc)",
+});
+
+export const zAbsenceTransactionsControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -9773,22 +13276,34 @@ export const zListData = z.object({
 });
 
 /**
- * a list of absence transactions
+ * Successful list absence transactions response
  */
-export const zListResponse = zFortnoxAbsenceTransactionListItemWrap;
+export const zAbsenceTransactionsControllerDoIndexResponse =
+  zFortnoxLonAbsenceTransactionsListItemWrap;
 
-export const zCreateData = z.object({
-  body: zFortnoxAbsenceTransactionPayloadWrap.optional(),
+export const zAbsenceTransactionsControllerDoCreateData = z.object({
+  body: zFortnoxLonAbsenceTransactionsSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created absence transaction
+ * Successful create absence transaction response
  */
-export const zCreateResponse = zFortnoxAbsenceTransactionSingleItemWrap;
+export const zAbsenceTransactionsControllerDoCreateResponse =
+  zFortnoxLonAbsenceTransactionsSingleItemWrap;
 
-export const zRemoveData = z.object({
+export const zAbsenceTransactionsControllerDoDeleteData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    id: z.uuid().register(z.globalRegistry, {
+      description: "identifies the transaction",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+export const zAbsenceTransactionsControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.uuid().register(z.globalRegistry, {
@@ -9799,12 +13314,13 @@ export const zRemoveData = z.object({
 });
 
 /**
- * empty
+ * Successful show absence transaction response
  */
-export const zRemoveResponse = zFortnoxAbsenceTransactionSingleItemWrap;
+export const zAbsenceTransactionsControllerDoShowResponse =
+  zFortnoxLonAbsenceTransactionsSingleItemWrap;
 
-export const zGetData = z.object({
-  body: z.never().optional(),
+export const zAbsenceTransactionsControllerDoUpdateData = z.object({
+  body: zFortnoxLonAbsenceTransactionsSinglePayloadItemWrap.optional(),
   path: z.object({
     id: z.uuid().register(z.globalRegistry, {
       description: "identifies the transaction",
@@ -9814,88 +13330,88 @@ export const zGetData = z.object({
 });
 
 /**
- * the absence transaction
+ * Successful update absence transaction response
  */
-export const zGetResponse = zFortnoxAbsenceTransactionSingleItemWrap;
+export const zAbsenceTransactionsControllerDoUpdateResponse =
+  zFortnoxLonAbsenceTransactionsSingleItemWrap;
 
-export const zUpdateData = z.object({
-  body: zFortnoxAbsenceTransactionPayloadWrap.optional(),
-  path: z.object({
-    id: z.uuid().register(z.globalRegistry, {
-      description: "identifies the transaction",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated absence transaction
- */
-export const zUpdateResponse = zFortnoxAbsenceTransactionSingleItemWrap;
-
-export const zGet1Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    id: z.string().register(z.globalRegistry, {
-      description: "identifies the employee",
-    }),
-    Date: z.iso.date().register(z.globalRegistry, {
-      description: "of the absence transaction",
-    }),
-    Code: z
-      .enum([
-        "ASK",
-        "FPE",
-        "FRA",
-        "HAV",
-        "KOM",
-        "MIL",
-        "NAR",
-        "OS1",
-        "OS2",
-        "OS3",
-        "OS4",
-        "OS5",
-        "PAP",
-        "PEM",
-        "PER",
-        "SEM",
-        "SJK",
-        "SMB",
-        "SVE",
-        "TJL",
-        "UTB",
-        "VAB",
-      ])
-      .register(z.globalRegistry, {
-        description: "status code of the absence transaction",
+export const zAbsenceTransactionsControllerDoListByIdDateCauseCodeData =
+  z.object({
+    body: z.never().optional(),
+    path: z.object({
+      id: z.string().register(z.globalRegistry, {
+        description: "identifies the employee",
       }),
-  }),
-  query: z.never().optional(),
-});
+      Date: z.iso.date().register(z.globalRegistry, {
+        description: "of the absence transaction",
+      }),
+      Code: z
+        .enum([
+          "ASK",
+          "FPE",
+          "FRA",
+          "HAV",
+          "KOM",
+          "MIL",
+          "NAR",
+          "OS1",
+          "OS2",
+          "OS3",
+          "OS4",
+          "OS5",
+          "PAP",
+          "PEM",
+          "PER",
+          "SEM",
+          "SJK",
+          "SMB",
+          "SVE",
+          "TJL",
+          "UTB",
+          "VAB",
+        ])
+        .register(z.globalRegistry, {
+          description: "status code of the absence transaction",
+        }),
+    }),
+    query: z.never().optional(),
+  });
 
 /**
- * a list of absence transactions
+ * Successful list absence transactions response
  */
-export const zGet1Response = zFortnoxAbsenceTransactionListItemWrap;
+export const zAbsenceTransactionsControllerDoListByIdDateCauseCodeResponse =
+  zFortnoxLonAbsenceTransactionsListItemWrap;
 
-export const zList1Data = z.object({
+export const zAccountChartControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * a list of account charts
+ * Successful list account charts response
  */
-export const zList1Response = zFortnoxAccountChartWrap;
+export const zAccountChartControllerDoIndexResponse =
+  zFortnoxBfAccountChartListItemWrap;
 
-export const zList2Data = z.object({
+export const zAccountControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
     .object({
-      lastmodified: z.string().optional(),
+      sortby: z
+        .enum(["number"])
+        .register(z.globalRegistry, {
+          description: "field to sort returned list on",
+        })
+        .optional(),
+      lastmodified: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Lastmodified of accounts to list",
+        })
+        .optional(),
       sru: z
         .int()
         .min(-2147483648, {
@@ -9904,11 +13420,8 @@ export const zList2Data = z.object({
         .max(2147483647, {
           error: "Invalid value: Expected int32 to be <= 2147483647",
         })
-        .optional(),
-      sortby: z
-        .enum(["number"])
         .register(z.globalRegistry, {
-          description: "field to sort returned list on",
+          description: "Sru of accounts to list",
         })
         .optional(),
     })
@@ -9916,12 +13429,12 @@ export const zList2Data = z.object({
 });
 
 /**
- * list of accounts
+ * Successful list accounts response
  */
-export const zList2Response = zFortnoxAccountListItemWrap;
+export const zAccountControllerDoIndexResponse = zFortnoxBfAccountListItemWrap;
 
-export const zCreate1Data = z.object({
-  body: zFortnoxAccountPayloadWrap.optional(),
+export const zAccountControllerDoCreateData = z.object({
+  body: zFortnoxBfAccountSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z
     .object({
@@ -9942,11 +13455,12 @@ export const zCreate1Data = z.object({
 });
 
 /**
- * the created account
+ * Successful create account response
  */
-export const zCreate1Response = zFortnoxAccountSingleItemWrap;
+export const zAccountControllerDoCreateResponse =
+  zFortnoxBfAccountSingleItemWrap;
 
-export const zRemoveByIdData = z.object({
+export const zAccountControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     Number: z
@@ -9965,13 +13479,15 @@ export const zRemoveByIdData = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete account response with no content
  */
-export const zRemoveByIdResponse = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zAccountControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete account response with no content",
+  });
 
-export const zGet2Data = z.object({
+export const zAccountControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Number: z
@@ -9990,12 +13506,12 @@ export const zGet2Data = z.object({
 });
 
 /**
- * the existing account
+ * Successful show account response
  */
-export const zGet2Response = zFortnoxAccountSingleItemWrap;
+export const zAccountControllerDoShowResponse = zFortnoxBfAccountSingleItemWrap;
 
-export const zUpdate1Data = z.object({
-  body: zFortnoxAccountPayloadWrap.optional(),
+export const zAccountControllerDoUpdateData = z.object({
+  body: zFortnoxBfAccountSinglePayloadItemWrap.optional(),
   path: z.object({
     Number: z
       .int()
@@ -10028,11 +13544,12 @@ export const zUpdate1Data = z.object({
 });
 
 /**
- * the updated account
+ * Successful update account response
  */
-export const zUpdate1Response = zFortnoxAccountSingleItemWrap;
+export const zAccountControllerDoUpdateResponse =
+  zFortnoxBfAccountSingleItemWrap;
 
-export const zRemoveByPathData = z.object({
+export const zArchiveControllerDoDeleteRootData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -10048,13 +13565,15 @@ export const zRemoveByPathData = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete folder response with no content
  */
-export const zRemoveByPathResponse = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zArchiveControllerDoDeleteRootResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete folder response with no content",
+  });
 
-export const zGetFolderData = z.object({
+export const zArchiveControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -10076,11 +13595,12 @@ export const zGetFolderData = z.object({
 });
 
 /**
- * a single folder
+ * Successful show folder response
  */
-export const zGetFolderResponse = zFortnoxFolderWrap;
+export const zArchiveControllerDoIndexResponse =
+  zFortnoxFileStorageFolderSingleItemWrap;
 
-export const zUploadFileData = z.object({
+export const zArchiveControllerDoCreateData = z.object({
   body: z
     .object({
       file: z
@@ -10090,20 +13610,23 @@ export const zUploadFileData = z.object({
         })
         .optional(),
     })
+    .register(z.globalRegistry, {
+      description: "Request body for create folder",
+    })
     .optional(),
   path: z.never().optional(),
   query: z
     .object({
-      path: z
-        .string()
-        .register(z.globalRegistry, {
-          description: "name of folder",
-        })
-        .optional(),
       folderid: z
         .string()
         .register(z.globalRegistry, {
           description: "id of folder",
+        })
+        .optional(),
+      path: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "name of folder",
         })
         .optional(),
     })
@@ -10111,28 +13634,40 @@ export const zUploadFileData = z.object({
 });
 
 /**
- * the uploaded file
+ * Successful create folder response
  */
-export const zUploadFileResponse = zFortnoxFolderFileRowWrap;
+export const zArchiveControllerDoCreateResponse =
+  zFortnoxFileStorageFolderFileRowWrap;
 
-export const zRemoveById1Data = z.object({
+export const zArchiveControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.string().register(z.globalRegistry, {
       description: "identifies file/folder to remove",
     }),
   }),
-  query: z.never().optional(),
+  query: z
+    .object({
+      path: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Path of file/folder to remove",
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete folder response with no content
  */
-export const zRemoveById1Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zArchiveControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete folder response with no content",
+  });
 
-export const zGetFileByIdData = z.object({
+export const zArchiveControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.string().register(z.globalRegistry, {
@@ -10141,6 +13676,12 @@ export const zGetFileByIdData = z.object({
   }),
   query: z
     .object({
+      path: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Path of folder to show",
+        })
+        .optional(),
       fileid: z
         .string()
         .register(z.globalRegistry, {
@@ -10152,35 +13693,45 @@ export const zGetFileByIdData = z.object({
 });
 
 /**
- * a single file
+ * Successful show folder response
  */
-export const zGetFileByIdResponse = z.string().register(z.globalRegistry, {
-  description: "a single file",
-});
+export const zArchiveControllerDoShowResponse =
+  zFortnoxFileStorageFolderSingleItemWrap;
 
-export const zList3Data = z.object({
+export const zArticleFileConnectionControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
-  query: z.never().optional(),
+  query: z
+    .object({
+      articlenumber: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Articlenumber of file connections to list",
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 /**
- * a list of article file connections.
+ * Successful list article file connections response
  */
-export const zList3Response = zFortnoxArticleFileConnectionListItemWrap;
+export const zArticleFileConnectionControllerDoIndexResponse =
+  zFortnoxDaArticleFileConnectionListItemWrap;
 
-export const zCreate2Data = z.object({
-  body: zFortnoxArticleFileConnectionWrap.optional(),
+export const zArticleFileConnectionControllerDoCreateData = z.object({
+  body: zFortnoxDaArticleFileConnectionSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created article file connection
+ * Successful create article file connection response
  */
-export const zCreate2Response = zFortnoxArticleFileConnectionWrap;
+export const zArticleFileConnectionControllerDoCreateResponse =
+  zFortnoxDaArticleFileConnectionSingleItemWrap;
 
-export const zRemove1Data = z.object({
+export const zArticleFileConnectionControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     FileId: z.string().register(z.globalRegistry, {
@@ -10191,13 +13742,16 @@ export const zRemove1Data = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete article file connection response with no content
  */
-export const zRemove1Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zArticleFileConnectionControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description:
+      "Successful delete article file connection response with no content",
+  });
 
-export const zGet3Data = z.object({
+export const zArticleFileConnectionControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     FileId: z.string().register(z.globalRegistry, {
@@ -10208,11 +13762,12 @@ export const zGet3Data = z.object({
 });
 
 /**
- * the existing article file connection
+ * Successful show article file connection response
  */
-export const zGet3Response = zFortnoxArticleFileConnectionWrap;
+export const zArticleFileConnectionControllerDoShowResponse =
+  zFortnoxDaArticleFileConnectionSingleItemWrap;
 
-export const zList4Data = z.object({
+export const zArticleControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -10221,6 +13776,17 @@ export const zList4Data = z.object({
         .enum(["active", "inactive"])
         .register(z.globalRegistry, {
           description: "possibility to filter supplier invoices",
+        })
+        .optional(),
+      sortby: z
+        .enum([
+          "articlenumber",
+          "quantityinstock",
+          "reservedquantity",
+          "stockvalue",
+        ])
+        .register(z.globalRegistry, {
+          description: "field to sort returned list",
         })
         .optional(),
       articlenumber: z
@@ -10271,15 +13837,114 @@ export const zList4Data = z.object({
           description: "filter by lastmodified",
         })
         .optional(),
-      sortby: z
-        .enum([
-          "articlenumber",
-          "quantityinstock",
-          "reservedquantity",
-          "stockvalue",
-        ])
+    })
+    .optional(),
+});
+
+/**
+ * Successful list articles response
+ */
+export const zArticleControllerDoIndexResponse = zFortnoxArticleListItemWrap;
+
+export const zArticleControllerDoCreateData = z.object({
+  body: zFortnoxArticleSinglePayloadItemWrap.optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful create article response
+ */
+export const zArticleControllerDoCreateResponse = zFortnoxArticleSingleItemWrap;
+
+export const zArticleControllerDoDeleteData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    ArticleNumber: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .register(z.globalRegistry, {
+        description: "identifies the article",
+      }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful delete article response with no content
+ */
+export const zArticleControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete article response with no content",
+  });
+
+export const zArticleControllerDoShowData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    ArticleNumber: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .register(z.globalRegistry, {
+        description: "identifies the article",
+      }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful show article response
+ */
+export const zArticleControllerDoShowResponse = zFortnoxArticleSingleItemWrap;
+
+export const zArticleControllerDoUpdateData = z.object({
+  body: zFortnoxArticleSinglePayloadItemWrap.optional(),
+  path: z.object({
+    ArticleNumber: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .register(z.globalRegistry, {
+        description: "identifies the article",
+      }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update article response
+ */
+export const zArticleControllerDoUpdateResponse = zFortnoxArticleSingleItemWrap;
+
+export const zItemUrlConnectionControllerDoIndexData = z.object({
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      articlenumber: z
+        .int()
+        .min(-2147483648, {
+          error: "Invalid value: Expected int32 to be >= -2147483648",
+        })
+        .max(2147483647, {
+          error: "Invalid value: Expected int32 to be <= 2147483647",
+        })
         .register(z.globalRegistry, {
-          description: "field to sort returned list",
+          description: "identifies the article",
         })
         .optional(),
     })
@@ -10287,115 +13952,24 @@ export const zList4Data = z.object({
 });
 
 /**
- * list of articles
+ * Successful list article url connections response
  */
-export const zList4Response = zFortnoxArticleListItemList;
+export const zItemUrlConnectionControllerDoIndexResponse =
+  zFortnoxItemUrlConnectionListItemWrap;
 
-export const zCreate3Data = z.object({
-  body: zFortnoxArticleWrap.optional(),
+export const zItemUrlConnectionControllerDoCreateData = z.object({
+  body: zFortnoxItemUrlConnectionSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created article
+ * Successful create article url connection response
  */
-export const zCreate3Response = zFortnoxArticleWrap;
+export const zItemUrlConnectionControllerDoCreateResponse =
+  zFortnoxItemUrlConnectionSingleItemWrap;
 
-export const zRemove2Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    ArticleNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the article",
-      }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * Successfully removed the specified resource.
- */
-export const zRemove2Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
-
-export const zGet4Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    ArticleNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the article",
-      }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the existing article
- */
-export const zGet4Response = zFortnoxArticleWrap;
-
-export const zUpdate2Data = z.object({
-  body: zFortnoxArticleWrap.optional(),
-  path: z.object({
-    ArticleNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the article",
-      }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated article
- */
-export const zUpdate2Response = zFortnoxArticleWrap;
-
-export const zList6Data = z.object({
-  body: z.never().optional(),
-  path: z.never().optional(),
-  query: z.never().optional(),
-});
-
-/**
- * a list of article url connections
- */
-export const zList6Response = zFortnoxArticleUrlConnectionListItemList;
-
-export const zCreate5Data = z.object({
-  body: zFortnoxArticleUrlConnectionWrap.optional(),
-  path: z.never().optional(),
-  query: z.never().optional(),
-});
-
-/**
- * the created article url connection
- */
-export const zCreate5Response = zFortnoxArticleUrlConnectionWrap;
-
-export const zRemove4Data = z.object({
+export const zItemUrlConnectionControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.string().register(z.globalRegistry, {
@@ -10406,13 +13980,16 @@ export const zRemove4Data = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete article url connection response with no content
  */
-export const zRemove4Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zItemUrlConnectionControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description:
+      "Successful delete article url connection response with no content",
+  });
 
-export const zGet6Data = z.object({
+export const zItemUrlConnectionControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.string().register(z.globalRegistry, {
@@ -10423,111 +14000,159 @@ export const zGet6Data = z.object({
 });
 
 /**
- * the existing article url connection
+ * Successful show article url connection response
  */
-export const zGet6Response = zFortnoxArticleUrlConnectionWrap;
+export const zItemUrlConnectionControllerDoShowResponse =
+  zFortnoxItemUrlConnectionSingleItemWrap;
 
-export const zUpdate4Data = z.object({
-  body: zFortnoxArticleUrlConnectionWrap.optional(),
+export const zItemUrlConnectionControllerDoUpdateData = z.object({
+  body: zFortnoxItemUrlConnectionSinglePayloadItemWrap.optional(),
   path: z.object({
-    id: z.string(),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated article url connection
- */
-export const zUpdate4Response = zFortnoxArticleUrlConnectionWrap;
-
-export const zGetAllData = z.object({
-  body: z.never().optional(),
-  path: z.never().optional(),
-  query: z.never().optional(),
-});
-
-/**
- * list of asset file connections
- */
-export const zGetAllResponse = zFortnoxAssetFileConnectionResponse;
-
-export const zCreate6Data = z.object({
-  body: zFortnoxCreateAssetFileConnection.optional(),
-  path: z.never().optional(),
-  query: z.never().optional(),
-});
-
-/**
- * asset file connection
- */
-export const zCreate6Response = zFortnoxAssetFileConnection;
-
-export const zDeleteData = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    fileId: z.string().register(z.globalRegistry, {
-      description: "fileId",
+    id: z.string().register(z.globalRegistry, {
+      description: "Id of article url connection to update",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful update article url connection response
  */
-export const zDeleteResponse = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zItemUrlConnectionControllerDoUpdateResponse =
+  zFortnoxItemUrlConnectionSingleItemWrap;
 
-export const zList7Data = z.object({
+export const zAssetFileConnectionControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
-  query: z.never().optional(),
+  query: z
+    .object({
+      assetid: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Assetid of asset file connections to list",
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 /**
- * list of assets
+ * Successful list asset file connections response
  */
-export const zList7Response = zFortnoxListAssetWrap;
+export const zAssetFileConnectionControllerDoIndexResponse =
+  zFortnoxDaAssetFileConnectionListItemWrap;
 
-export const zCreate7Data = z.object({
-  body: zFortnoxCreateAssetWrap.optional(),
+export const zAssetFileConnectionControllerDoCreateData = z.object({
+  body: zFortnoxDaAssetFileConnectionCreatePayload.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * asset
+ * Successful create asset file connection response
  */
-export const zCreate7Response = zFortnoxAssetSingle;
+export const zAssetFileConnectionControllerDoCreateResponse =
+  zFortnoxDaAssetFileConnectionSingleItem;
 
-export const zChangeObData = z.object({
-  body: zFortnoxManualObAsset.optional(),
+export const zAssetFileConnectionControllerDoDeleteData = z.object({
+  body: z.never().optional(),
   path: z.object({
-    GivenNumber: z.string().register(z.globalRegistry, {
-      description: "Asset number",
+    FileId: z.string().register(z.globalRegistry, {
+      description: "File id of asset file connection to delete",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * asset
+ * Successful delete asset file connection response with no content
  */
-export const zChangeObResponse = zFortnoxAssetSingle;
+export const zAssetFileConnectionControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description:
+      "Successful delete asset file connection response with no content",
+  });
 
-export const zDepreciateData = z.object({
-  body: zFortnoxDepreciationWrap.optional(),
+export const zAssetsControllerDoIndexData = z.object({
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      number: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Asset number",
+        })
+        .optional(),
+      description: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Asset description",
+        })
+        .optional(),
+      type: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Asset type",
+        })
+        .optional(),
+      lastmodified: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "Filter on last modified date",
+        })
+        .optional(),
+    })
+    .optional(),
+});
+
+/**
+ * Successful list assets response
+ */
+export const zAssetsControllerDoIndexResponse = zFortnoxAnlAssetsListItemWrap;
+
+export const zAssetsControllerDoCreateData = z.object({
+  body: zFortnoxAnlAssetsSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * response
+ * Successful create asset response
  */
-export const zDepreciateResponse = zFortnoxDepreciationResponseWrap;
+export const zAssetsControllerDoCreateResponse =
+  zFortnoxAnlAssetsSingleItemResponseWrap;
 
-export const zGetDeprecationListData = z.object({
+export const zAssetsControllerDoChangeobData = z.object({
+  body: zFortnoxAnlAssetActionsSingleItem.optional(),
+  path: z.object({
+    Id: z.string().register(z.globalRegistry, {
+      description: "Asset ID",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update asset response
+ */
+export const zAssetsControllerDoChangeobResponse =
+  zFortnoxAnlAssetsActionResponse;
+
+export const zAssetsControllerDoDepreciateData = z.object({
+  body: zFortnoxAnlDepreciationWrap.optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update asset response
+ */
+export const zAssetsControllerDoDepreciateResponse =
+  zFortnoxAnlAssetsDepreciationResponseWrap;
+
+export const zAssetsControllerDoDepreciationsData = z.object({
   body: z.never().optional(),
   path: z.object({
     ToDate: z.string().register(z.globalRegistry, {
@@ -10538,52 +14163,84 @@ export const zGetDeprecationListData = z.object({
 });
 
 /**
- * list of assets
+ * Successful list assets response
  */
-export const zGetDeprecationListResponse = zFortnoxListAssetWrap;
+export const zAssetsControllerDoDepreciationsResponse =
+  zFortnoxAnlAssetsListItemWrap;
 
-export const zScrapData = z.object({
-  body: zFortnoxScrapWrap.optional(),
+export const zAssetsControllerDoScrapData = z.object({
+  body: zFortnoxAnlScrapAssetWrap.optional(),
   path: z.object({
-    GivenNumber: z.string().register(z.globalRegistry, {
-      description: "Asset number",
+    Id: z.string().register(z.globalRegistry, {
+      description: "Asset ID",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * asset
+ * Successful update asset response
  */
-export const zScrapResponse = zFortnoxAssetSingle;
+export const zAssetsControllerDoScrapResponse = zFortnoxAnlAssetsActionResponse;
 
-export const zSellData = z.object({
-  body: zFortnoxSellWrap.optional(),
+export const zAssetsControllerDoSellData = z.object({
+  body: zFortnoxAnlSellAssetWrap.optional(),
   path: z.object({
-    GivenNumber: z.string().register(z.globalRegistry, {
-      description: "Asset number",
+    Id: z.string().register(z.globalRegistry, {
+      description: "Asset ID",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * asset
+ * Successful update asset response
  */
-export const zSellResponse = zFortnoxAssetSingle;
+export const zAssetsControllerDoSellResponse = zFortnoxAnlAssetsActionResponse;
 
-export const zGetAll1Data = z.object({
+export const zAssetsControllerDoTypesGetData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * asset types
+ * Successful list assets response
  */
-export const zGetAll1Response = zFortnoxAssetTypeWrapList;
+export const zAssetsControllerDoTypesGetResponse =
+  zFortnoxAnlAssetTypesListResponseWrap;
 
-export const zDelete2Data = z.object({
+export const zAssetsControllerDoTypesPostData = z.object({
+  body: zFortnoxAnlCreateAssetTypeWrap.optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update asset response
+ */
+export const zAssetsControllerDoTypesPostResponse =
+  zFortnoxAnlAssetTypesSingleResponseWrap;
+
+export const zAssetsControllerDoTypesDeleteWithIdData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    id: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .register(z.globalRegistry, {
+        description: "id",
+      }),
+  }),
+  query: z.never().optional(),
+});
+
+export const zAssetsControllerDoTypesGetWithIdData = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z
@@ -10602,14 +14259,13 @@ export const zDelete2Data = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful show asset response
  */
-export const zDelete2Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zAssetsControllerDoTypesGetWithIdResponse =
+  zFortnoxAnlAssetTypesSingleResponseWrap;
 
-export const zGet8Data = z.object({
-  body: z.never().optional(),
+export const zAssetsControllerDoTypesPutWithIdData = z.object({
+  body: zFortnoxAnlUpdateAssetTypeWrap.optional(),
   path: z.object({
     id: z
       .int()
@@ -10627,107 +14283,57 @@ export const zGet8Data = z.object({
 });
 
 /**
- * asset type
+ * Successful update asset response
  */
-export const zGet8Response = zFortnoxAssetTypeWrapSingle;
+export const zAssetsControllerDoTypesPutWithIdResponse =
+  zFortnoxAnlAssetTypesSingleResponseWrap;
 
-export const zCreate8Data = z.object({
-  body: zFortnoxCreateAssetWrap.optional(),
+export const zAssetsControllerDoWritedownData = z.object({
+  body: zFortnoxAnlAdjustAssetValueWrap.optional(),
   path: z.object({
-    id: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "id",
-      }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * response
- */
-export const zCreate8Response = zFortnoxAssetTypeWrapSingle;
-
-export const zUpdate6Data = z.object({
-  body: zFortnoxUpdateAssetUpdateWrap.optional(),
-  path: z.object({
-    id: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "id",
-      }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * response
- */
-export const zUpdate6Response = zFortnoxAssetTypeWrapSingle;
-
-export const zWriteDownData = z.object({
-  body: zFortnoxWriteDownWrap.optional(),
-  path: z.object({
-    GivenNumber: z.string().register(z.globalRegistry, {
-      description: "Asset number",
+    Id: z.string().register(z.globalRegistry, {
+      description: "Asset ID",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * asset
+ * Successful update asset response
  */
-export const zWriteDownResponse = zFortnoxAssetSingle;
+export const zAssetsControllerDoWritedownResponse =
+  zFortnoxAnlAssetsActionResponse;
 
-export const zWriteUpData = z.object({
-  body: zFortnoxWriteUpWrap.optional(),
+export const zAssetsControllerDoWriteupData = z.object({
+  body: zFortnoxAnlAdjustAssetValueWrap.optional(),
   path: z.object({
-    GivenNumber: z.string().register(z.globalRegistry, {
-      description: "Asset number",
+    Id: z.string().register(z.globalRegistry, {
+      description: "Asset ID",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * asset
+ * Successful update asset response
  */
-export const zWriteUpResponse = zFortnoxAssetSingle;
+export const zAssetsControllerDoWriteupResponse =
+  zFortnoxAnlAssetsActionResponse;
 
-export const zDelete1Data = z.object({
+export const zAssetsControllerDoDeleteData = z.object({
   body: zFortnoxDeleteWrap.optional(),
   path: z.object({
-    GivenNumber: z.string().register(z.globalRegistry, {
+    Id: z.string().register(z.globalRegistry, {
       description: "Asset number",
     }),
   }),
   query: z.never().optional(),
 });
 
-/**
- * Successfully removed the specified resource.
- */
-export const zDelete1Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
-
-export const zGet7Data = z.object({
+export const zAssetsControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
-    GivenNumber: z.string().register(z.globalRegistry, {
+    Id: z.string().register(z.globalRegistry, {
       description: "Asset number",
     }),
   }),
@@ -10735,26 +14341,28 @@ export const zGet7Data = z.object({
 });
 
 /**
- * asset
+ * Successful show asset response
  */
-export const zGet7Response = zFortnoxAssetSingle;
+export const zAssetsControllerDoShowResponse =
+  zFortnoxAnlAssetsSingleItemResponseWrap;
 
-export const zUpdate5Data = z.object({
-  body: zFortnoxUpdateAssetWrap.optional(),
+export const zAssetsControllerDoUpdateData = z.object({
+  body: zFortnoxAnlAssetsSinglePayloadItemWrap.optional(),
   path: z.object({
-    GivenNumber: z.string().register(z.globalRegistry, {
-      description: "Asset number",
+    Id: z.string().register(z.globalRegistry, {
+      description: "Asset ID",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * asset
+ * Successful update asset response
  */
-export const zUpdate5Response = zFortnoxAssetSingle;
+export const zAssetsControllerDoUpdateResponse =
+  zFortnoxAnlAssetsSingleItemResponseWrap;
 
-export const zList8Data = z.object({
+export const zAttendanceTransactionsControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -10776,22 +14384,34 @@ export const zList8Data = z.object({
 });
 
 /**
- * a list of attendance transactions
+ * Successful list attendance transactions response
  */
-export const zList8Response = zFortnoxAttendanceTransactionListItemList;
+export const zAttendanceTransactionsControllerDoIndexResponse =
+  zFortnoxLonAttendanceTransactionsListItemWrap;
 
-export const zCreate9Data = z.object({
-  body: zFortnoxAttendanceTransactionWrap.optional(),
+export const zAttendanceTransactionsControllerDoCreateData = z.object({
+  body: zFortnoxLonAttendanceTransactionsSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created attendance transaction
+ * Successful create attendance transaction response
  */
-export const zCreate9Response = zFortnoxAttendanceTransactionWrap;
+export const zAttendanceTransactionsControllerDoCreateResponse =
+  zFortnoxLonAttendanceTransactionsSingleItemWrap;
 
-export const zRemove5Data = z.object({
+export const zAttendanceTransactionsControllerDoDeleteData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    id: z.uuid().register(z.globalRegistry, {
+      description: "identifies the transaction",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+export const zAttendanceTransactionsControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.uuid().register(z.globalRegistry, {
@@ -10802,12 +14422,13 @@ export const zRemove5Data = z.object({
 });
 
 /**
- * empty
+ * Successful show attendance transaction response
  */
-export const zRemove5Response = zFortnoxAttendanceTransactionWrap;
+export const zAttendanceTransactionsControllerDoShowResponse =
+  zFortnoxLonAttendanceTransactionsSingleItemWrap;
 
-export const zGet9Data = z.object({
-  body: z.never().optional(),
+export const zAttendanceTransactionsControllerDoUpdateData = z.object({
+  body: zFortnoxLonAttendanceTransactionsSinglePayloadItemWrap.optional(),
   path: z.object({
     id: z.uuid().register(z.globalRegistry, {
       description: "identifies the transaction",
@@ -10817,188 +14438,219 @@ export const zGet9Data = z.object({
 });
 
 /**
- * the attendance transaction
+ * Successful update attendance transaction response
  */
-export const zGet9Response = zFortnoxAttendanceTransactionWrap;
+export const zAttendanceTransactionsControllerDoUpdateResponse =
+  zFortnoxLonAttendanceTransactionsSingleItemWrap;
 
-export const zUpdate7Data = z.object({
-  body: zFortnoxAttendanceTransactionWrap.optional(),
-  path: z.object({
-    id: z.uuid().register(z.globalRegistry, {
-      description: "identifies the transaction",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated attendance transaction
- */
-export const zUpdate7Response = zFortnoxAttendanceTransactionWrap;
-
-export const zGet10Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    id: z.string().register(z.globalRegistry, {
-      description: "identifies the employee",
-    }),
-    Date: z.iso.date().register(z.globalRegistry, {
-      description: "date of the attendance",
-    }),
-    Code: z
-      .enum([
-        "ARB",
-        "BE2",
-        "BER",
-        "FLX",
-        "HLG",
-        "JO2",
-        "JOR",
-        "MER",
-        "OB1",
-        "OB2",
-        "OB3",
-        "OB4",
-        "OB5",
-        "OK0",
-        "OK1",
-        "OK2",
-        "OK3",
-        "OK4",
-        "OK5",
-        "OT1",
-        "OT2",
-        "OT3",
-        "OT4",
-        "OT5",
-        "RES",
-        "TID",
-      ])
-      .register(z.globalRegistry, {
-        description: "status code of the attendance transaction",
+export const zAttendanceTransactionsControllerDoListByIdDateCauseCodeData =
+  z.object({
+    body: z.never().optional(),
+    path: z.object({
+      id: z.string().register(z.globalRegistry, {
+        description: "identifies the employee",
       }),
-  }),
-  query: z.never().optional(),
-});
+      Date: z.iso.date().register(z.globalRegistry, {
+        description: "date of the attendance",
+      }),
+      Code: z
+        .enum([
+          "ARB",
+          "BE2",
+          "BER",
+          "FLX",
+          "HLG",
+          "JO2",
+          "JOR",
+          "MER",
+          "OB1",
+          "OB2",
+          "OB3",
+          "OB4",
+          "OB5",
+          "OK0",
+          "OK1",
+          "OK2",
+          "OK3",
+          "OK4",
+          "OK5",
+          "OT1",
+          "OT2",
+          "OT3",
+          "OT4",
+          "OT5",
+          "RES",
+          "TID",
+        ])
+        .register(z.globalRegistry, {
+          description: "status code of the attendance transaction",
+        }),
+    }),
+    query: z.never().optional(),
+  });
 
 /**
- * a list of attendance transactions
+ * Successful list attendance transactions response
  */
-export const zGet10Response = zFortnoxAttendanceTransactionListItemList;
+export const zAttendanceTransactionsControllerDoListByIdDateCauseCodeResponse =
+  zFortnoxLonAttendanceTransactionsListItemWrap;
 
-export const zGet11Data = z.object({
+export const zCompanyInformationControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * company information
+ * Successful show company information response
  */
-export const zGet11Response = zFortnoxCompanyInfoWrap;
+export const zCompanyInformationControllerDoIndexResponse =
+  zFortnoxCompanyInformationSingleItemWrap;
 
-export const zList9Data = z.object({
+export const zContractAccrualControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * list of contract accruals
+ * Successful list contract accruals response
  */
-export const zList9Response = zFortnoxContractAccrualListItemList;
+export const zContractAccrualControllerDoIndexResponse =
+  zFortnoxContractInvoiceContractAccrualListItemWrap;
 
-export const zCreate10Data = z.object({
-  body: zFortnoxContractAccrualWrap.optional(),
+export const zContractAccrualControllerDoCreateData = z.object({
+  body: zFortnoxContractInvoiceContractAccrualSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created contract accrual
+ * Successful create contract accrual response
  */
-export const zCreate10Response = zFortnoxContractAccrualWrap;
+export const zContractAccrualControllerDoCreateResponse =
+  zFortnoxContractInvoiceContractAccrualSingleItemWrap;
 
-export const zRemove6Data = z.object({
+export const zContractAccrualControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
-    DocumentNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the contract accrual",
-      }),
+    DocumentNumber: z.string().register(z.globalRegistry, {
+      description: "Document number of contract accrual to delete",
+    }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete contract accrual response with no content
  */
-export const zRemove6Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zContractAccrualControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete contract accrual response with no content",
+  });
 
-export const zGet13Data = z.object({
+export const zContractAccrualControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
-    DocumentNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the contract accrual",
-      }),
+    DocumentNumber: z.string().register(z.globalRegistry, {
+      description: "Document number of contract accrual to show",
+    }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the existing contract accrual
+ * Successful show contract accrual response
  */
-export const zGet13Response = zFortnoxContractAccrualWrap;
+export const zContractAccrualControllerDoShowResponse =
+  zFortnoxContractInvoiceContractAccrualSingleItemWrap;
 
-export const zUpdate8Data = z.object({
-  body: zFortnoxContractAccrualWrap.optional(),
+export const zContractAccrualControllerDoUpdateData = z.object({
+  body: zFortnoxContractInvoiceContractAccrualSinglePayloadItemWrap.optional(),
   path: z.object({
-    DocumentNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the contract accrual",
-      }),
+    DocumentNumber: z.string().register(z.globalRegistry, {
+      description: "Document number of contract accrual to update",
+    }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the updated contract accrual
+ * Successful update contract accrual response
  */
-export const zUpdate8Response = zFortnoxContractAccrualWrap;
+export const zContractAccrualControllerDoUpdateResponse =
+  zFortnoxContractInvoiceContractAccrualSingleItemWrap;
 
-export const zList10Data = z.object({
+export const zContractControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
     .object({
+      periodstart: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "Filter contracts by start of contract period",
+        })
+        .optional(),
+      periodend: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "Filter contracts by end of contract period",
+        })
+        .optional(),
       filter: z
         .enum(["active", "inactive", "finished"])
         .register(z.globalRegistry, {
-          description: "possibility to filter contracts",
+          description: "Filter contracts by status",
+        })
+        .optional(),
+      documentnumber: z
+        .int()
+        .min(-2147483648, {
+          error: "Invalid value: Expected int32 to be >= -2147483648",
+        })
+        .max(2147483647, {
+          error: "Invalid value: Expected int32 to be <= 2147483647",
+        })
+        .register(z.globalRegistry, {
+          description: "Filter contracts by document number",
+        })
+        .optional(),
+      customernumber: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Filter contracts by customer number",
+        })
+        .optional(),
+      templatenumber: z
+        .int()
+        .min(-2147483648, {
+          error: "Invalid value: Expected int32 to be >= -2147483648",
+        })
+        .max(2147483647, {
+          error: "Invalid value: Expected int32 to be <= 2147483647",
+        })
+        .register(z.globalRegistry, {
+          description: "Filter contracts by template number",
+        })
+        .optional(),
+      invoicesremaining: z
+        .int()
+        .min(-2147483648, {
+          error: "Invalid value: Expected int32 to be >= -2147483648",
+        })
+        .max(2147483647, {
+          error: "Invalid value: Expected int32 to be <= 2147483647",
+        })
+        .register(z.globalRegistry, {
+          description: "Filter contracts by number of remaining invoices",
+        })
+        .optional(),
+      lastmodified: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "Filter contracts by last modified date",
         })
         .optional(),
     })
@@ -11006,22 +14658,24 @@ export const zList10Data = z.object({
 });
 
 /**
- * list of contracts
+ * Successful list contracts response
  */
-export const zList10Response = zFortnoxContractListItemList;
+export const zContractControllerDoIndexResponse =
+  zFortnoxContractInvoiceContractListResponseWrap;
 
-export const zCreate11Data = z.object({
-  body: zFortnoxContractWrap.optional(),
+export const zContractControllerDoCreateData = z.object({
+  body: zFortnoxContractInvoiceContractCreatePayloadWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created contract
+ * Successful create contract response
  */
-export const zCreate11Response = zFortnoxContractWrap;
+export const zContractControllerDoCreateResponse =
+  zFortnoxContractInvoiceContractResponseWrap;
 
-export const zGet14Data = z.object({
+export const zContractControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -11032,12 +14686,13 @@ export const zGet14Data = z.object({
 });
 
 /**
- * the existing contract
+ * Successful show contract response
  */
-export const zGet14Response = zFortnoxContractWrap;
+export const zContractControllerDoShowResponse =
+  zFortnoxContractInvoiceContractResponseWrap;
 
-export const zUpdate9Data = z.object({
-  body: zFortnoxContractWrap.optional(),
+export const zContractControllerDoUpdateData = z.object({
+  body: zFortnoxContractInvoiceContractUpdatePayloadWrap.optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
       description: "identifies the contract",
@@ -11047,12 +14702,38 @@ export const zUpdate9Data = z.object({
 });
 
 /**
- * the updated contract
+ * Successful update contract response
  */
-export const zUpdate9Response = zFortnoxContractWrap;
+export const zContractControllerDoUpdateResponse =
+  zFortnoxContractInvoiceContractResponseWrap;
 
-export const zCreateinvoiceData = z.object({
-  body: z.never().optional(),
+export const zContractControllerDoUpdateAndCreateInvoiceData = z.object({
+  body: zFortnoxContractInvoiceContractUpdateAndCreateInvoicePayloadWrap.optional(),
+  path: z.object({
+    DocumentNumber: z.string().register(z.globalRegistry, {
+      description: "identifies the contract",
+    }),
+  }),
+  query: z
+    .object({
+      invoicedate: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "Date of invoicing",
+        })
+        .optional(),
+    })
+    .optional(),
+});
+
+/**
+ * Successful update contract response
+ */
+export const zContractControllerDoUpdateAndCreateInvoiceResponse =
+  zFortnoxContractInvoiceContractResponseWrap;
+
+export const zContractControllerDoUpdateAndFinishData = z.object({
+  body: zFortnoxContractInvoiceContractUpdateAndFinishPayloadWrap.optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
       description: "identifies the contract",
@@ -11062,12 +14743,13 @@ export const zCreateinvoiceData = z.object({
 });
 
 /**
- * created invoice
+ * Successful update contract response
  */
-export const zCreateinvoiceResponse = zFortnoxInvoiceWrap;
+export const zContractControllerDoUpdateAndFinishResponse =
+  zFortnoxContractInvoiceContractResponseWrap;
 
-export const zFinishData = z.object({
-  body: z.never().optional(),
+export const zContractControllerDoUpdateAndIncreaseInvoiceCountData = z.object({
+  body: zFortnoxContractInvoiceContractUpdateAndIncreaseInvoiceCountPayloadWrap.optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
       description: "identifies the contract",
@@ -11077,48 +14759,36 @@ export const zFinishData = z.object({
 });
 
 /**
- * the updated contract
+ * Successful update contract response
  */
-export const zFinishResponse = zFortnoxContractWrap;
+export const zContractControllerDoUpdateAndIncreaseInvoiceCountResponse =
+  zFortnoxContractInvoiceContractResponseWrap;
 
-export const zIncreaseinvoicecountData = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    DocumentNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the contract",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated contract
- */
-export const zIncreaseinvoicecountResponse = zFortnoxContractWrap;
-
-export const zList11Data = z.object({
+export const zContractTemplateControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * list of contract templates
+ * Successful list contract templates response
  */
-export const zList11Response = zFortnoxContractTemplateListItemList;
+export const zContractTemplateControllerDoIndexResponse =
+  zFortnoxContractInvoiceContractTemplateListResponseWrap;
 
-export const zCreate12Data = z.object({
-  body: zFortnoxContractTemplateWrap.optional(),
+export const zContractTemplateControllerDoCreateData = z.object({
+  body: zFortnoxContractInvoiceContractTemplateSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created contract template
+ * Successful create contract template response
  */
-export const zCreate12Response = zFortnoxContractTemplateWrap;
+export const zContractTemplateControllerDoCreateResponse =
+  zFortnoxContractInvoiceContractTemplateResponseWrap;
 
-export const zGet15Data = z.object({
+export const zContractTemplateControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     TemplateNumber: z
@@ -11137,12 +14807,13 @@ export const zGet15Data = z.object({
 });
 
 /**
- * the existing contract template
+ * Successful show contract template response
  */
-export const zGet15Response = zFortnoxContractTemplateWrap;
+export const zContractTemplateControllerDoShowResponse =
+  zFortnoxContractInvoiceContractTemplateResponseWrap;
 
-export const zUpdate10Data = z.object({
-  body: zFortnoxContractTemplateWrap.optional(),
+export const zContractTemplateControllerDoUpdateData = z.object({
+  body: zFortnoxContractInvoiceContractTemplateSinglePayloadItemWrap.optional(),
   path: z.object({
     TemplateNumber: z
       .int()
@@ -11160,33 +14831,36 @@ export const zUpdate10Data = z.object({
 });
 
 /**
- * the updated contract template
+ * Successful update contract template response
  */
-export const zUpdate10Response = zFortnoxContractTemplateWrap;
+export const zContractTemplateControllerDoUpdateResponse =
+  zFortnoxContractInvoiceContractTemplateResponseWrap;
 
-export const zList12Data = z.object({
+export const zCostCenterControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * a list of cost centers
+ * Successful list cost centers response
  */
-export const zList12Response = zFortnoxCostCenterList;
+export const zCostCenterControllerDoIndexResponse =
+  zFortnoxCostCenterListItemWrap;
 
-export const zCreate13Data = z.object({
-  body: zFortnoxCostCenterWrap.optional(),
+export const zCostCenterControllerDoCreateData = z.object({
+  body: zFortnoxCostCenterSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created cost center
+ * Successful create cost center response
  */
-export const zCreate13Response = zFortnoxCostCenterWrap;
+export const zCostCenterControllerDoCreateResponse =
+  zFortnoxCostCenterSingleItemWrap;
 
-export const zRemove7Data = z.object({
+export const zCostCenterControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
@@ -11197,13 +14871,15 @@ export const zRemove7Data = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete cost center response with no content
  */
-export const zRemove7Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zCostCenterControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete cost center response with no content",
+  });
 
-export const zGet16Data = z.object({
+export const zCostCenterControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
@@ -11214,12 +14890,13 @@ export const zGet16Data = z.object({
 });
 
 /**
- * the existing cost center
+ * Successful show cost center response
  */
-export const zGet16Response = zFortnoxCostCenterWrap;
+export const zCostCenterControllerDoShowResponse =
+  zFortnoxCostCenterSingleItemWrap;
 
-export const zUpdate11Data = z.object({
-  body: zFortnoxCostCenterWrap.optional(),
+export const zCostCenterControllerDoUpdateData = z.object({
+  body: zFortnoxCostCenterSinglePayloadItemWrap.optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
       description: "identifies the cost center",
@@ -11229,80 +14906,85 @@ export const zUpdate11Data = z.object({
 });
 
 /**
- * the updated cost center
+ * Successful update cost center response
  */
-export const zUpdate11Response = zFortnoxCostCenterWrap;
+export const zCostCenterControllerDoUpdateResponse =
+  zFortnoxCostCenterSingleItemWrap;
 
-export const zList13Data = z.object({
+export const zCurrencyControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * a list of currencies
+ * Successful list currencies response
  */
-export const zList13Response = zFortnoxCurrencyList;
+export const zCurrencyControllerDoIndexResponse = zFortnoxCurrencyListItemWrap;
 
-export const zCreate14Data = z.object({
-  body: zFortnoxCurrencyWrap.optional(),
+export const zCurrencyControllerDoCreateData = z.object({
+  body: zFortnoxCurrencySinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created currency
+ * Successful create currency response
  */
-export const zCreate14Response = zFortnoxCurrencyWrap;
+export const zCurrencyControllerDoCreateResponse =
+  zFortnoxCurrencySingleItemWrap;
 
-export const zRemove8Data = z.object({
+export const zCurrencyControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
-      description: "identifies the currency",
+      description: "Code of currency to delete",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete currency response with no content
  */
-export const zRemove8Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zCurrencyControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete currency response with no content",
+  });
 
-export const zGet17Data = z.object({
+export const zCurrencyControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
-      description: "identifies currency",
+      description: "Code of currency to show",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the existing currency
+ * Successful show currency response
  */
-export const zGet17Response = zFortnoxCurrencyWrap;
+export const zCurrencyControllerDoShowResponse = zFortnoxCurrencySingleItemWrap;
 
-export const zUpdate12Data = z.object({
-  body: zFortnoxCurrencyWrap.optional(),
+export const zCurrencyControllerDoUpdateData = z.object({
+  body: zFortnoxCurrencySinglePayloadItemWrap.optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
-      description: "identifies the currency",
+      description: "Code of currency to update",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the updated currency
+ * Successful update currency response
  */
-export const zUpdate12Response = zFortnoxCurrencyWrap;
+export const zCurrencyControllerDoUpdateResponse =
+  zFortnoxCurrencySingleItemWrap;
 
-export const zList14Data = z.object({
+export const zCustomerReferenceControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -11318,22 +15000,24 @@ export const zList14Data = z.object({
 });
 
 /**
- * list of customers reference rows
+ * Successful show customer reference response
  */
-export const zList14Response = zFortnoxCustomerReferenceWrap;
+export const zCustomerReferenceControllerDoIndexResponse =
+  zFortnoxKfCustomerReferenceSingleItemWrap;
 
-export const zCreate15Data = z.object({
-  body: zFortnoxCustomerReferenceCustomerReferenceRowWrap.optional(),
+export const zCustomerReferenceControllerDoCreateData = z.object({
+  body: zFortnoxKfCustomerReferenceRowRowWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created customer reference row
+ * Successful create customer reference response
  */
-export const zCreate15Response = zFortnoxCustomerReferenceWrap;
+export const zCustomerReferenceControllerDoCreateResponse =
+  zFortnoxKfCustomerReferenceSingleItemWrap;
 
-export const zRemove9Data = z.object({
+export const zCustomerReferenceControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     CustomerReferenceRowId: z.string().register(z.globalRegistry, {
@@ -11344,13 +15028,16 @@ export const zRemove9Data = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete customer reference response with no content
  */
-export const zRemove9Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zCustomerReferenceControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description:
+      "Successful delete customer reference response with no content",
+  });
 
-export const zGet18Data = z.object({
+export const zCustomerReferenceControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     CustomerReferenceRowId: z.string().register(z.globalRegistry, {
@@ -11361,12 +15048,13 @@ export const zGet18Data = z.object({
 });
 
 /**
- * the existing customer reference row
+ * Successful show customer reference response
  */
-export const zGet18Response = zFortnoxCustomerReferenceWrap;
+export const zCustomerReferenceControllerDoShowResponse =
+  zFortnoxKfCustomerReferenceSingleItemWrap;
 
-export const zUpdate13Data = z.object({
-  body: zFortnoxCustomerReferenceCustomerReferenceRowWrap.optional(),
+export const zCustomerReferenceControllerDoUpdateData = z.object({
+  body: zFortnoxKfCustomerReferenceRowRowWrap.optional(),
   path: z.object({
     CustomerReferenceRowId: z.string().register(z.globalRegistry, {
       description: "identifies the customer reference row",
@@ -11376,11 +15064,12 @@ export const zUpdate13Data = z.object({
 });
 
 /**
- * the updated customer reference row
+ * Successful update customer reference response
  */
-export const zUpdate13Response = zFortnoxCustomerWrap;
+export const zCustomerReferenceControllerDoUpdateResponse =
+  zFortnoxKfCustomerReferenceSingleItemWrap;
 
-export const zList15Data = z.object({
+export const zCustomerControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -11389,6 +15078,12 @@ export const zList15Data = z.object({
         .enum(["active", "inactive"])
         .register(z.globalRegistry, {
           description: "possibility to filter customers",
+        })
+        .optional(),
+      sortby: z
+        .enum(["customernumber", "name"])
+        .register(z.globalRegistry, {
+          description: "field to sort returned list",
         })
         .optional(),
       customernumber: z
@@ -11451,102 +15146,104 @@ export const zList15Data = z.object({
           description: "filter by last modified",
         })
         .optional(),
-      sortby: z
-        .enum(["customernumber", "name"])
-        .register(z.globalRegistry, {
-          description: "field to sort returned list",
-        })
-        .optional(),
     })
     .optional(),
 });
 
 /**
- * list of customers
+ * Successful list customers response
  */
-export const zList15Response = zFortnoxCustomerListItemList;
+export const zCustomerControllerDoIndexResponse =
+  zFortnoxKfCustomerListItemWrap;
 
-export const zCreate16Data = z.object({
-  body: zFortnoxCustomerWrap.optional(),
+export const zCustomerControllerDoCreateData = z.object({
+  body: zFortnoxKfCustomerSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created customer
+ * Successful create customer response
  */
-export const zCreate16Response = zFortnoxCustomerWrap;
+export const zCustomerControllerDoCreateResponse =
+  zFortnoxKfCustomerSingleItemWrap;
 
-export const zRemove10Data = z.object({
+export const zCustomerControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     CustomerNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the customer",
+      description: "Customer number of customer to delete",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete customer response with no content
  */
-export const zRemove10Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zCustomerControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete customer response with no content",
+  });
 
-export const zGet19Data = z.object({
+export const zCustomerControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     CustomerNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the customer",
+      description: "Customer number of customer to show",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the existing customer
+ * Successful show customer response
  */
-export const zGet19Response = zFortnoxCustomerWrap;
+export const zCustomerControllerDoShowResponse =
+  zFortnoxKfCustomerSingleItemWrap;
 
-export const zUpdate14Data = z.object({
-  body: zFortnoxCustomerWrap.optional(),
+export const zCustomerControllerDoUpdateData = z.object({
+  body: zFortnoxKfCustomerSinglePayloadItemWrap.optional(),
   path: z.object({
     CustomerNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the customer",
+      description: "Customer number of customer to update",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the updated customer
+ * Successful update customer response
  */
-export const zUpdate14Response = zFortnoxCustomerWrap;
+export const zCustomerControllerDoUpdateResponse =
+  zFortnoxKfCustomerSingleItemWrap;
 
-export const zGet53Data = z.object({
+export const zEmailSenderControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * all trusted and rejected email senders
+ * Successful list email senders response
  */
-export const zGet53Response = zFortnoxTrustedEmailSenderWrap;
+export const zEmailSenderControllerDoIndexResponse = zFortnoxDaEmailSendersWrap;
 
-export const zCreate44Data = z.object({
-  body: zFortnoxTrustedEmailSenderTrustedSenderWrap.optional(),
+export const zEmailSenderControllerDoTrustedPostDefaultData = z.object({
+  body: zFortnoxDaEmailSenderTrustedWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
-/**
- * the created trusted email sender
- */
-export const zCreate44Response = zFortnoxTrustedEmailSenderTrustedSenderWrap;
+export const zEmailSenderControllerDoTrustedPostDefaultResponse = z.union([
+  zFortnoxDaEmailSenderTrustedWrap,
+  z.void().register(z.globalRegistry, {
+    description: "Successful update email sender response with no content",
+  }),
+]);
 
-export const zRemove23Data = z.object({
+export const zEmailSenderControllerDoTrustedDeleteWithIdData = z.object({
   body: z.never().optional(),
   path: z.object({
     Id: z
@@ -11564,36 +15261,40 @@ export const zRemove23Data = z.object({
   query: z.never().optional(),
 });
 
-/**
- * Successfully removed the specified resource.
- */
-export const zRemove23Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zEmailSenderControllerDoTrustedDeleteWithIdResponse = z.union([
+  z.unknown().register(z.globalRegistry, {
+    description: "Successful delete email sender response",
+  }),
+  z.void().register(z.globalRegistry, {
+    description: "Successful delete email sender response with no content",
+  }),
+]);
 
-export const zList16Data = z.object({
+export const zEmployeeControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * list of employees
+ * Successful list employees response
  */
-export const zList16Response = zFortnoxEmployeeListItemWrap;
+export const zEmployeeControllerDoIndexResponse =
+  zFortnoxLonEmployeeListItemWrap;
 
-export const zCreate17Data = z.object({
-  body: zFortnoxEmployeeWrap.optional(),
+export const zEmployeeControllerDoCreateData = z.object({
+  body: zFortnoxLonEmployeeSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created employee
+ * Successful create employee response
  */
-export const zCreate17Response = zFortnoxEmployeeWrap;
+export const zEmployeeControllerDoCreateResponse =
+  zFortnoxLonEmployeeSingleItemWrap;
 
-export const zGet20Data = z.object({
+export const zEmployeeControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     EmployeeId: z.string().register(z.globalRegistry, {
@@ -11604,12 +15305,13 @@ export const zGet20Data = z.object({
 });
 
 /**
- * the existing employee
+ * Successful show employee response
  */
-export const zGet20Response = zFortnoxEmployeeWrap;
+export const zEmployeeControllerDoShowResponse =
+  zFortnoxLonEmployeeSingleItemWrap;
 
-export const zUpdate15Data = z.object({
-  body: zFortnoxEmployeeWrap.optional(),
+export const zEmployeeControllerDoUpdateData = z.object({
+  body: zFortnoxLonEmployeeSinglePayloadItemWrap.optional(),
   path: z.object({
     EmployeeId: z.string().register(z.globalRegistry, {
       description: "identifies the employee",
@@ -11619,11 +15321,12 @@ export const zUpdate15Data = z.object({
 });
 
 /**
- * the updated employee
+ * Successful update employee response
  */
-export const zUpdate15Response = zFortnoxEmployeeWrap;
+export const zEmployeeControllerDoUpdateResponse =
+  zFortnoxLonEmployeeSingleItemWrap;
 
-export const zGet21Data = z.object({
+export const zEuVatLimitRegulationControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -11646,33 +15349,36 @@ export const zGet21Data = z.object({
 });
 
 /**
- * eu vat limit regulation entry
+ * Successful list eu vat limit regulations response
  */
-export const zGet21Response = zFortnoxEuVatLimitRegulationWrap;
+export const zEuVatLimitRegulationControllerDoIndexResponse =
+  zFortnoxEuVatLimitRegulationResponseWrap;
 
-export const zList17Data = z.object({
+export const zExpensesControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * expense
+ * Successful list expenses response
  */
-export const zList17Response = zFortnoxExpenseListItemWrap;
+export const zExpensesControllerDoIndexResponse =
+  zFortnoxLonExpensesListItemWrap;
 
-export const zCreate18Data = z.object({
-  body: zFortnoxExpenseWrap.optional(),
+export const zExpensesControllerDoCreateData = z.object({
+  body: zFortnoxLonExpensesSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * expense
+ * Successful create expense response
  */
-export const zCreate18Response = zFortnoxExpenseWrap;
+export const zExpensesControllerDoCreateResponse =
+  zFortnoxLonExpensesSingleItemWrap;
 
-export const zGet22Data = z.object({
+export const zExpensesControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     ExpenseCode: z.string().register(z.globalRegistry, {
@@ -11683,11 +15389,12 @@ export const zGet22Data = z.object({
 });
 
 /**
- * list of expenses
+ * Successful show expense response
  */
-export const zGet22Response = zFortnoxExpenseWrap;
+export const zExpensesControllerDoShowResponse =
+  zFortnoxLonExpensesSingleItemWrap;
 
-export const zGetByDateData = z.object({
+export const zFinancialYearControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -11703,22 +15410,24 @@ export const zGetByDateData = z.object({
 });
 
 /**
- * the existing financial year
+ * Successful list financial years response
  */
-export const zGetByDateResponse = zFortnoxFinancialYearWrapList;
+export const zFinancialYearControllerDoIndexResponse =
+  zFortnoxBfFinancialYearListItemWrap;
 
-export const zCreate20Data = z.object({
-  body: zFortnoxFinancialYearWrap.optional(),
+export const zFinancialYearControllerDoCreateData = z.object({
+  body: zFortnoxBfFinancialYearSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created year
+ * Successful create financial year response
  */
-export const zCreate20Response = zFortnoxFinancialYearWrap;
+export const zFinancialYearControllerDoCreateResponse =
+  zFortnoxBfFinancialYearSingleItemWrap;
 
-export const zGetByIdData = z.object({
+export const zFinancialYearControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Id: z
@@ -11737,22 +15446,24 @@ export const zGetByIdData = z.object({
 });
 
 /**
- * the existing financial year
+ * Successful show financial year response
  */
-export const zGetByIdResponse = zFortnoxFinancialYearWrap;
+export const zFinancialYearControllerDoShowResponse =
+  zFortnoxBfFinancialYearSingleItemWrap;
 
-export const zGet24Data = z.object({
+export const zInboxControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the root folder
+ * Successful list folders response
  */
-export const zGet24Response = zFortnoxFolderWrap;
+export const zInboxControllerDoIndexResponse =
+  zFortnoxDaInboxFolderResponseWrap;
 
-export const zUploadData = z.object({
+export const zInboxControllerDoCreateData = z.object({
   body: z
     .object({
       file: z
@@ -11761,6 +15472,9 @@ export const zUploadData = z.object({
           description: "file",
         })
         .optional(),
+    })
+    .register(z.globalRegistry, {
+      description: "Request body for create folder",
     })
     .optional(),
   path: z.never().optional(),
@@ -11783,11 +15497,11 @@ export const zUploadData = z.object({
 });
 
 /**
- * file file
+ * Successful create folder response
  */
-export const zUploadResponse = zFortnoxFolderFileRowWrap;
+export const zInboxControllerDoCreateResponse = zFortnoxDaInboxFileResponseWrap;
 
-export const zRemove11Data = z.object({
+export const zInboxControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     Id: z.string().register(z.globalRegistry, {
@@ -11798,13 +15512,15 @@ export const zRemove11Data = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete folder response with no content
  */
-export const zRemove11Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zInboxControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete folder response with no content",
+  });
 
-export const zGetFileById1Data = z.object({
+export const zInboxControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Id: z.string().register(z.globalRegistry, {
@@ -11815,110 +15531,96 @@ export const zGetFileById1Data = z.object({
 });
 
 /**
- * a single file
+ * Successful show folder response
  */
-export const zGetFileById1Response = z.string().register(z.globalRegistry, {
-  description: "a single file",
-});
+export const zInboxControllerDoShowResponse = zFortnoxDaInboxFolderResponseWrap;
 
-export const zList18Data = z.object({
+export const zInvoiceAccrualControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * list of invoice accruals
+ * Successful list invoice accruals response
  */
-export const zList18Response = zFortnoxInvoiceAccrualListItemList;
+export const zInvoiceAccrualControllerDoIndexResponse =
+  zFortnoxKfInvoiceAccrualListItemWrap;
 
-export const zCreate21Data = z.object({
-  body: zFortnoxInvoiceAccrualWrap.optional(),
+export const zInvoiceAccrualControllerDoCreateData = z.object({
+  body: zFortnoxKfInvoiceAccrualSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created invoice accrual
+ * Successful create invoice accrual response
  */
-export const zCreate21Response = zFortnoxInvoiceAccrualWrap;
+export const zInvoiceAccrualControllerDoCreateResponse =
+  zFortnoxKfInvoiceAccrualSingleItemWrap;
 
-export const zRemove12Data = z.object({
+export const zInvoiceAccrualControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
-    InvoiceNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the invoice accrual",
-      }),
+    InvoiceNumber: z.string().register(z.globalRegistry, {
+      description: "Invoice number of invoice accrual to delete",
+    }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete invoice accrual response with no content
  */
-export const zRemove12Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zInvoiceAccrualControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete invoice accrual response with no content",
+  });
 
-export const zGet25Data = z.object({
+export const zInvoiceAccrualControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
-    InvoiceNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the invoice accrual",
-      }),
+    InvoiceNumber: z.string().register(z.globalRegistry, {
+      description: "Invoice number of invoice accrual to show",
+    }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the existing invoice accrual
+ * Successful show invoice accrual response
  */
-export const zGet25Response = zFortnoxInvoiceAccrualWrap;
+export const zInvoiceAccrualControllerDoShowResponse =
+  zFortnoxKfInvoiceAccrualSingleItemWrap;
 
-export const zUpdate16Data = z.object({
-  body: zFortnoxInvoiceAccrualWrap.optional(),
+export const zInvoiceAccrualControllerDoUpdateData = z.object({
+  body: zFortnoxKfInvoiceAccrualSinglePayloadItemWrap.optional(),
   path: z.object({
-    InvoiceNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the invoice accrual",
-      }),
+    InvoiceNumber: z.string().register(z.globalRegistry, {
+      description: "Invoice number of invoice accrual to update",
+    }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the updated invoice accrual
+ * Successful update invoice accrual response
  */
-export const zUpdate16Response = zFortnoxInvoiceAccrualWrap;
+export const zInvoiceAccrualControllerDoUpdateResponse =
+  zFortnoxKfInvoiceAccrualSingleItemWrap;
 
-export const zList19Data = z.object({
+export const zInvoicePaymentControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
     .object({
+      sortby: z
+        .enum(["paymentdate"])
+        .register(z.globalRegistry, {
+          description: "field to sort returned list on",
+        })
+        .optional(),
       invoicenumber: z
         .int()
         .min(-2147483648, {
@@ -11937,33 +15639,29 @@ export const zList19Data = z.object({
           description: "filter by last modified",
         })
         .optional(),
-      sortby: z
-        .enum(["paymentdate"])
-        .register(z.globalRegistry, {
-          description: "field to sort returned list on",
-        })
-        .optional(),
     })
     .optional(),
 });
 
 /**
- * list of invoice payments
+ * Successful list invoice payments response
  */
-export const zList19Response = zFortnoxInvoicePaymentListItemList;
+export const zInvoicePaymentControllerDoIndexResponse =
+  zFortnoxKfInvoicePaymentListItemWrap;
 
-export const zCreate22Data = z.object({
-  body: zFortnoxInvoicePaymentWrap.optional(),
+export const zInvoicePaymentControllerDoCreateData = z.object({
+  body: zFortnoxKfInvoicePaymentSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created invoice payment
+ * Successful create invoice payment response
  */
-export const zCreate22Response = zFortnoxInvoicePaymentWrap;
+export const zInvoicePaymentControllerDoCreateResponse =
+  zFortnoxKfInvoicePaymentSingleItemWrap;
 
-export const zRemove13Data = z.object({
+export const zInvoicePaymentControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     Number: z.string().register(z.globalRegistry, {
@@ -11974,13 +15672,15 @@ export const zRemove13Data = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete invoice payment response with no content
  */
-export const zRemove13Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zInvoicePaymentControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete invoice payment response with no content",
+  });
 
-export const zGet26Data = z.object({
+export const zInvoicePaymentControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Number: z.string().register(z.globalRegistry, {
@@ -11991,12 +15691,13 @@ export const zGet26Data = z.object({
 });
 
 /**
- * the existing invoice payment
+ * Successful show invoice payment response
  */
-export const zGet26Response = zFortnoxInvoicePaymentWrap;
+export const zInvoicePaymentControllerDoShowResponse =
+  zFortnoxKfInvoicePaymentSingleItemWrap;
 
-export const zUpdate17Data = z.object({
-  body: zFortnoxInvoicePaymentWrap.optional(),
+export const zInvoicePaymentControllerDoUpdateData = z.object({
+  body: zFortnoxKfInvoicePaymentSinglePayloadItemWrap.optional(),
   path: z.object({
     Number: z.string().register(z.globalRegistry, {
       description: "identifies the invoice payment",
@@ -12006,12 +15707,13 @@ export const zUpdate17Data = z.object({
 });
 
 /**
- * the updated invoice payment
+ * Successful update invoice payment response
  */
-export const zUpdate17Response = zFortnoxInvoicePaymentWrap;
+export const zInvoicePaymentControllerDoUpdateResponse =
+  zFortnoxKfInvoicePaymentSingleItemWrap;
 
-export const zBookkeepData = z.object({
-  body: zFortnoxInvoicePaymentWrap.optional(),
+export const zInvoicePaymentControllerDoUpdateAndBookkeepData = z.object({
+  body: zFortnoxKfInvoicePaymentSinglePayloadItemWrap.optional(),
   path: z.object({
     Number: z.string().register(z.globalRegistry, {
       description: "identifies the invoice payment",
@@ -12021,47 +15723,34 @@ export const zBookkeepData = z.object({
 });
 
 /**
- * the updated invoice payment
+ * Successful update invoice payment response
  */
-export const zBookkeepResponse = zFortnoxInvoicePaymentWrap;
+export const zInvoicePaymentControllerDoUpdateAndBookkeepResponse =
+  zFortnoxKfInvoicePaymentSingleItemWrap;
 
-export const zList20Data = z.object({
+export const zInvoiceControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
     .object({
+      tofinalpaydate: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Tofinalpaydate of invoices to list",
+        })
+        .optional(),
+      fromfinalpaydate: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Fromfinalpaydate of invoices to list",
+        })
+        .optional(),
       filter: z
         .enum(["cancelled", "fullypaid", "unpaid", "unpaidoverdue", "unbooked"])
         .register(z.globalRegistry, {
           description: "possibility to filter invoices",
         })
         .optional(),
-      costcenter: z.string().optional(),
-      customername: z.string().optional(),
-      customernumber: z.string().optional(),
-      label: z.string().optional(),
-      documentnumber: z.string().optional(),
-      fromdate: z.string().optional(),
-      todate: z.string().optional(),
-      fromfinalpaydate: z.string().optional(),
-      tofinalpaydate: z.string().optional(),
-      lastmodified: z.string().optional(),
-      notcompleted: z.string().optional(),
-      ocr: z.string().optional(),
-      ourreference: z.string().optional(),
-      project: z.string().optional(),
-      sent: z.string().optional(),
-      externalinvoicereference1: z.string().optional(),
-      externalinvoicereference2: z.string().optional(),
-      yourreference: z.string().optional(),
-      invoicetype: z.string().optional(),
-      articlenumber: z.string().optional(),
-      articledescription: z.string().optional(),
-      currency: z.string().optional(),
-      accountnumberfrom: z.string().optional(),
-      accountnumberto: z.string().optional(),
-      yourordernumber: z.string().optional(),
-      credit: z.string().optional(),
       sortby: z
         .enum([
           "customername",
@@ -12075,27 +15764,172 @@ export const zList20Data = z.object({
           description: "field to sort returned list on",
         })
         .optional(),
+      costcenter: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Costcenter of invoices to list",
+        })
+        .optional(),
+      customername: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Customername of invoices to list",
+        })
+        .optional(),
+      customernumber: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Customernumber of invoices to list",
+        })
+        .optional(),
+      label: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Label of invoices to list",
+        })
+        .optional(),
+      documentnumber: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Documentnumber of invoices to list",
+        })
+        .optional(),
+      fromdate: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Fromdate of invoices to list",
+        })
+        .optional(),
+      todate: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Todate of invoices to list",
+        })
+        .optional(),
+      lastmodified: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Lastmodified of invoices to list",
+        })
+        .optional(),
+      notcompleted: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Notcompleted of invoices to list",
+        })
+        .optional(),
+      ocr: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Ocr of invoices to list",
+        })
+        .optional(),
+      ourreference: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Ourreference of invoices to list",
+        })
+        .optional(),
+      project: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Project of invoices to list",
+        })
+        .optional(),
+      sent: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Sent of invoices to list",
+        })
+        .optional(),
+      externalinvoicereference1: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Externalinvoicereference1 of invoices to list",
+        })
+        .optional(),
+      externalinvoicereference2: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Externalinvoicereference2 of invoices to list",
+        })
+        .optional(),
+      yourreference: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Yourreference of invoices to list",
+        })
+        .optional(),
+      invoicetype: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Invoicetype of invoices to list",
+        })
+        .optional(),
+      articlenumber: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Articlenumber of invoices to list",
+        })
+        .optional(),
+      articledescription: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Articledescription of invoices to list",
+        })
+        .optional(),
+      currency: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Currency of invoices to list",
+        })
+        .optional(),
+      accountnumberfrom: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Accountnumberfrom of invoices to list",
+        })
+        .optional(),
+      accountnumberto: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Accountnumberto of invoices to list",
+        })
+        .optional(),
+      yourordernumber: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Yourordernumber of invoices to list",
+        })
+        .optional(),
+      credit: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Credit of invoices to list",
+        })
+        .optional(),
     })
     .optional(),
 });
 
 /**
- * list of invoices
+ * Successful list invoices response
  */
-export const zList20Response = zFortnoxInvoiceListItemWrap;
+export const zInvoiceControllerDoIndexResponse =
+  zFortnoxKfInvoiceListResponseWrap;
 
-export const zCreate23Data = z.object({
-  body: zFortnoxInvoicePayloadWrap.optional(),
+export const zInvoiceControllerDoCreateData = z.object({
+  body: zFortnoxKfInvoiceSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created invoice
+ * Successful create invoice response
  */
-export const zCreate23Response = zFortnoxInvoiceWrap;
+export const zInvoiceControllerDoCreateResponse = zFortnoxKfInvoiceResponseWrap;
 
-export const zGet27Data = z.object({
+export const zInvoiceControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -12106,12 +15940,12 @@ export const zGet27Data = z.object({
 });
 
 /**
- * the existing invoice
+ * Successful show invoice response
  */
-export const zGet27Response = zFortnoxInvoiceWrap;
+export const zInvoiceControllerDoShowResponse = zFortnoxKfInvoiceResponseWrap;
 
-export const zUpdate18Data = z.object({
-  body: zFortnoxInvoicePayloadWrap.optional(),
+export const zInvoiceControllerDoUpdateData = z.object({
+  body: zFortnoxKfInvoiceSinglePayloadItemWrap.optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
       description: "identifies the invoice",
@@ -12121,11 +15955,59 @@ export const zUpdate18Data = z.object({
 });
 
 /**
- * the updated invoice
+ * Successful update invoice response
  */
-export const zUpdate18Response = zFortnoxInvoiceWrap;
+export const zInvoiceControllerDoUpdateResponse = zFortnoxKfInvoiceResponseWrap;
 
-export const zBookkeep1Data = z.object({
+export const zInvoiceControllerDoUpdateAndBookkeepData = z.object({
+  body: zFortnoxKfInvoiceSinglePayloadItemWrap.optional(),
+  path: z.object({
+    DocumentNumber: z.string().register(z.globalRegistry, {
+      description: "identifies the invoice",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update invoice response
+ */
+export const zInvoiceControllerDoUpdateAndBookkeepResponse =
+  zFortnoxKfInvoiceResponseWrap;
+
+export const zInvoiceControllerDoUpdateAndCancelData = z.object({
+  body: zFortnoxKfInvoiceSinglePayloadItemWrap.optional(),
+  path: z.object({
+    DocumentNumber: z.string().register(z.globalRegistry, {
+      description: "identifies the invoice",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update invoice response
+ */
+export const zInvoiceControllerDoUpdateAndCancelResponse =
+  zFortnoxKfInvoiceResponseWrap;
+
+export const zInvoiceControllerDoUpdateAndCreditData = z.object({
+  body: zFortnoxKfInvoiceSinglePayloadItemWrap.optional(),
+  path: z.object({
+    DocumentNumber: z.string().register(z.globalRegistry, {
+      description: "identifies the invoice",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update invoice response
+ */
+export const zInvoiceControllerDoUpdateAndCreditResponse =
+  zFortnoxKfInvoiceResponseWrap;
+
+export const zInvoiceControllerDoShowAndEinvoiceData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -12136,11 +16018,12 @@ export const zBookkeep1Data = z.object({
 });
 
 /**
- * the updated invoice
+ * Successful show invoice response
  */
-export const zBookkeep1Response = zFortnoxInvoiceWrap;
+export const zInvoiceControllerDoShowAndEinvoiceResponse =
+  zFortnoxKfInvoiceResponseWrap;
 
-export const zCancelData = z.object({
+export const zInvoiceControllerDoShowAndEmailData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -12151,11 +16034,12 @@ export const zCancelData = z.object({
 });
 
 /**
- * the updated invoice
+ * Successful show invoice response
  */
-export const zCancelResponse = zFortnoxInvoiceWrap;
+export const zInvoiceControllerDoShowAndEmailResponse =
+  zFortnoxKfInvoiceResponseWrap;
 
-export const zCreditData = z.object({
+export const zInvoiceControllerDoShowAndEprintData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -12166,11 +16050,28 @@ export const zCreditData = z.object({
 });
 
 /**
- * the updated invoice
+ * Successful show invoice response
  */
-export const zCreditResponse = zFortnoxInvoiceWrap;
+export const zInvoiceControllerDoShowAndEprintResponse =
+  zFortnoxKfInvoiceResponseWrap;
 
-export const zEInvoiceData = z.object({
+export const zInvoiceControllerDoUpdateAndExternalPrintData = z.object({
+  body: zFortnoxKfInvoiceSinglePayloadItemWrap.optional(),
+  path: z.object({
+    DocumentNumber: z.string().register(z.globalRegistry, {
+      description: "identifies the invoice",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update invoice response
+ */
+export const zInvoiceControllerDoUpdateAndExternalPrintResponse =
+  zFortnoxKfInvoiceResponseWrap;
+
+export const zInvoiceControllerDoShowAndPreviewData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -12181,11 +16082,12 @@ export const zEInvoiceData = z.object({
 });
 
 /**
- * sent invoice
+ * Successful show invoice response
  */
-export const zEInvoiceResponse = zFortnoxInvoiceWrap;
+export const zInvoiceControllerDoShowAndPreviewResponse =
+  zFortnoxKfInvoiceResponseWrap;
 
-export const zEmailData = z.object({
+export const zInvoiceControllerDoShowAndPrintData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -12196,11 +16098,12 @@ export const zEmailData = z.object({
 });
 
 /**
- * sent invoice
+ * Successful show invoice response
  */
-export const zEmailResponse = zFortnoxInvoiceWrap;
+export const zInvoiceControllerDoShowAndPrintResponse =
+  zFortnoxKfInvoiceResponseWrap;
 
-export const zEPrintData = z.object({
+export const zInvoiceControllerDoShowAndPrintReminderData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -12211,12 +16114,13 @@ export const zEPrintData = z.object({
 });
 
 /**
- * sent invoice
+ * Successful show invoice response
  */
-export const zEPrintResponse = zFortnoxInvoiceWrap;
+export const zInvoiceControllerDoShowAndPrintReminderResponse =
+  zFortnoxKfInvoiceResponseWrap;
 
-export const zExternalPrintData = z.object({
-  body: z.never().optional(),
+export const zInvoiceControllerDoUpdateAndWarehouseReadyData = z.object({
+  body: zFortnoxKfInvoiceSinglePayloadItemWrap.optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
       description: "identifies the invoice",
@@ -12226,99 +16130,36 @@ export const zExternalPrintData = z.object({
 });
 
 /**
- * the updated invoice
+ * Successful update invoice response
  */
-export const zExternalPrintResponse = zFortnoxInvoiceWrap;
+export const zInvoiceControllerDoUpdateAndWarehouseReadyResponse =
+  zFortnoxKfInvoiceResponseWrap;
 
-export const zPreviewData = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    DocumentNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the invoice",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the invoice as PDF
- */
-export const zPreviewResponse = z.string().register(z.globalRegistry, {
-  description: "the invoice as PDF",
-});
-
-export const zPrintData = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    DocumentNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the invoice",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the invoice as PDF
- */
-export const zPrintResponse = z.string().register(z.globalRegistry, {
-  description: "the invoice as PDF",
-});
-
-export const zPrintReminderData = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    DocumentNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the invoice",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the invoice as PDF
- */
-export const zPrintReminderResponse = z.string().register(z.globalRegistry, {
-  description: "the invoice as PDF",
-});
-
-export const zWarehouseReadyData = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    DocumentNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the invoice",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated invoice
- */
-export const zWarehouseReadyResponse = zFortnoxInvoiceWrap;
-
-export const zList22Data = z.object({
+export const zDocumentTagControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * list of labels
+ * Successful list labels response
  */
-export const zList22Response = zFortnoxLabelList;
+export const zDocumentTagControllerDoIndexResponse =
+  zFortnoxDocumentTagListItemWrap;
 
-export const zCreate25Data = z.object({
-  body: zFortnoxLabelWrap.optional(),
+export const zDocumentTagControllerDoCreateData = z.object({
+  body: zFortnoxDocumentTagSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created label
+ * Successful create label response
  */
-export const zCreate25Response = zFortnoxLabelWrap;
+export const zDocumentTagControllerDoCreateResponse =
+  zFortnoxDocumentTagSingleItemWrap;
 
-export const zRemove14Data = z.object({
+export const zDocumentTagControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     Id: z
@@ -12337,14 +16178,16 @@ export const zRemove14Data = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete label response with no content
  */
-export const zRemove14Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zDocumentTagControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete label response with no content",
+  });
 
-export const zUpdate20Data = z.object({
-  body: zFortnoxLabelWrap.optional(),
+export const zDocumentTagControllerDoUpdateData = z.object({
+  body: zFortnoxDocumentTagSinglePayloadItemWrap.optional(),
   path: z.object({
     Id: z
       .int()
@@ -12362,130 +16205,113 @@ export const zUpdate20Data = z.object({
 });
 
 /**
- * the updated label
+ * Successful update label response
  */
-export const zUpdate20Response = zFortnoxLabelWrap;
+export const zDocumentTagControllerDoUpdateResponse =
+  zFortnoxDocumentTagSingleItemWrap;
 
-export const zGet30Data = z.object({
+export const zMeControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * user information
+ * Successful show me response
  */
-export const zGet30Response = zFortnoxMeWrap;
+export const zMeControllerDoIndexResponse = zFortnoxMeSingleItemWrap;
 
-export const zList23Data = z.object({
+export const zModeOfPaymentControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * a list of modes of payments.
+ * Successful list modes of payments response
  */
-export const zList23Response = zFortnoxModeOfPaymentList;
+export const zModeOfPaymentControllerDoIndexResponse =
+  zFortnoxModeOfPaymentListItemWrap;
 
-export const zCreate26Data = z.object({
-  body: zFortnoxModeOfPaymentWrap.optional(),
+export const zModeOfPaymentControllerDoCreateData = z.object({
+  body: zFortnoxModeOfPaymentSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created mode of payment
+ * Successful create mode of payment response
  */
-export const zCreate26Response = zFortnoxModeOfPaymentWrap;
+export const zModeOfPaymentControllerDoCreateResponse =
+  zFortnoxModeOfPaymentSingleItemWrap;
 
-export const zRemove15Data = z.object({
+export const zModeOfPaymentControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
-      description: "identifies the mode of payment",
+      description: "Code of mode of payment to delete",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete mode of payment response with no content
  */
-export const zRemove15Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zModeOfPaymentControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete mode of payment response with no content",
+  });
 
-export const zGet31Data = z.object({
+export const zModeOfPaymentControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
-      description: "identifies the mode of payment",
+      description: "Code of mode of payment to show",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the existing mode of payment
+ * Successful show mode of payment response
  */
-export const zGet31Response = zFortnoxModeOfPaymentWrap;
+export const zModeOfPaymentControllerDoShowResponse =
+  zFortnoxModeOfPaymentSingleItemWrap;
 
-export const zUpdate21Data = z.object({
-  body: zFortnoxModeOfPaymentWrap.optional(),
+export const zModeOfPaymentControllerDoUpdateData = z.object({
+  body: zFortnoxModeOfPaymentSinglePayloadItemWrap.optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
-      description: "identifies the mode of payment",
+      description: "Code of mode of payment to update",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the updated mode of payment
+ * Successful update mode of payment response
  */
-export const zUpdate21Response = zFortnoxModeOfPaymentWrap;
+export const zModeOfPaymentControllerDoUpdateResponse =
+  zFortnoxModeOfPaymentSingleItemWrap;
 
-export const zCreate19Data = z.object({
-  body: zFortnoxCreatePayloadWrap.optional(),
+export const zNoxInvoiceControllerDoCreateData = z.object({
+  body: zFortnoxKfNoxInvoiceCreatePayloadWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * The current status of the invoice
- * <i>Response parameters:</i>
- * <p>
- * <ul>
- * <li>@url: the URL used to retrieve the invoice status</li>
- * <li>BalanceIncludeFees: the current balance of the invoice, fees included (in SEK)</li>
- * <li>BalanceIncludeFeesCurrency: the current balance of the invoice, fees included, in other currency (currently only SEK is available)</li>
- * <li>CurrentCapitalBalance: capital amount balance (in SEK)</li>
- * <li>CurrentCapitalBalanceCurrency: capital amount balance in other currency (currently only SEK is available)</li>
- * <li>InvoiceDocumentURL: URL to PDF document for invoice</li>
- * <li>InvoiceNumber: invoice number in Fortnox</li>
- * <li>NextEvent: the next event for the invoice</li>
- * <li>NextEventDate: the date when the next event for the invoice will occur</li>
- * <li>OCRNumber: the OCR number of the invoice</li>
- * <li>Service: the service used for the invoice (LEDGERBASE or REMINDER)</li>
- * <li>ServiceName: the detailed service name used for the invoice (SERVICE_FULL, SERVICE_LIGHT or REMINDER_SERVICE, this field is omitted if the invoice is sent with the old Noxbox service)</li>
- * <li>Status: the current status of the invoice</li>
- * </ul>
- * <i>status</i> can be one of the following:
- * <ul>
- * <li>UNKNOWN: Not yet confirmed by Fortnox Finans</li>
- * <li>NOT_AUTHORIZED: Factoring invoice waiting approval</li>
- * <li>OPEN: invoice is open, and not fully paid yet</li>
- * <li>PAUSED: invoice is paused</li>
- * <li>CLOSED: invoice is closed (fully paid, credited or cancelled)</li>
- * </ul>
+ * Successful create nox finans invoice response
  */
-export const zCreate19Response = zFortnoxInvoiceResponseWrap;
+export const zNoxInvoiceControllerDoCreateResponse =
+  zFortnoxKfNoxInvoiceSingleItemWrap;
 
-export const zGet23Data = z.object({
+export const zNoxInvoiceControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
-    Number: z.string().register(z.globalRegistry, {
+    InvoiceNumber: z.string().register(z.globalRegistry, {
       description: "The Fortnox invoice number",
     }),
   }),
@@ -12493,39 +16319,15 @@ export const zGet23Data = z.object({
 });
 
 /**
- * The current status of the invoice
- * <i>Response parameters:</i>
- * <p>
- * <ul>
- * <li>@url: the URL used to retrieve the invoice status</li>
- * <li>BalanceIncludeFees: the current balance of the invoice, fees included (in SEK)</li>
- * <li>BalanceIncludeFeesCurrency: the current balance of the invoice, fees included, in other currency (currently only SEK is available)</li>
- * <li>CurrentCapitalBalance: capital amount balance (in SEK)</li>
- * <li>CurrentCapitalBalanceCurrency: capital amount balance in other currency (currently only SEK is available)</li>
- * <li>InvoiceDocumentURL: URL to PDF document for invoice</li>
- * <li>InvoiceNumber: invoice number in Fortnox</li>
- * <li>NextEvent: the next event for the invoice</li>
- * <li>NextEventDate: the date when the next event for the invoice will occur</li>
- * <li>OCRNumber: the OCR number of the invoice</li>
- * <li>Service: the service used for the invoice (LEDGERBASE or REMINDER)</li>
- * <li>ServiceName: the detailed service name used for the invoice (SERVICE_FULL, SERVICE_LIGHT or REMINDER_SERVICE, this field is omitted if the invoice is sent with the old Noxbox service)</li>
- * <li>Status: the current status of the invoice</li>
- * </ul>
- * <i>status</i> can be one of the following:
- * <ul>
- * <li>UNKNOWN: Not yet confirmed by Fortnox Finans</li>
- * <li>NOT_AUTHORIZED: Factoring invoice waiting approval</li>
- * <li>OPEN: invoice is open, and not fully paid yet</li>
- * <li>PAUSED: invoice is paused</li>
- * <li>CLOSED: invoice is closed (fully paid, credited or cancelled)</li>
- * </ul>
+ * Successful show nox finans invoice response
  */
-export const zGet23Response = zFortnoxInvoiceResponseWrap;
+export const zNoxInvoiceControllerDoShowResponse =
+  zFortnoxKfNoxInvoiceSingleItemWrap;
 
-export const zPauseData = z.object({
-  body: zFortnoxPausePayloadWrap.optional(),
+export const zNoxInvoiceControllerDoUpdateAndPauseData = z.object({
+  body: zFortnoxKfNoxInvoiceUpdateAndPausePayloadWrap.optional(),
   path: z.object({
-    Number: z.string().register(z.globalRegistry, {
+    InvoiceNumber: z.string().register(z.globalRegistry, {
       description: "The Fortnox invoice number",
     }),
   }),
@@ -12533,39 +16335,15 @@ export const zPauseData = z.object({
 });
 
 /**
- * The current status of the invoice
- * <i>Response parameters:</i>
- * <p>
- * <ul>
- * <li>@url: the URL used to retrieve the invoice status</li>
- * <li>BalanceIncludeFees: the current balance of the invoice, fees included (in SEK)</li>
- * <li>BalanceIncludeFeesCurrency: the current balance of the invoice, fees included, in other currency (currently only SEK is available)</li>
- * <li>CurrentCapitalBalance: capital amount balance (in SEK)</li>
- * <li>CurrentCapitalBalanceCurrency: capital amount balance in other currency (currently only SEK is available)</li>
- * <li>InvoiceDocumentURL: URL to PDF document for invoice</li>
- * <li>InvoiceNumber: invoice number in Fortnox</li>
- * <li>NextEvent: the next event for the invoice</li>
- * <li>NextEventDate: the date when the next event for the invoice will occur</li>
- * <li>OCRNumber: the OCR number of the invoice</li>
- * <li>Service: the service used for the invoice (LEDGERBASE or REMINDER)</li>
- * <li>ServiceName: the detailed service name used for the invoice (SERVICE_FULL, SERVICE_LIGHT or REMINDER_SERVICE, this field is omitted if the invoice is sent with the old Noxbox service)</li>
- * <li>Status: the current status of the invoice</li>
- * </ul>
- * <i>status</i> can be one of the following:
- * <ul>
- * <li>UNKNOWN: Not yet confirmed by Fortnox Finans</li>
- * <li>NOT_AUTHORIZED: Factoring invoice waiting approval</li>
- * <li>OPEN: invoice is open, and not fully paid yet</li>
- * <li>PAUSED: invoice is paused</li>
- * <li>CLOSED: invoice is closed (fully paid, credited or cancelled)</li>
- * </ul>
+ * Successful update nox finans invoice response
  */
-export const zPauseResponse = zFortnoxInvoiceResponseWrap;
+export const zNoxInvoiceControllerDoUpdateAndPauseResponse =
+  zFortnoxKfNoxInvoiceSingleItemWrap;
 
-export const zReportPaymentData = z.object({
-  body: zFortnoxReportPaymentPayloadWrap.optional(),
+export const zNoxInvoiceControllerDoUpdateAndRepostPaymentData = z.object({
+  body: zFortnoxKfNoxInvoiceUpdateAndRepostPaymentPayloadWrap.optional(),
   path: z.object({
-    Number: z.string().register(z.globalRegistry, {
+    InvoiceNumber: z.string().register(z.globalRegistry, {
       description: "The Fortnox invoice number",
     }),
   }),
@@ -12573,39 +16351,15 @@ export const zReportPaymentData = z.object({
 });
 
 /**
- * The current status of the invoice
- * <i>Response parameters:</i>
- * <p>
- * <ul>
- * <li>@url: the URL used to retrieve the invoice status</li>
- * <li>BalanceIncludeFees: the current balance of the invoice, fees included (in SEK)</li>
- * <li>BalanceIncludeFeesCurrency: the current balance of the invoice, fees included, in other currency (currently only SEK is available)</li>
- * <li>CurrentCapitalBalance: capital amount balance (in SEK)</li>
- * <li>CurrentCapitalBalanceCurrency: capital amount balance in other currency (currently only SEK is available)</li>
- * <li>InvoiceDocumentURL: URL to PDF document for invoice</li>
- * <li>InvoiceNumber: invoice number in Fortnox</li>
- * <li>NextEvent: the next event for the invoice</li>
- * <li>NextEventDate: the date when the next event for the invoice will occur</li>
- * <li>OCRNumber: the OCR number of the invoice</li>
- * <li>Service: the service used for the invoice (LEDGERBASE or REMINDER)</li>
- * <li>ServiceName: the detailed service name used for the invoice (SERVICE_FULL, SERVICE_LIGHT or REMINDER_SERVICE, this field is omitted if the invoice is sent with the old Noxbox service)</li>
- * <li>Status: the current status of the invoice</li>
- * </ul>
- * <i>status</i> can be one of the following:
- * <ul>
- * <li>UNKNOWN: Not yet confirmed by Fortnox Finans</li>
- * <li>NOT_AUTHORIZED: Factoring invoice waiting approval</li>
- * <li>OPEN: invoice is open, and not fully paid yet</li>
- * <li>PAUSED: invoice is paused</li>
- * <li>CLOSED: invoice is closed (fully paid, credited or cancelled)</li>
- * </ul>
+ * Successful update nox finans invoice response
  */
-export const zReportPaymentResponse = zFortnoxInvoiceResponseWrap;
+export const zNoxInvoiceControllerDoUpdateAndRepostPaymentResponse =
+  zFortnoxKfNoxInvoiceSingleItemWrap;
 
-export const zStopData = z.object({
-  body: z.never().optional(),
+export const zNoxInvoiceControllerDoUpdateAndStopData = z.object({
+  body: zFortnoxKfNoxInvoiceUpdateAndStopPayloadWrap.optional(),
   path: z.object({
-    Number: z.string().register(z.globalRegistry, {
+    InvoiceNumber: z.string().register(z.globalRegistry, {
       description: "The Fortnox invoice number",
     }),
   }),
@@ -12613,14 +16367,15 @@ export const zStopData = z.object({
 });
 
 /**
- * The current status of the invoice
+ * Successful update nox finans invoice response
  */
-export const zStopResponse = zFortnoxInvoiceResponseWrap;
+export const zNoxInvoiceControllerDoUpdateAndStopResponse =
+  zFortnoxKfNoxInvoiceSingleItemWrap;
 
-export const zTakeFeesData = z.object({
-  body: z.never().optional(),
+export const zNoxInvoiceControllerDoUpdateAndTakeFeesData = z.object({
+  body: zFortnoxKfNoxInvoiceUpdateAndTakeFeesPayloadWrap.optional(),
   path: z.object({
-    Number: z.string().register(z.globalRegistry, {
+    InvoiceNumber: z.string().register(z.globalRegistry, {
       description: "The Fortnox invoice number",
     }),
   }),
@@ -12628,39 +16383,15 @@ export const zTakeFeesData = z.object({
 });
 
 /**
- * The current status of the invoice
- * <i>Response parameters:</i>
- * <p>
- * <ul>
- * <li>@url: the URL used to retrieve the invoice status</li>
- * <li>BalanceIncludeFees: the current balance of the invoice, fees included (in SEK)</li>
- * <li>BalanceIncludeFeesCurrency: the current balance of the invoice, fees included, in other currency (currently only SEK is available)</li>
- * <li>CurrentCapitalBalance: capital amount balance (in SEK)</li>
- * <li>CurrentCapitalBalanceCurrency: capital amount balance in other currency (currently only SEK is available)</li>
- * <li>InvoiceDocumentURL: URL to PDF document for invoice</li>
- * <li>InvoiceNumber: invoice number in Fortnox</li>
- * <li>NextEvent: the next event for the invoice</li>
- * <li>NextEventDate: the date when the next event for the invoice will occur</li>
- * <li>OCRNumber: the OCR number of the invoice</li>
- * <li>Service: the service used for the invoice (LEDGERBASE or REMINDER)</li>
- * <li>ServiceName: the detailed service name used for the invoice (SERVICE_FULL, SERVICE_LIGHT or REMINDER_SERVICE, this field is omitted if the invoice is sent with the old Noxbox service)</li>
- * <li>Status: the current status of the invoice</li>
- * </ul>
- * <i>status</i> can be one of the following:
- * <ul>
- * <li>UNKNOWN: Not yet confirmed by Fortnox Finans</li>
- * <li>NOT_AUTHORIZED: Factoring invoice waiting approval</li>
- * <li>OPEN: invoice is open, and not fully paid yet</li>
- * <li>PAUSED: invoice is paused</li>
- * <li>CLOSED: invoice is closed (fully paid, credited or cancelled)</li>
- * </ul>
+ * Successful update nox finans invoice response
  */
-export const zTakeFeesResponse = zFortnoxInvoiceResponseWrap;
+export const zNoxInvoiceControllerDoUpdateAndTakeFeesResponse =
+  zFortnoxKfNoxInvoiceSingleItemWrap;
 
-export const zUnpauseData = z.object({
-  body: z.never().optional(),
+export const zNoxInvoiceControllerDoUpdateAndUnpauseData = z.object({
+  body: zFortnoxKfNoxInvoiceUpdateAndUnpausePayloadWrap.optional(),
   path: z.object({
-    Number: z.string().register(z.globalRegistry, {
+    InvoiceNumber: z.string().register(z.globalRegistry, {
       description: "The Fortnox invoice number",
     }),
   }),
@@ -12668,40 +16399,28 @@ export const zUnpauseData = z.object({
 });
 
 /**
- * The current status of the invoice
- * <i>Response parameters:</i>
- * <p>
- * <ul>
- * <li>@url: the URL used to retrieve the invoice status</li>
- * <li>BalanceIncludeFees: the current balance of the invoice, fees included (in SEK)</li>
- * <li>BalanceIncludeFeesCurrency: the current balance of the invoice, fees included, in other currency (currently only SEK is available)</li>
- * <li>CurrentCapitalBalance: capital amount balance (in SEK)</li>
- * <li>CurrentCapitalBalanceCurrency: capital amount balance in other currency (currently only SEK is available)</li>
- * <li>InvoiceDocumentURL: URL to PDF document for invoice</li>
- * <li>InvoiceNumber: invoice number in Fortnox</li>
- * <li>NextEvent: the next event for the invoice</li>
- * <li>NextEventDate: the date when the next event for the invoice will occur</li>
- * <li>OCRNumber: the OCR number of the invoice</li>
- * <li>Service: the service used for the invoice (LEDGERBASE or REMINDER)</li>
- * <li>ServiceName: the detailed service name used for the invoice (SERVICE_FULL, SERVICE_LIGHT or REMINDER_SERVICE, this field is omitted if the invoice is sent with the old Noxbox service)</li>
- * <li>Status: the current status of the invoice</li>
- * </ul>
- * <i>status</i> can be one of the following:
- * <ul>
- * <li>UNKNOWN: Not yet confirmed by Fortnox Finans</li>
- * <li>NOT_AUTHORIZED: Factoring invoice waiting approval</li>
- * <li>OPEN: invoice is open, and not fully paid yet</li>
- * <li>PAUSED: invoice is paused</li>
- * <li>CLOSED: invoice is closed (fully paid, credited or cancelled)</li>
- * </ul>
+ * Successful update nox finans invoice response
  */
-export const zUnpauseResponse = zFortnoxInvoiceResponseWrap;
+export const zNoxInvoiceControllerDoUpdateAndUnpauseResponse =
+  zFortnoxKfNoxInvoiceSingleItemWrap;
 
-export const zList24Data = z.object({
+export const zOfferControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
     .object({
+      todate: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter by to date",
+        })
+        .optional(),
+      fromdate: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter by from date",
+        })
+        .optional(),
       filter: z
         .enum([
           "cancelled",
@@ -12713,6 +16432,12 @@ export const zList24Data = z.object({
         ])
         .register(z.globalRegistry, {
           description: "possibility to filter offers",
+        })
+        .optional(),
+      sortby: z
+        .enum(["customerName", "id", "transactionDate", "total"])
+        .register(z.globalRegistry, {
+          description: "sort returned list of offers",
         })
         .optional(),
       customername: z
@@ -12743,18 +16468,6 @@ export const zList24Data = z.object({
         .string()
         .register(z.globalRegistry, {
           description: "filter by label",
-        })
-        .optional(),
-      fromdate: z
-        .string()
-        .register(z.globalRegistry, {
-          description: "filter by from date",
-        })
-        .optional(),
-      todate: z
-        .string()
-        .register(z.globalRegistry, {
-          description: "filter by to date",
         })
         .optional(),
       project: z
@@ -12793,33 +16506,28 @@ export const zList24Data = z.object({
           description: "filter by last modified",
         })
         .optional(),
-      sortby: z
-        .enum(["customerName", "id", "transactionDate", "total"])
-        .register(z.globalRegistry, {
-          description: "sort returned list of offers",
-        })
-        .optional(),
     })
     .optional(),
 });
 
 /**
- * list of offers
+ * Successful list offers response
  */
-export const zList24Response = zFortnoxOfferListItemList;
+export const zOfferControllerDoIndexResponse =
+  zFortnoxOfferOfferListResponseWrap;
 
-export const zCreate27Data = z.object({
-  body: zFortnoxOfferWrap.optional(),
+export const zOfferControllerDoCreateData = z.object({
+  body: zFortnoxOfferOfferSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created offer
+ * Successful create offer response
  */
-export const zCreate27Response = zFortnoxOfferWrap;
+export const zOfferControllerDoCreateResponse = zFortnoxOfferOfferResponseWrap;
 
-export const zGet32Data = z.object({
+export const zOfferControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -12830,12 +16538,12 @@ export const zGet32Data = z.object({
 });
 
 /**
- * the existing offer
+ * Successful show offer response
  */
-export const zGet32Response = zFortnoxOfferWrap;
+export const zOfferControllerDoShowResponse = zFortnoxOfferOfferResponseWrap;
 
-export const zUpdate22Data = z.object({
-  body: zFortnoxOfferWrap.optional(),
+export const zOfferControllerDoUpdateData = z.object({
+  body: zFortnoxOfferOfferSinglePayloadItemWrap.optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
       description: "identifies the offer",
@@ -12845,11 +16553,59 @@ export const zUpdate22Data = z.object({
 });
 
 /**
- * the updated offer
+ * Successful update offer response
  */
-export const zUpdate22Response = zFortnoxOfferWrap;
+export const zOfferControllerDoUpdateResponse = zFortnoxOfferOfferResponseWrap;
 
-export const zCancel2Data = z.object({
+export const zOfferControllerDoUpdateAndCancelData = z.object({
+  body: zFortnoxOfferOfferSinglePayloadItemWrap.optional(),
+  path: z.object({
+    DocumentNumber: z.string().register(z.globalRegistry, {
+      description: "identifies the offer",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update offer response
+ */
+export const zOfferControllerDoUpdateAndCancelResponse =
+  zFortnoxOfferOfferResponseWrap;
+
+export const zOfferControllerDoUpdateAndCreateInvoiceData = z.object({
+  body: zFortnoxOfferOfferSinglePayloadItemWrap.optional(),
+  path: z.object({
+    DocumentNumber: z.string().register(z.globalRegistry, {
+      description: "identifies the offer",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update offer response
+ */
+export const zOfferControllerDoUpdateAndCreateInvoiceResponse =
+  zFortnoxOfferOfferResponseWrap;
+
+export const zOfferControllerDoUpdateAndCreateOrderData = z.object({
+  body: zFortnoxOfferOfferSinglePayloadItemWrap.optional(),
+  path: z.object({
+    DocumentNumber: z.string().register(z.globalRegistry, {
+      description: "identifies the offer",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update offer response
+ */
+export const zOfferControllerDoUpdateAndCreateOrderResponse =
+  zFortnoxOfferOfferResponseWrap;
+
+export const zOfferControllerDoShowAndEmailData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -12860,11 +16616,28 @@ export const zCancel2Data = z.object({
 });
 
 /**
- * the updated offer
+ * Successful show offer response
  */
-export const zCancel2Response = zFortnoxOfferWrap;
+export const zOfferControllerDoShowAndEmailResponse =
+  zFortnoxOfferOfferResponseWrap;
 
-export const zCreateinvoice1Data = z.object({
+export const zOfferControllerDoUpdateAndExternalPrintData = z.object({
+  body: zFortnoxOfferOfferSinglePayloadItemWrap.optional(),
+  path: z.object({
+    DocumentNumber: z.string().register(z.globalRegistry, {
+      description: "identifies the offer",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update offer response
+ */
+export const zOfferControllerDoUpdateAndExternalPrintResponse =
+  zFortnoxOfferOfferResponseWrap;
+
+export const zOfferControllerDoShowAndPreviewData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -12875,11 +16648,12 @@ export const zCreateinvoice1Data = z.object({
 });
 
 /**
- * the created invoice
+ * Successful show offer response
  */
-export const zCreateinvoice1Response = zFortnoxOrderWrap;
+export const zOfferControllerDoShowAndPreviewResponse =
+  zFortnoxOfferOfferResponseWrap;
 
-export const zCreateorderData = z.object({
+export const zOfferControllerDoShowAndPrintData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -12890,83 +16664,44 @@ export const zCreateorderData = z.object({
 });
 
 /**
- * the created order
+ * Successful show offer response
  */
-export const zCreateorderResponse = zFortnoxOrderWrap;
+export const zOfferControllerDoShowAndPrintResponse =
+  zFortnoxOfferOfferResponseWrap;
 
-export const zEmail2Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    DocumentNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the offer",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the existing offer
- */
-export const zEmail2Response = zFortnoxOfferWrap;
-
-export const zExternalprintData = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    DocumentNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the offer",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated offer
- */
-export const zExternalprintResponse = zFortnoxOfferWrap;
-
-export const zPreview2Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    DocumentNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the offer",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the existing offer
- */
-export const zPreview2Response = z.string().register(z.globalRegistry, {
-  description: "the existing offer",
-});
-
-export const zPrint2Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    DocumentNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the offer",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the existing offer
- */
-export const zPrint2Response = z.string().register(z.globalRegistry, {
-  description: "the existing offer",
-});
-
-export const zList26Data = z.object({
+export const zOrderControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
     .object({
+      todate: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter by to date",
+        })
+        .optional(),
+      fromdate: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter by from date",
+        })
+        .optional(),
       filter: z
         .enum(["cancelled", "expired", "invoicecreated", "invoicenotcreated"])
         .register(z.globalRegistry, {
           description: "possibility to filter orders",
+        })
+        .optional(),
+      sortby: z
+        .enum([
+          "customername",
+          "customernumber",
+          "orderdate",
+          "documentnumber",
+          "total",
+        ])
+        .register(z.globalRegistry, {
+          description: "field to sort returned list",
         })
         .optional(),
       customername: z
@@ -13003,18 +16738,6 @@ export const zList26Data = z.object({
         .string()
         .register(z.globalRegistry, {
           description: "filter by external invoice reference 2",
-        })
-        .optional(),
-      fromdate: z
-        .string()
-        .register(z.globalRegistry, {
-          description: "filter by from date",
-        })
-        .optional(),
-      todate: z
-        .string()
-        .register(z.globalRegistry, {
-          description: "filter by to date",
         })
         .optional(),
       costcenter: z
@@ -13065,39 +16788,28 @@ export const zList26Data = z.object({
           description: "filter by order type",
         })
         .optional(),
-      sortby: z
-        .enum([
-          "customername",
-          "customernumber",
-          "orderdate",
-          "documentnumber",
-          "total",
-        ])
-        .register(z.globalRegistry, {
-          description: "field to sort returned list",
-        })
-        .optional(),
     })
     .optional(),
 });
 
 /**
- * list of orders
+ * Successful list orders response
  */
-export const zList26Response = zFortnoxOrderListItemList;
+export const zOrderControllerDoIndexResponse =
+  zFortnoxOrderOrderListResponseWrap;
 
-export const zCreate29Data = z.object({
-  body: zFortnoxOrderWrap.optional(),
+export const zOrderControllerDoCreateData = z.object({
+  body: zFortnoxOrderOrderSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created order
+ * Successful create order response
  */
-export const zCreate29Response = zFortnoxOrderWrap;
+export const zOrderControllerDoCreateResponse = zFortnoxOrderOrderResponseWrap;
 
-export const zGet34Data = z.object({
+export const zOrderControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -13108,12 +16820,12 @@ export const zGet34Data = z.object({
 });
 
 /**
- * the existing order
+ * Successful show order response
  */
-export const zGet34Response = zFortnoxOrderWrap;
+export const zOrderControllerDoShowResponse = zFortnoxOrderOrderResponseWrap;
 
-export const zUpdate24Data = z.object({
-  body: zFortnoxOrderWrap.optional(),
+export const zOrderControllerDoUpdateData = z.object({
+  body: zFortnoxOrderOrderSinglePayloadItemWrap.optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
       description: "identifies the order",
@@ -13123,11 +16835,43 @@ export const zUpdate24Data = z.object({
 });
 
 /**
- * the updated order
+ * Successful update order response
  */
-export const zUpdate24Response = zFortnoxOrderWrap;
+export const zOrderControllerDoUpdateResponse = zFortnoxOrderOrderResponseWrap;
 
-export const zCancel4Data = z.object({
+export const zOrderControllerDoUpdateAndCancelData = z.object({
+  body: zFortnoxOrderOrderSinglePayloadItemWrap.optional(),
+  path: z.object({
+    DocumentNumber: z.string().register(z.globalRegistry, {
+      description: "identifies the order",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update order response
+ */
+export const zOrderControllerDoUpdateAndCancelResponse =
+  zFortnoxOrderOrderResponseWrap;
+
+export const zOrderControllerDoUpdateAndCreateOrderData = z.object({
+  body: zFortnoxOrderOrderSinglePayloadItemWrap.optional(),
+  path: z.object({
+    DocumentNumber: z.string().register(z.globalRegistry, {
+      description: "identifies the order",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update order response
+ */
+export const zOrderControllerDoUpdateAndCreateOrderResponse =
+  zFortnoxOrderOrderResponseWrap;
+
+export const zOrderControllerDoShowAndEmailData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -13138,12 +16882,13 @@ export const zCancel4Data = z.object({
 });
 
 /**
- * the updated order
+ * Successful show order response
  */
-export const zCancel4Response = zFortnoxOrderWrap;
+export const zOrderControllerDoShowAndEmailResponse =
+  zFortnoxOrderOrderResponseWrap;
 
-export const zCreateinvoice3Data = z.object({
-  body: z.never().optional(),
+export const zOrderControllerDoUpdateAndExternalPrintData = z.object({
+  body: zFortnoxOrderOrderSinglePayloadItemWrap.optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
       description: "identifies the order",
@@ -13153,41 +16898,12 @@ export const zCreateinvoice3Data = z.object({
 });
 
 /**
- * the created invoice
+ * Successful update order response
  */
-export const zCreateinvoice3Response = zFortnoxInvoiceWrap;
+export const zOrderControllerDoUpdateAndExternalPrintResponse =
+  zFortnoxOrderOrderResponseWrap;
 
-export const zEmail4Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    DocumentNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the order",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the existing order
- */
-export const zEmail4Response = zFortnoxOrderWrap;
-
-export const zExternalprint2Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    DocumentNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the order",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated order
- */
-export const zExternalprint2Response = zFortnoxOrderWrap;
-
-export const zPreview4Data = z.object({
+export const zOrderControllerDoShowAndPreviewData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -13198,13 +16914,12 @@ export const zPreview4Data = z.object({
 });
 
 /**
- * the given order as PDF
+ * Successful show order response
  */
-export const zPreview4Response = z.string().register(z.globalRegistry, {
-  description: "the given order as PDF",
-});
+export const zOrderControllerDoShowAndPreviewResponse =
+  zFortnoxOrderOrderResponseWrap;
 
-export const zPrint4Data = z.object({
+export const zOrderControllerDoShowAndPrintData = z.object({
   body: z.never().optional(),
   path: z.object({
     DocumentNumber: z.string().register(z.globalRegistry, {
@@ -13215,24 +16930,24 @@ export const zPrint4Data = z.object({
 });
 
 /**
- * the given order as PDF
+ * Successful show order response
  */
-export const zPrint4Response = z.string().register(z.globalRegistry, {
-  description: "the given order as PDF",
-});
+export const zOrderControllerDoShowAndPrintResponse =
+  zFortnoxOrderOrderResponseWrap;
 
-export const zList28Data = z.object({
+export const zPreDefinedAccountControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * list of predefined accounts
+ * Successful list pre defined accounts response
  */
-export const zList28Response = zFortnoxPredefinedAccountList;
+export const zPreDefinedAccountControllerDoIndexResponse =
+  zFortnoxPreDefinedAccountListItemWrap;
 
-export const zGet36Data = z.object({
+export const zPreDefinedAccountControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     name: z.string().register(z.globalRegistry, {
@@ -13243,12 +16958,13 @@ export const zGet36Data = z.object({
 });
 
 /**
- * the existing predefined account
+ * Successful show pre defined account response
  */
-export const zGet36Response = zFortnoxPredefinedAccountWrap;
+export const zPreDefinedAccountControllerDoShowResponse =
+  zFortnoxPreDefinedAccountSingleItemWrap;
 
-export const zUpdate26Data = z.object({
-  body: zFortnoxPredefinedAccountWrap.optional(),
+export const zPreDefinedAccountControllerDoUpdateData = z.object({
+  body: zFortnoxPreDefinedAccountSinglePayloadItemWrap.optional(),
   path: z.object({
     name: z.string().register(z.globalRegistry, {
       description: "identifies the predefined account",
@@ -13258,22 +16974,24 @@ export const zUpdate26Data = z.object({
 });
 
 /**
- * the updated predefined account
+ * Successful update pre defined account response
  */
-export const zUpdate26Response = zFortnoxPredefinedAccountWrap;
+export const zPreDefinedAccountControllerDoUpdateResponse =
+  zFortnoxPreDefinedAccountSingleItemWrap;
 
-export const zList29Data = z.object({
+export const zPreDefinedVoucherSeriesControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * a list of predefined voucher series
+ * Successful list pre defined voucher series collection response
  */
-export const zList29Response = zFortnoxPredefinedVoucherSeriesList;
+export const zPreDefinedVoucherSeriesControllerDoIndexResponse =
+  zFortnoxBfPreDefinedVoucherSeriesListItemWrap;
 
-export const zGet37Data = z.object({
+export const zPreDefinedVoucherSeriesControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Name: z.string().register(z.globalRegistry, {
@@ -13284,12 +17002,13 @@ export const zGet37Data = z.object({
 });
 
 /**
- * a list of predefined voucher series
+ * Successful show pre defined voucher series response
  */
-export const zGet37Response = zFortnoxPredefinedVoucherSeriesWrap;
+export const zPreDefinedVoucherSeriesControllerDoShowResponse =
+  zFortnoxBfPreDefinedVoucherSeriesSingleItemWrap;
 
-export const zUpdate27Data = z.object({
-  body: zFortnoxPredefinedVoucherSeriesWrap.optional(),
+export const zPreDefinedVoucherSeriesControllerDoUpdateData = z.object({
+  body: zFortnoxBfPreDefinedVoucherSeriesSinglePayloadItemWrap.optional(),
   path: z.object({
     Name: z.string().register(z.globalRegistry, {
       description: "identifies the predefined voucher series",
@@ -13299,33 +17018,36 @@ export const zUpdate27Data = z.object({
 });
 
 /**
- * the updated predefined voucher series
+ * Successful update pre defined voucher series response
  */
-export const zUpdate27Response = zFortnoxPredefinedVoucherSeriesWrap;
+export const zPreDefinedVoucherSeriesControllerDoUpdateResponse =
+  zFortnoxBfPreDefinedVoucherSeriesSingleItemWrap;
 
-export const zList30Data = z.object({
+export const zPriceListControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * all price lists
+ * Successful list price lists response
  */
-export const zList30Response = zFortnoxPriceListList;
+export const zPriceListControllerDoIndexResponse =
+  zFortnoxPriceListListItemWrap;
 
-export const zCreate31Data = z.object({
-  body: zFortnoxPriceListWrap.optional(),
+export const zPriceListControllerDoCreateData = z.object({
+  body: zFortnoxPriceListSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created price list
+ * Successful create price list response
  */
-export const zCreate31Response = zFortnoxPriceListWrap;
+export const zPriceListControllerDoCreateResponse =
+  zFortnoxPriceListSingleItemWrap;
 
-export const zGet38Data = z.object({
+export const zPriceListControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
@@ -13336,12 +17058,13 @@ export const zGet38Data = z.object({
 });
 
 /**
- * the existing price list
+ * Successful show price list response
  */
-export const zGet38Response = zFortnoxPriceListWrap;
+export const zPriceListControllerDoShowResponse =
+  zFortnoxPriceListSingleItemWrap;
 
-export const zUpdate28Data = z.object({
-  body: zFortnoxPriceListWrap.optional(),
+export const zPriceListControllerDoUpdateData = z.object({
+  body: zFortnoxPriceListSinglePayloadItemWrap.optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
       description: "identifies the price list",
@@ -13351,270 +17074,20 @@ export const zUpdate28Data = z.object({
 });
 
 /**
- * the updated price list
+ * Successful update price list response
  */
-export const zUpdate28Response = zFortnoxPriceListWrap;
+export const zPriceListControllerDoUpdateResponse =
+  zFortnoxPriceListSingleItemWrap;
 
-export const zList31Data = z.object({
-  body: z.never().optional(),
-  path: z.never().optional(),
-  query: z.never().optional(),
-});
-
-/**
- * a list of prices.
- */
-export const zList31Response = zFortnoxPriceWrap;
-
-export const zCreate32Data = z.object({
-  body: zFortnoxPriceWrap.optional(),
-  path: z.never().optional(),
-  query: z.never().optional(),
-});
-
-/**
- * the created price
- */
-export const zCreate32Response = zFortnoxPriceWrap;
-
-export const zList32Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    PriceList: z.string().register(z.globalRegistry, {
-      description: "identifies the price list of the prices",
-    }),
-    ArticleNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the article number of the prices",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * list of prices
- */
-export const zList32Response = zFortnoxPriceListItemList;
-
-export const zGetFirstPriceData = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    PriceList: z.string().register(z.globalRegistry, {
-      description: "identifies the price list",
-    }),
-    ArticleNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the article",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the first price for the specified article
- */
-export const zGetFirstPriceResponse = zFortnoxPriceWrap;
-
-export const zUpdate30Data = z.object({
-  body: zFortnoxPriceWrap.optional(),
-  path: z.object({
-    PriceList: z.string().register(z.globalRegistry, {
-      description: "identifies the price list",
-    }),
-    ArticleNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the article number",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated price
- */
-export const zUpdate30Response = zFortnoxPriceWrap;
-
-export const zRemove16Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    PriceList: z.string().register(z.globalRegistry, {
-      description: "identifies the price list",
-    }),
-    ArticleNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the article number",
-    }),
-    FromQuantity: z.number().register(z.globalRegistry, {
-      description: "identifies the from quantity",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * Successfully removed the specified resource.
- */
-export const zRemove16Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
-
-export const zGet39Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    PriceList: z.string().register(z.globalRegistry, {
-      description: "identifies the price list",
-    }),
-    ArticleNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the article",
-    }),
-    FromQuantity: z.number().register(z.globalRegistry, {
-      description: "identifies from quantity",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the price for a specified article
- */
-export const zGet39Response = zFortnoxPriceWrap;
-
-export const zUpdate29Data = z.object({
-  body: zFortnoxPriceWrap.optional(),
-  path: z.object({
-    PriceList: z.string().register(z.globalRegistry, {
-      description: "identifies the price list",
-    }),
-    ArticleNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the article number",
-    }),
-    FromQuantity: z.number().register(z.globalRegistry, {
-      description: "identifies the from quantity",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated price
- */
-export const zUpdate29Response = zFortnoxPriceWrap;
-
-export const zList33Data = z.object({
-  body: z.never().optional(),
-  path: z.never().optional(),
-  query: z.never().optional(),
-});
-
-/**
- * a list of print templates.
- */
-export const zList33Response = zFortnoxPrintTemplateList;
-
-export const zList34Data = z.object({
-  body: z.never().optional(),
-  path: z.never().optional(),
-  query: z.never().optional(),
-});
-
-/**
- * list of projects
- */
-export const zList34Response = zFortnoxProjectListItemList;
-
-export const zCreate33Data = z.object({
-  body: zFortnoxProjectWrap.optional(),
-  path: z.never().optional(),
-  query: z.never().optional(),
-});
-
-/**
- * the created project
- */
-export const zCreate33Response = zFortnoxProjectWrap;
-
-export const zRemove17Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    ProjectNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the project",
-      }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * Successfully removed the specified resource.
- */
-export const zRemove17Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
-
-export const zGet40Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    ProjectNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the project",
-      }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the existing project
- */
-export const zGet40Response = zFortnoxProjectWrap;
-
-export const zUpdate31Data = z.object({
-  body: zFortnoxProjectWrap.optional(),
-  path: z.object({
-    ProjectNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the project",
-      }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated project
- */
-export const zUpdate31Response = zFortnoxProjectWrap;
-
-export const zList35Data = z.object({
+export const zPriceControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
     .object({
-      employeeId: z
-        .string()
+      fromquantity: z
+        .number()
         .register(z.globalRegistry, {
-          description: "filter on employeeId",
-        })
-        .optional(),
-      date: z.iso
-        .date()
-        .register(z.globalRegistry, {
-          description: "filter on date",
+          description: "Lists prices by from quantity",
         })
         .optional(),
     })
@@ -13622,22 +17095,356 @@ export const zList35Data = z.object({
 });
 
 /**
- * list of salary transactions
+ * Successful show price response
  */
-export const zList35Response = zFortnoxSalaryTransactionListItemList;
+export const zPriceControllerDoIndexResponse = zFortnoxPriceSingleItemWrap;
 
-export const zCreate34Data = z.object({
-  body: zFortnoxSalaryTransactionWrap.optional(),
+export const zPriceControllerDoCreateData = z.object({
+  body: zFortnoxPriceSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created salary transaction
+ * Successful create price response
  */
-export const zCreate34Response = zFortnoxSalaryTransactionWrap;
+export const zPriceControllerDoCreateResponse = zFortnoxPriceSingleItemWrap;
 
-export const zDelete3Data = z.object({
+export const zPriceControllerDoSublistWithTwoParamsData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    PriceList: z.string().register(z.globalRegistry, {
+      description: "Price list of the prices to list",
+    }),
+    ArticleNumber: z.string().register(z.globalRegistry, {
+      description: "Article number of the prices to list",
+    }),
+  }),
+  query: z
+    .object({
+      fromquantity: z
+        .number()
+        .register(z.globalRegistry, {
+          description: "Filter prices by from quantity",
+        })
+        .optional(),
+    })
+    .optional(),
+});
+
+/**
+ * Successful list prices response
+ */
+export const zPriceControllerDoSublistWithTwoParamsResponse =
+  zFortnoxPriceListItemWrap;
+
+export const zPriceControllerDoShowData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    PriceList: z.string().register(z.globalRegistry, {
+      description: "Price list of the price to show",
+    }),
+    ArticleNumber: z.string().register(z.globalRegistry, {
+      description: "Article number of the price to show",
+    }),
+  }),
+  query: z
+    .object({
+      fromquantity: z
+        .number()
+        .register(z.globalRegistry, {
+          description: "Get price by from quantity",
+        })
+        .optional(),
+    })
+    .optional(),
+});
+
+/**
+ * Successful show price response
+ */
+export const zPriceControllerDoShowResponse = zFortnoxPriceSingleItemWrap;
+
+export const zPriceControllerDoUpdateData = z.object({
+  body: zFortnoxPriceSinglePayloadItemWrap.optional(),
+  path: z.object({
+    PriceList: z.string().register(z.globalRegistry, {
+      description: "Price list to update the price for",
+    }),
+    ArticleNumber: z.string().register(z.globalRegistry, {
+      description: "Number of article to update the price for",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update price response
+ */
+export const zPriceControllerDoUpdateResponse = zFortnoxPriceSingleItemWrap;
+
+export const zPriceControllerDoDeleteWithId3Data = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    PriceList: z.string().register(z.globalRegistry, {
+      description: "Price list to delete from",
+    }),
+    ArticleNumber: z.string().register(z.globalRegistry, {
+      description: "Number of article to delete the price for",
+    }),
+    FromQuantity: z.string().register(z.globalRegistry, {
+      description: "From quantity of price to delete",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful delete price response with no content
+ */
+export const zPriceControllerDoDeleteWithId3Response = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete price response with no content",
+  });
+
+export const zPriceControllerDoShowWithId3Data = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    PriceList: z.string().register(z.globalRegistry, {
+      description: "Price list to get the price from",
+    }),
+    ArticleNumber: z.string().register(z.globalRegistry, {
+      description: "Number of article to get the price for",
+    }),
+    FromQuantity: z.string().register(z.globalRegistry, {
+      description: "From quantity of price to show",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful show price response
+ */
+export const zPriceControllerDoShowWithId3Response =
+  zFortnoxPriceSingleItemWrap;
+
+export const zPriceControllerDoUpdateWithId3Data = z.object({
+  body: zFortnoxPriceSinglePayloadItemWrap.optional(),
+  path: z.object({
+    PriceList: z.string().register(z.globalRegistry, {
+      description: "Price list to update the price for",
+    }),
+    ArticleNumber: z.string().register(z.globalRegistry, {
+      description: "Number of article to update the price for",
+    }),
+    FromQuantity: z.string().register(z.globalRegistry, {
+      description: "From quantity of price to update",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update price response
+ */
+export const zPriceControllerDoUpdateWithId3Response =
+  zFortnoxPriceSingleItemWrap;
+
+export const zPrintTemplateControllerDoIndexData = z.object({
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      type: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Filters the list of print templates by type",
+        })
+        .optional(),
+    })
+    .optional(),
+});
+
+/**
+ * Successful list print templates response
+ */
+export const zPrintTemplateControllerDoIndexResponse =
+  zFortnoxPrintTemplateListItemWrap;
+
+export const zProjectsControllerDoIndexData = z.object({
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      description: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on description",
+        })
+        .optional(),
+      projectleader: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on project leader",
+        })
+        .optional(),
+    })
+    .optional(),
+});
+
+/**
+ * Successful list projects response
+ */
+export const zProjectsControllerDoIndexResponse =
+  zFortnoxProjectProjectListItemWrap;
+
+export const zProjectsControllerDoCreateData = z.object({
+  body: zFortnoxProjectProjectSinglePayloadItemWrap.optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful create project response
+ */
+export const zProjectsControllerDoCreateResponse =
+  zFortnoxProjectProjectSingleItemWrap;
+
+export const zProjectsControllerDoDeleteData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    ProjectNumber: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .register(z.globalRegistry, {
+        description: "identifies the project",
+      }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful delete project response with no content
+ */
+export const zProjectsControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete project response with no content",
+  });
+
+export const zProjectsControllerDoShowData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    ProjectNumber: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .register(z.globalRegistry, {
+        description: "identifies the project",
+      }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful show project response
+ */
+export const zProjectsControllerDoShowResponse =
+  zFortnoxProjectProjectSingleItemWrap;
+
+export const zProjectsControllerDoUpdateData = z.object({
+  body: zFortnoxProjectProjectSinglePayloadItemWrap.optional(),
+  path: z.object({
+    ProjectNumber: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .register(z.globalRegistry, {
+        description: "identifies the project",
+      }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update project response
+ */
+export const zProjectsControllerDoUpdateResponse =
+  zFortnoxProjectProjectSingleItemWrap;
+
+export const zSalaryTransactionsControllerDoIndexData = z.object({
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      date: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "filter on date",
+        })
+        .optional(),
+      employeeId: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on employeeId",
+        })
+        .optional(),
+    })
+    .optional(),
+});
+
+/**
+ * Successful list salary transactions response
+ */
+export const zSalaryTransactionsControllerDoIndexResponse =
+  zFortnoxLonSalaryTransactionsListItemWrap;
+
+export const zSalaryTransactionsControllerDoCreateData = z.object({
+  body: zFortnoxLonSalaryTransactionsSinglePayloadItemWrap.optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful create salary transaction response
+ */
+export const zSalaryTransactionsControllerDoCreateResponse =
+  zFortnoxLonSalaryTransactionsSingleItemWrap;
+
+export const zSalaryTransactionsControllerDoDeleteData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    SalaryRow: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .register(z.globalRegistry, {
+        description: "identifies the salary transaction",
+      }),
+  }),
+  query: z.never().optional(),
+});
+
+export const zSalaryTransactionsControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     SalaryRow: z
@@ -13656,12 +17463,13 @@ export const zDelete3Data = z.object({
 });
 
 /**
- * the existing salary transaction
+ * Successful show salary transaction response
  */
-export const zDelete3Response = zFortnoxSalaryTransactionWrap;
+export const zSalaryTransactionsControllerDoShowResponse =
+  zFortnoxLonSalaryTransactionsSingleItemWrap;
 
-export const zGet41Data = z.object({
-  body: z.never().optional(),
+export const zSalaryTransactionsControllerDoUpdateData = z.object({
+  body: zFortnoxLonSalaryTransactionsSinglePayloadItemWrap.optional(),
   path: z.object({
     SalaryRow: z
       .int()
@@ -13679,34 +17487,12 @@ export const zGet41Data = z.object({
 });
 
 /**
- * the existing salary transaction
+ * Successful update salary transaction response
  */
-export const zGet41Response = zFortnoxSalaryTransactionWrap;
+export const zSalaryTransactionsControllerDoUpdateResponse =
+  zFortnoxLonSalaryTransactionsSingleItemWrap;
 
-export const zUpdate32Data = z.object({
-  body: zFortnoxSalaryTransactionWrap.optional(),
-  path: z.object({
-    SalaryRow: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the salary transaction",
-      }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated salary transaction
- */
-export const zUpdate32Response = zFortnoxSalaryTransactionWrap;
-
-export const zGet42Data = z.object({
+export const zScheduleTimeControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     EmployeeId: z.string().register(z.globalRegistry, {
@@ -13720,12 +17506,13 @@ export const zGet42Data = z.object({
 });
 
 /**
- * the existing schedule time
+ * Successful show schedule time response
  */
-export const zGet42Response = zFortnoxScheduleTimeWrap;
+export const zScheduleTimeControllerDoShowResponse =
+  zFortnoxLonScheduleTimeSingleItemWrap;
 
-export const zUpdate33Data = z.object({
-  body: zFortnoxScheduleTimeWrap.optional(),
+export const zScheduleTimeControllerDoUpdateData = z.object({
+  body: zFortnoxLonScheduleTimeSinglePayloadItemWrap.optional(),
   path: z.object({
     EmployeeId: z.string().register(z.globalRegistry, {
       description: "identifies the employee",
@@ -13738,12 +17525,13 @@ export const zUpdate33Data = z.object({
 });
 
 /**
- * the updated schedule time
+ * Successful update schedule time response
  */
-export const zUpdate33Response = zFortnoxScheduleTimeWrap;
+export const zScheduleTimeControllerDoUpdateResponse =
+  zFortnoxLonScheduleTimeSingleItemWrap;
 
-export const zResetData = z.object({
-  body: z.never().optional(),
+export const zScheduleTimeControllerDoUpdateAndResetDayData = z.object({
+  body: zFortnoxLonScheduleTimeSinglePayloadItemWrap.optional(),
   path: z.object({
     EmployeeId: z.string().register(z.globalRegistry, {
       description: "identifies the employee",
@@ -13756,33 +17544,36 @@ export const zResetData = z.object({
 });
 
 /**
- * the reset schedule time
+ * Successful update schedule time response
  */
-export const zResetResponse = zFortnoxScheduleTimeWrap;
+export const zScheduleTimeControllerDoUpdateAndResetDayResponse =
+  zFortnoxLonScheduleTimeSingleItemWrap;
 
-export const zGet12Data = z.object({
+export const zCompanySettingsControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * company settings
+ * Successful show setting response
  */
-export const zGet12Response = zFortnoxCompanySettingsWrap;
+export const zCompanySettingsControllerDoIndexResponse =
+  zFortnoxCompanyCompanySettingsResponseWrap;
 
-export const zGet29Data = z.object({
+export const zLockedPeriodSettingsControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the locked period
+ * Successful show locked period response
  */
-export const zGet29Response = zFortnoxLockedPeriodWrap;
+export const zLockedPeriodSettingsControllerDoShowResponse =
+  zFortnoxLockedPeriodSettingsSingleItemWrap;
 
-export const zGet43Data = z.object({
+export const zSieControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Type: z.string().register(z.globalRegistry, {
@@ -13791,6 +17582,12 @@ export const zGet43Data = z.object({
   }),
   query: z
     .object({
+      selection: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on selection",
+        })
+        .optional(),
       financialYear: z
         .int()
         .min(-2147483648, {
@@ -13803,123 +17600,125 @@ export const zGet43Data = z.object({
           description: "financialYear",
         })
         .optional(),
+      exportall: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on export all",
+        })
+        .optional(),
+      fromdate: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "filter on from date",
+        })
+        .optional(),
+      todate: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "filter on to date",
+        })
+        .optional(),
     })
     .optional(),
 });
 
 /**
- * Operation successful but returned no content.
+ * Successful show sie summary response
  */
-export const zGet43Response = z.void().register(z.globalRegistry, {
-  description: "Operation successful but returned no content.",
-});
+export const zSieControllerDoShowResponse = zFortnoxBfSieSingleItemWrap;
 
-export const zList36Data = z.object({
+export const zSupplierInvoiceAccrualControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * list of supplier invoice accruals
+ * Successful list supplier invoice accruals response
  */
-export const zList36Response = zFortnoxSupplierInvoiceAccrualListItemList;
+export const zSupplierInvoiceAccrualControllerDoIndexResponse =
+  zFortnoxLfSupplierInvoiceAccrualListItemWrap;
 
-export const zCreate35Data = z.object({
-  body: zFortnoxSupplierInvoiceAccrualWrap.optional(),
+export const zSupplierInvoiceAccrualControllerDoCreateData = z.object({
+  body: zFortnoxLfSupplierInvoiceAccrualSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created supplier invoice accrual
+ * Successful create supplier invoice accrual response
  */
-export const zCreate35Response = zFortnoxSupplierInvoiceAccrualWrap;
+export const zSupplierInvoiceAccrualControllerDoCreateResponse =
+  zFortnoxLfSupplierInvoiceAccrualSingleItemWrap;
 
-export const zRemove18Data = z.object({
+export const zSupplierInvoiceAccrualControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
-    SupplierInvoiceNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the supplier invoice accrual",
-      }),
+    SupplierInvoiceNumber: z.string().register(z.globalRegistry, {
+      description:
+        "Supplier invoice number of supplier invoice accrual to delete",
+    }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete supplier invoice accrual response with no content
  */
-export const zRemove18Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zSupplierInvoiceAccrualControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description:
+      "Successful delete supplier invoice accrual response with no content",
+  });
 
-export const zGet44Data = z.object({
+export const zSupplierInvoiceAccrualControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
-    SupplierInvoiceNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the supplier invoice accrual",
-      }),
+    SupplierInvoiceNumber: z.string().register(z.globalRegistry, {
+      description:
+        "Supplier invoice number of supplier invoice accrual to show",
+    }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the existing supplier invoice accrual
+ * Successful show supplier invoice accrual response
  */
-export const zGet44Response = zFortnoxSupplierInvoiceAccrualWrap;
+export const zSupplierInvoiceAccrualControllerDoShowResponse =
+  zFortnoxLfSupplierInvoiceAccrualSingleItemWrap;
 
-export const zUpdate34Data = z.object({
-  body: zFortnoxSupplierInvoiceAccrualWrap.optional(),
+export const zSupplierInvoiceAccrualControllerDoUpdateData = z.object({
+  body: zFortnoxLfSupplierInvoiceAccrualSinglePayloadItemWrap.optional(),
   path: z.object({
-    SupplierInvoiceNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the supplier invoice accrual",
-      }),
+    SupplierInvoiceNumber: z.string().register(z.globalRegistry, {
+      description:
+        "Supplier invoice number of supplier invoice accrual to update",
+    }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the updated supplier invoice accrual
+ * Successful update supplier invoice accrual response
  */
-export const zUpdate34Response = zFortnoxSupplierInvoiceAccrualWrap;
+export const zSupplierInvoiceAccrualControllerDoUpdateResponse =
+  zFortnoxLfSupplierInvoiceAccrualSingleItemWrap;
 
-export const zCreate36Data = z.object({
-  body: zFortnoxSupplierInvoiceExternalUrlConnectionUpdate.optional(),
+export const zSinvoiceExternalUrlConnectionControllerDoCreateData = z.object({
+  body: zFortnoxSinvoiceExternalUrlConnectionSinglePayloadItem.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * supplier invoice external url connection
+ * Successful create supplier invoice externalurl connection response
  */
-export const zCreate36Response =
-  zFortnoxSupplierInvoiceExternalUrlConnectionSingle;
+export const zSinvoiceExternalUrlConnectionControllerDoCreateResponse =
+  zFortnoxSinvoiceExternalUrlConnectionSingleItemWrap;
 
-export const zDelete4Data = z.object({
+export const zSinvoiceExternalUrlConnectionControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     Id: z
@@ -13938,13 +17737,16 @@ export const zDelete4Data = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete supplier invoice externalurl connection response with no content
  */
-export const zDelete4Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zSinvoiceExternalUrlConnectionControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description:
+      "Successful delete supplier invoice externalurl connection response with no content",
+  });
 
-export const zGet45Data = z.object({
+export const zSinvoiceExternalUrlConnectionControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Id: z
@@ -13963,13 +17765,13 @@ export const zGet45Data = z.object({
 });
 
 /**
- * supplier invoice external url connection
+ * Successful show supplier invoice externalurl connection response
  */
-export const zGet45Response =
-  zFortnoxSupplierInvoiceExternalUrlConnectionSingle;
+export const zSinvoiceExternalUrlConnectionControllerDoShowResponse =
+  zFortnoxSinvoiceExternalUrlConnectionSingleItemWrap;
 
-export const zUpdate35Data = z.object({
-  body: zFortnoxSupplierInvoiceExternalUrlConnectionUpdate.optional(),
+export const zSinvoiceExternalUrlConnectionControllerDoUpdateData = z.object({
+  body: zFortnoxSinvoiceExternalUrlConnectionSinglePayloadItem.optional(),
   path: z.object({
     Id: z
       .int()
@@ -13987,34 +17789,45 @@ export const zUpdate35Data = z.object({
 });
 
 /**
- * supplier invoice external url connection
+ * Successful update supplier invoice externalurl connection response
  */
-export const zUpdate35Response =
-  zFortnoxSupplierInvoiceExternalUrlConnectionSingle;
+export const zSinvoiceExternalUrlConnectionControllerDoUpdateResponse =
+  zFortnoxSinvoiceExternalUrlConnectionSingleItemWrap;
 
-export const zList37Data = z.object({
+export const zSupplierInvoiceFileConnectionControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
-  query: z.never().optional(),
+  query: z
+    .object({
+      supplierinvoicenumber: z
+        .int()
+        .register(z.globalRegistry, {
+          description: "Filter file connections by supplier invoice number",
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 /**
- * list of file connections
+ * Successful list supplier invoice file connections response
  */
-export const zList37Response = zFortnoxSupplierInvoiceFileConnectionList;
+export const zSupplierInvoiceFileConnectionControllerDoIndexResponse =
+  zFortnoxDaSupplierInvoiceFileConnectionListItemWrap;
 
-export const zCreate37Data = z.object({
-  body: zFortnoxSupplierInvoiceFileConnectionWrap.optional(),
+export const zSupplierInvoiceFileConnectionControllerDoCreateData = z.object({
+  body: zFortnoxDaSupplierInvoiceFileConnectionSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created supplier invoice file connection
+ * Successful create supplier invoice file connection response
  */
-export const zCreate37Response = zFortnoxSupplierInvoiceFileConnectionWrap;
+export const zSupplierInvoiceFileConnectionControllerDoCreateResponse =
+  zFortnoxDaSupplierInvoiceFileConnectionSingleItemWrap;
 
-export const zRemove19Data = z.object({
+export const zSupplierInvoiceFileConnectionControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     FileId: z.string().register(z.globalRegistry, {
@@ -14025,13 +17838,16 @@ export const zRemove19Data = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete supplier invoice file connection response with no content
  */
-export const zRemove19Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zSupplierInvoiceFileConnectionControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description:
+      "Successful delete supplier invoice file connection response with no content",
+  });
 
-export const zGet46Data = z.object({
+export const zSupplierInvoiceFileConnectionControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     FileId: z.string().register(z.globalRegistry, {
@@ -14042,131 +17858,174 @@ export const zGet46Data = z.object({
 });
 
 /**
- * the existing file connection
+ * Successful show supplier invoice file connection response
  */
-export const zGet46Response = zFortnoxSupplierInvoiceFileConnectionWrap;
+export const zSupplierInvoiceFileConnectionControllerDoShowResponse =
+  zFortnoxDaSupplierInvoiceFileConnectionSingleItemWrap;
 
-export const zList38Data = z.object({
-  body: z.never().optional(),
-  path: z.never().optional(),
-  query: z.never().optional(),
-});
-
-/**
- * list of supplier invoice payments
- */
-export const zList38Response = zFortnoxSupplierInvoicePaymentListItemList;
-
-export const zCreate38Data = z.object({
-  body: zFortnoxSupplierInvoicePaymentWrap.optional(),
-  path: z.never().optional(),
-  query: z.never().optional(),
-});
-
-/**
- * the created supplier invoice payment
- */
-export const zCreate38Response = zFortnoxSupplierInvoicePaymentWrap;
-
-export const zRemove20Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    Number: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the supplier invoice payment",
-      }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * Successfully removed the specified resource.
- */
-export const zRemove20Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
-
-export const zGet47Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    Number: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the supplier invoice payment",
-      }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the existing supplier invoice payment
- */
-export const zGet47Response = zFortnoxSupplierInvoicePaymentWrap;
-
-export const zUpdate36Data = z.object({
-  body: zFortnoxSupplierInvoicePaymentWrap.optional(),
-  path: z.object({
-    Number: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the supplier invoice payment",
-      }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated supplier invoice payment
- */
-export const zUpdate36Response = zFortnoxSupplierInvoicePaymentWrap;
-
-export const zBookkeep3Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    Number: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the supplier invoice payment",
-      }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated supplier invoice payment
- */
-export const zBookkeep3Response = zFortnoxSupplierInvoicePaymentWrap;
-
-export const zList39Data = z.object({
+export const zSupplierInvoicePaymentControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
     .object({
+      invoicenumber: z
+        .int()
+        .min(-2147483648, {
+          error: "Invalid value: Expected int32 to be >= -2147483648",
+        })
+        .max(2147483647, {
+          error: "Invalid value: Expected int32 to be <= 2147483647",
+        })
+        .register(z.globalRegistry, {
+          description: "Filter payments by invoice number",
+        })
+        .optional(),
+      lastmodified: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "Filter payments by last modified date",
+        })
+        .optional(),
+    })
+    .optional(),
+});
+
+/**
+ * Successful list supplier invoice payments response
+ */
+export const zSupplierInvoicePaymentControllerDoIndexResponse =
+  zFortnoxLfSupplierInvoicePaymentListItemWrap;
+
+export const zSupplierInvoicePaymentControllerDoCreateData = z.object({
+  body: zFortnoxLfSupplierInvoicePaymentSinglePayloadItemWrap.optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful create supplier invoice payment response
+ */
+export const zSupplierInvoicePaymentControllerDoCreateResponse =
+  zFortnoxLfSupplierInvoicePaymentSingleItemWrap;
+
+export const zSupplierInvoicePaymentControllerDoDeleteData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    Number: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .register(z.globalRegistry, {
+        description: "identifies the supplier invoice payment",
+      }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful delete supplier invoice payment response with no content
+ */
+export const zSupplierInvoicePaymentControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description:
+      "Successful delete supplier invoice payment response with no content",
+  });
+
+export const zSupplierInvoicePaymentControllerDoShowData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    Number: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .register(z.globalRegistry, {
+        description: "identifies the supplier invoice payment",
+      }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful show supplier invoice payment response
+ */
+export const zSupplierInvoicePaymentControllerDoShowResponse =
+  zFortnoxLfSupplierInvoicePaymentSingleItemWrap;
+
+export const zSupplierInvoicePaymentControllerDoUpdateData = z.object({
+  body: zFortnoxLfSupplierInvoicePaymentSinglePayloadItemWrap.optional(),
+  path: z.object({
+    Number: z
+      .int()
+      .min(-2147483648, {
+        error: "Invalid value: Expected int32 to be >= -2147483648",
+      })
+      .max(2147483647, {
+        error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .register(z.globalRegistry, {
+        description: "identifies the supplier invoice payment",
+      }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful update supplier invoice payment response
+ */
+export const zSupplierInvoicePaymentControllerDoUpdateResponse =
+  zFortnoxLfSupplierInvoicePaymentSingleItemWrap;
+
+export const zSupplierInvoicePaymentControllerDoUpdateAndBookkeepData =
+  z.object({
+    body: zFortnoxLfSupplierInvoicePaymentSinglePayloadItemWrap.optional(),
+    path: z.object({
+      Number: z
+        .int()
+        .min(-2147483648, {
+          error: "Invalid value: Expected int32 to be >= -2147483648",
+        })
+        .max(2147483647, {
+          error: "Invalid value: Expected int32 to be <= 2147483647",
+        })
+        .register(z.globalRegistry, {
+          description: "identifies the supplier invoice payment",
+        }),
+    }),
+    query: z.never().optional(),
+  });
+
+/**
+ * Successful update supplier invoice payment response
+ */
+export const zSupplierInvoicePaymentControllerDoUpdateAndBookkeepResponse =
+  zFortnoxLfSupplierInvoicePaymentSingleItemWrap;
+
+export const zSupplierInvoiceControllerDoIndexData = z.object({
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      tofinalpaydate: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "Filter supplier invoices by final to pay date",
+        })
+        .optional(),
+      fromfinalpaydate: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "Filter supplier invoices by final from pay date",
+        })
+        .optional(),
       filter: z
         .enum([
           "cancelled",
@@ -14178,7 +18037,79 @@ export const zList39Data = z.object({
           "authorizepending",
         ])
         .register(z.globalRegistry, {
-          description: "possibility to filter supplier invoices",
+          description: "Filter supplier invoices by status",
+        })
+        .optional(),
+      lastmodified: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "Filter supplier invoices by last modified date",
+        })
+        .optional(),
+      suppliernumber: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Filter supplier invoices by supplier number",
+        })
+        .optional(),
+      suppliername: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Filter supplier invoices by supplier name",
+        })
+        .optional(),
+      ocr: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Filter supplier invoices by ocr number",
+        })
+        .optional(),
+      invoicenumber: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Filter supplier invoices by invoice number",
+        })
+        .optional(),
+      serialnumber: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Filter supplier invoices by serial number",
+        })
+        .optional(),
+      costcenter: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Filter supplier invoices by cost center",
+        })
+        .optional(),
+      project: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Filter supplier invoices by project",
+        })
+        .optional(),
+      ourreference: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Filter supplier invoices by our reference",
+        })
+        .optional(),
+      yourreference: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Filter supplier invoices by your reference",
+        })
+        .optional(),
+      fromdate: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "Filter supplier invoices by from date",
+        })
+        .optional(),
+      todate: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "Filter supplier invoices by to date",
         })
         .optional(),
     })
@@ -14186,22 +18117,24 @@ export const zList39Data = z.object({
 });
 
 /**
- * list of supplier invoices
+ * Successful list supplier invoices response
  */
-export const zList39Response = zFortnoxSupplierInvoiceListItemWrap;
+export const zSupplierInvoiceControllerDoIndexResponse =
+  zFortnoxLfSupplierInvoiceListItemWrap;
 
-export const zCreate39Data = z.object({
-  body: zFortnoxSupplierInvoiceWrap.optional(),
+export const zSupplierInvoiceControllerDoCreateData = z.object({
+  body: zFortnoxLfSupplierInvoiceSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created supplier invoice
+ * Successful create supplier invoice response
  */
-export const zCreate39Response = zFortnoxSupplierInvoiceWrap;
+export const zSupplierInvoiceControllerDoCreateResponse =
+  zFortnoxLfSupplierInvoiceSingleItemWrap;
 
-export const zGet48Data = z.object({
+export const zSupplierInvoiceControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     GivenNumber: z
@@ -14220,12 +18153,13 @@ export const zGet48Data = z.object({
 });
 
 /**
- * the existing supplier invoice
+ * Successful show supplier invoice response
  */
-export const zGet48Response = zFortnoxSupplierInvoiceWrap;
+export const zSupplierInvoiceControllerDoShowResponse =
+  zFortnoxLfSupplierInvoiceSingleItemWrap;
 
-export const zUpdate37Data = z.object({
-  body: zFortnoxSupplierInvoiceWrap.optional(),
+export const zSupplierInvoiceControllerDoUpdateData = z.object({
+  body: zFortnoxLfSupplierInvoiceSinglePayloadItemWrap.optional(),
   path: z.object({
     GivenNumber: z
       .int()
@@ -14243,12 +18177,63 @@ export const zUpdate37Data = z.object({
 });
 
 /**
- * the updated supplier invoice
+ * Successful update supplier invoice response
  */
-export const zUpdate37Response = zFortnoxSupplierInvoiceWrap;
+export const zSupplierInvoiceControllerDoUpdateResponse =
+  zFortnoxLfSupplierInvoiceSingleItemWrap;
 
-export const zApprovalbookkeepData = z.object({
-  body: z.never().optional(),
+export const zSupplierInvoiceControllerDoUpdateAndApprovalBookkeepData =
+  z.object({
+    body: zFortnoxLfSupplierInvoiceSinglePayloadItemWrap.optional(),
+    path: z.object({
+      GivenNumber: z
+        .int()
+        .min(-2147483648, {
+          error: "Invalid value: Expected int32 to be >= -2147483648",
+        })
+        .max(2147483647, {
+          error: "Invalid value: Expected int32 to be <= 2147483647",
+        })
+        .register(z.globalRegistry, {
+          description: "identifies the invoice",
+        }),
+    }),
+    query: z.never().optional(),
+  });
+
+/**
+ * Successful update supplier invoice response
+ */
+export const zSupplierInvoiceControllerDoUpdateAndApprovalBookkeepResponse =
+  zFortnoxLfSupplierInvoiceSingleItemWrap;
+
+export const zSupplierInvoiceControllerDoUpdateAndApprovalPaymentData =
+  z.object({
+    body: zFortnoxLfSupplierInvoiceSinglePayloadItemWrap.optional(),
+    path: z.object({
+      GivenNumber: z
+        .int()
+        .min(-2147483648, {
+          error: "Invalid value: Expected int32 to be >= -2147483648",
+        })
+        .max(2147483647, {
+          error: "Invalid value: Expected int32 to be <= 2147483647",
+        })
+        .register(z.globalRegistry, {
+          description: "identifies the invoice",
+        }),
+    }),
+    query: z.never().optional(),
+  });
+
+/**
+ * Successful update supplier invoice response
+ */
+export const zSupplierInvoiceControllerDoUpdateAndApprovalPaymentResponse =
+  zFortnoxLfSupplierInvoiceSingleItemWrap;
+
+export const zSupplierInvoiceControllerDoUpdateAndBookkeepData = z.object({
+  body: zFortnoxLfSupplierInvoiceSinglePayloadItemWrap.optional(),
   path: z.object({
     GivenNumber: z
       .int()
@@ -14266,12 +18251,13 @@ export const zApprovalbookkeepData = z.object({
 });
 
 /**
- * the updated supplier invoice
+ * Successful update supplier invoice response
  */
-export const zApprovalbookkeepResponse = zFortnoxSupplierInvoiceWrap;
+export const zSupplierInvoiceControllerDoUpdateAndBookkeepResponse =
+  zFortnoxLfSupplierInvoiceSingleItemWrap;
 
-export const zApprovalpaymentData = z.object({
-  body: z.never().optional(),
+export const zSupplierInvoiceControllerDoUpdateAndCancelData = z.object({
+  body: zFortnoxLfSupplierInvoiceSinglePayloadItemWrap.optional(),
   path: z.object({
     GivenNumber: z
       .int()
@@ -14289,12 +18275,13 @@ export const zApprovalpaymentData = z.object({
 });
 
 /**
- * the updated supplier invoice
+ * Successful update supplier invoice response
  */
-export const zApprovalpaymentResponse = zFortnoxSupplierInvoiceWrap;
+export const zSupplierInvoiceControllerDoUpdateAndCancelResponse =
+  zFortnoxLfSupplierInvoiceSingleItemWrap;
 
-export const zBookkeep4Data = z.object({
-  body: z.never().optional(),
+export const zSupplierInvoiceControllerDoUpdateAndCreditData = z.object({
+  body: zFortnoxLfSupplierInvoiceSinglePayloadItemWrap.optional(),
   path: z.object({
     GivenNumber: z
       .int()
@@ -14312,109 +18299,119 @@ export const zBookkeep4Data = z.object({
 });
 
 /**
- * the updated supplier invoice
+ * Successful update supplier invoice response
  */
-export const zBookkeep4Response = zFortnoxSupplierInvoiceWrap;
+export const zSupplierInvoiceControllerDoUpdateAndCreditResponse =
+  zFortnoxLfSupplierInvoiceSingleItemWrap;
 
-export const zCancel6Data = z.object({
+export const zSupplierControllerDoIndexData = z.object({
   body: z.never().optional(),
-  path: z.object({
-    GivenNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the invoice",
-      }),
-  }),
-  query: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      suppliernumber: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on supplier number",
+        })
+        .optional(),
+      name: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on name",
+        })
+        .optional(),
+      organisationnumber: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on organisation number",
+        })
+        .optional(),
+      phone: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on phone",
+        })
+        .optional(),
+      zipcode: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on zip code",
+        })
+        .optional(),
+      city: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on city",
+        })
+        .optional(),
+      email: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on email",
+        })
+        .optional(),
+      lastmodified: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "filter on last modified date",
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 /**
- * the updated supplier invoice
+ * Successful list suppliers response
  */
-export const zCancel6Response = zFortnoxSupplierInvoiceWrap;
+export const zSupplierControllerDoIndexResponse =
+  zFortnoxLfSupplierListItemWrap;
 
-export const zCredit2Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    GivenNumber: z
-      .int()
-      .min(-2147483648, {
-        error: "Invalid value: Expected int32 to be >= -2147483648",
-      })
-      .max(2147483647, {
-        error: "Invalid value: Expected int32 to be <= 2147483647",
-      })
-      .register(z.globalRegistry, {
-        description: "identifies the invoice",
-      }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the updated supplier invoice
- */
-export const zCredit2Response = zFortnoxSupplierInvoiceWrap;
-
-export const zList40Data = z.object({
-  body: z.never().optional(),
+export const zSupplierControllerDoCreateData = z.object({
+  body: zFortnoxLfSupplierSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * list of suppliers
+ * Successful create supplier response
  */
-export const zList40Response = zFortnoxSupplierListItemList;
+export const zSupplierControllerDoCreateResponse =
+  zFortnoxLfSupplierSingleItemWrap;
 
-export const zCreate40Data = z.object({
-  body: zFortnoxSupplierWrap.optional(),
-  path: z.never().optional(),
-  query: z.never().optional(),
-});
-
-/**
- * the created supplier
- */
-export const zCreate40Response = zFortnoxSupplierWrap;
-
-export const zGet49Data = z.object({
+export const zSupplierControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     SupplierNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the supplier",
+      description: "Supplier number of supplier to show",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the existing supplier
+ * Successful show supplier response
  */
-export const zGet49Response = zFortnoxSupplierWrap;
+export const zSupplierControllerDoShowResponse =
+  zFortnoxLfSupplierSingleItemWrap;
 
-export const zUpdate38Data = z.object({
-  body: zFortnoxSupplierWrap.optional(),
+export const zSupplierControllerDoUpdateData = z.object({
+  body: zFortnoxLfSupplierSinglePayloadItemWrap.optional(),
   path: z.object({
     SupplierNumber: z.string().register(z.globalRegistry, {
-      description: "identifies the supplier",
+      description: "Supplier number of supplier to update",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the updated supplier
+ * Successful update supplier response
  */
-export const zUpdate38Response = zFortnoxSupplierWrap;
+export const zSupplierControllerDoUpdateResponse =
+  zFortnoxLfSupplierSingleItemWrap;
 
-export const zList41Data = z.object({
+export const zTaxReductionControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -14430,22 +18427,24 @@ export const zList41Data = z.object({
 });
 
 /**
- * a list of tax reductions.
+ * Successful list tax reductions response
  */
-export const zList41Response = zFortnoxTaxReductionListItemList;
+export const zTaxReductionControllerDoIndexResponse =
+  zFortnoxTaxReductionListItemWrap;
 
-export const zCreate41Data = z.object({
-  body: zFortnoxTaxReductionWrap.optional(),
+export const zTaxReductionControllerDoCreateData = z.object({
+  body: zFortnoxTaxReductionCreatePayloadWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created tax reduction
+ * Successful create tax reduction response
  */
-export const zCreate41Response = zFortnoxTaxReductionWrap;
+export const zTaxReductionControllerDoCreateResponse =
+  zFortnoxTaxReductionSingleItemWrap;
 
-export const zRemove21Data = z.object({
+export const zTaxReductionControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     Id: z
@@ -14464,13 +18463,15 @@ export const zRemove21Data = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete tax reduction response with no content
  */
-export const zRemove21Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zTaxReductionControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete tax reduction response with no content",
+  });
 
-export const zGet50Data = z.object({
+export const zTaxReductionControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Id: z
@@ -14489,12 +18490,13 @@ export const zGet50Data = z.object({
 });
 
 /**
- * the existing tax reduction
+ * Successful show tax reduction response
  */
-export const zGet50Response = zFortnoxTaxReductionWrap;
+export const zTaxReductionControllerDoShowResponse =
+  zFortnoxTaxReductionSingleItemWrap;
 
-export const zUpdate39Data = z.object({
-  body: zFortnoxTaxReductionWrap.optional(),
+export const zTaxReductionControllerDoUpdateData = z.object({
+  body: zFortnoxTaxReductionUpdatePayloadWrap.optional(),
   path: z.object({
     Id: z
       .int()
@@ -14512,33 +18514,36 @@ export const zUpdate39Data = z.object({
 });
 
 /**
- * the updated tax reduction
+ * Successful update tax reduction response
  */
-export const zUpdate39Response = zFortnoxTaxReductionWrap;
+export const zTaxReductionControllerDoUpdateResponse =
+  zFortnoxTaxReductionSingleItemWrap;
 
-export const zList42Data = z.object({
+export const zTermsOfDeliveryControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * a list of terms of deliveries
+ * Successful list terms of deliveries response
  */
-export const zList42Response = zFortnoxTermsOfDeliveryList;
+export const zTermsOfDeliveryControllerDoIndexResponse =
+  zFortnoxKfTermsOfDeliveryListItemWrap;
 
-export const zCreate42Data = z.object({
-  body: zFortnoxTermsOfDeliveryWrap.optional(),
+export const zTermsOfDeliveryControllerDoCreateData = z.object({
+  body: zFortnoxKfTermsOfDeliverySinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created term of delivery
+ * Successful create terms of delivery response
  */
-export const zCreate42Response = zFortnoxTermsOfDeliveryWrap;
+export const zTermsOfDeliveryControllerDoCreateResponse =
+  zFortnoxKfTermsOfDeliverySingleItemWrap;
 
-export const zGet51Data = z.object({
+export const zTermsOfDeliveryControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
@@ -14549,12 +18554,13 @@ export const zGet51Data = z.object({
 });
 
 /**
- * the existing terms of delivery
+ * Successful show terms of delivery response
  */
-export const zGet51Response = zFortnoxTermsOfDeliveryWrap;
+export const zTermsOfDeliveryControllerDoShowResponse =
+  zFortnoxKfTermsOfDeliverySingleItemWrap;
 
-export const zUpdate40Data = z.object({
-  body: zFortnoxTermsOfDeliveryWrap.optional(),
+export const zTermsOfDeliveryControllerDoUpdateData = z.object({
+  body: zFortnoxKfTermsOfDeliverySinglePayloadItemWrap.optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
       description: "identifies the terms of delivery",
@@ -14564,33 +18570,36 @@ export const zUpdate40Data = z.object({
 });
 
 /**
- * the updated terms of delivery
+ * Successful update terms of delivery response
  */
-export const zUpdate40Response = zFortnoxTermsOfDeliveryWrap;
+export const zTermsOfDeliveryControllerDoUpdateResponse =
+  zFortnoxKfTermsOfDeliverySingleItemWrap;
 
-export const zList43Data = z.object({
+export const zTermsOfPaymentControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * a list of terms of payments
+ * Successful list terms of payments response
  */
-export const zList43Response = zFortnoxTermsOfPaymentList;
+export const zTermsOfPaymentControllerDoIndexResponse =
+  zFortnoxTermsOfPaymentListItemWrap;
 
-export const zCreate43Data = z.object({
-  body: zFortnoxTermsOfPaymentWrap.optional(),
+export const zTermsOfPaymentControllerDoCreateData = z.object({
+  body: zFortnoxTermsOfPaymentSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created terms of payment
+ * Successful create terms of payment response
  */
-export const zCreate43Response = zFortnoxTermsOfPaymentWrap;
+export const zTermsOfPaymentControllerDoCreateResponse =
+  zFortnoxTermsOfPaymentSingleItemWrap;
 
-export const zRemove22Data = z.object({
+export const zTermsOfPaymentControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
@@ -14601,13 +18610,15 @@ export const zRemove22Data = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete terms of payment response with no content
  */
-export const zRemove22Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zTermsOfPaymentControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete terms of payment response with no content",
+  });
 
-export const zGet52Data = z.object({
+export const zTermsOfPaymentControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
@@ -14618,12 +18629,13 @@ export const zGet52Data = z.object({
 });
 
 /**
- * the existing terms of payment
+ * Successful show terms of payment response
  */
-export const zGet52Response = zFortnoxTermsOfPaymentWrap;
+export const zTermsOfPaymentControllerDoShowResponse =
+  zFortnoxTermsOfPaymentSingleItemWrap;
 
-export const zUpdate41Data = z.object({
-  body: zFortnoxTermsOfPaymentWrap.optional(),
+export const zTermsOfPaymentControllerDoUpdateData = z.object({
+  body: zFortnoxTermsOfPaymentSinglePayloadItemWrap.optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
       description: "identifies the term of payment",
@@ -14633,33 +18645,34 @@ export const zUpdate41Data = z.object({
 });
 
 /**
- * the updated term of payment
+ * Successful update terms of payment response
  */
-export const zUpdate41Response = zFortnoxTermsOfPaymentWrap;
+export const zTermsOfPaymentControllerDoUpdateResponse =
+  zFortnoxTermsOfPaymentSingleItemWrap;
 
-export const zList44Data = z.object({
+export const zUnitControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * a list of units.
+ * Successful list units response
  */
-export const zList44Response = zFortnoxUnitList;
+export const zUnitControllerDoIndexResponse = zFortnoxUnitListItemWrap;
 
-export const zCreate45Data = z.object({
-  body: zFortnoxUnitWrap.optional(),
+export const zUnitControllerDoCreateData = z.object({
+  body: zFortnoxUnitSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created unit
+ * Successful create unit response
  */
-export const zCreate45Response = zFortnoxUnitWrap;
+export const zUnitControllerDoCreateResponse = zFortnoxUnitSingleItemWrap;
 
-export const zRemove24Data = z.object({
+export const zUnitControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
@@ -14670,13 +18683,15 @@ export const zRemove24Data = z.object({
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete unit response with no content
  */
-export const zRemove24Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zUnitControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete unit response with no content",
+  });
 
-export const zGet54Data = z.object({
+export const zUnitControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
@@ -14687,12 +18702,12 @@ export const zGet54Data = z.object({
 });
 
 /**
- * the existing unit
+ * Successful show unit response
  */
-export const zGet54Response = zFortnoxUnitWrap;
+export const zUnitControllerDoShowResponse = zFortnoxUnitSingleItemWrap;
 
-export const zUpdate42Data = z.object({
-  body: zFortnoxUnitWrap.optional(),
+export const zUnitControllerDoUpdateData = z.object({
+  body: zFortnoxUnitSinglePayloadItemWrap.optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
       description: "identifies the unit",
@@ -14702,11 +18717,11 @@ export const zUpdate42Data = z.object({
 });
 
 /**
- * the updated unit
+ * Successful update unit response
  */
-export const zUpdate42Response = zFortnoxUnitWrap;
+export const zUnitControllerDoUpdateResponse = zFortnoxUnitSingleItemWrap;
 
-export const zGet55Data = z.object({
+export const zVacationDebtBasisControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Year: z
@@ -14716,6 +18731,9 @@ export const zGet55Data = z.object({
       })
       .max(2147483647, {
         error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .register(z.globalRegistry, {
+        description: "Id of vacation debt basis to show",
       }),
     Month: z
       .int()
@@ -14724,75 +18742,154 @@ export const zGet55Data = z.object({
       })
       .max(2147483647, {
         error: "Invalid value: Expected int32 to be <= 2147483647",
+      })
+      .register(z.globalRegistry, {
+        description: "Month of vacation debt basis to show",
       }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * a created and posted vacation debt basis up until last day of month in year
+ * Successful show vacation debt basis response
  */
-export const zGet55Response = zFortnoxVacationDebtBasisWrap;
+export const zVacationDebtBasisControllerDoShowResponse =
+  zFortnoxLonVacationDebtBasisSingleItemWrap;
 
-export const zList45Data = z.object({
-  body: z.never().optional(),
-  path: z.never().optional(),
-  query: z.never().optional(),
-});
-
-/**
- * a list of voucher file connections.
- */
-export const zList45Response = zFortnoxVoucherFileConnectionList;
-
-export const zCreate46Data = z.object({
-  body: zFortnoxVoucherFileConnectionWrap.optional(),
-  path: z.never().optional(),
-  query: z.never().optional(),
-});
-
-/**
- * the created voucher file connection
- */
-export const zCreate46Response = zFortnoxVoucherFileConnectionWrap;
-
-export const zRemove25Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    FileId: z.string().register(z.globalRegistry, {
-      description: "identifies the voucher file connection",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * Successfully removed the specified resource.
- */
-export const zRemove25Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
-
-export const zGet56Data = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    FileId: z.string().register(z.globalRegistry, {
-      description: "identifies the voucher file connection",
-    }),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * the existing voucher file connection
- */
-export const zGet56Response = zFortnoxVoucherFileConnectionWrap;
-
-export const zList46Data = z.object({
+export const zVoucherFileConnectionControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
     .object({
+      voucheryear: z
+        .int()
+        .min(-2147483648, {
+          error: "Invalid value: Expected int32 to be >= -2147483648",
+        })
+        .max(2147483647, {
+          error: "Invalid value: Expected int32 to be <= 2147483647",
+        })
+        .register(z.globalRegistry, {
+          description: "Voucheryear of voucher file connections to list",
+        })
+        .optional(),
+      voucherdescription: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Voucherdescription of voucher file connections to list",
+        })
+        .optional(),
+      vouchernumber: z
+        .int()
+        .min(-2147483648, {
+          error: "Invalid value: Expected int32 to be >= -2147483648",
+        })
+        .max(2147483647, {
+          error: "Invalid value: Expected int32 to be <= 2147483647",
+        })
+        .register(z.globalRegistry, {
+          description: "Vouchernumber of voucher file connections to list",
+        })
+        .optional(),
+      voucherseries: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "Voucherseries of voucher file connections to list",
+        })
+        .optional(),
+    })
+    .optional(),
+});
+
+/**
+ * Successful list voucher file connections response
+ */
+export const zVoucherFileConnectionControllerDoIndexResponse =
+  zFortnoxDaVoucherFileConnectionListItemWrap;
+
+export const zVoucherFileConnectionControllerDoCreateData = z.object({
+  body: zFortnoxDaVoucherFileConnectionSinglePayloadItemWrap.optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful create voucher file connection response
+ */
+export const zVoucherFileConnectionControllerDoCreateResponse =
+  zFortnoxDaVoucherFileConnectionSingleItemWrap;
+
+export const zVoucherFileConnectionControllerDoDeleteData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    FileId: z.string().register(z.globalRegistry, {
+      description: "identifies the voucher file connection",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful delete voucher file connection response with no content
+ */
+export const zVoucherFileConnectionControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description:
+      "Successful delete voucher file connection response with no content",
+  });
+
+export const zVoucherFileConnectionControllerDoShowData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    FileId: z.string().register(z.globalRegistry, {
+      description: "identifies the voucher file connection",
+    }),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Successful show voucher file connection response
+ */
+export const zVoucherFileConnectionControllerDoShowResponse =
+  zFortnoxDaVoucherFileConnectionSingleItemWrap;
+
+export const zVoucherControllerDoIndexData = z.object({
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z
+    .object({
+      costcenter: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on cost center",
+        })
+        .optional(),
+      lastmodified: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "filter on last modified date",
+        })
+        .optional(),
+      fromdate: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "filter on from date",
+        })
+        .optional(),
+      todate: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "filter on to date",
+        })
+        .optional(),
+      voucherseries: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on voucher series",
+        })
+        .optional(),
       financialyear: z
         .int()
         .min(-2147483648, {
@@ -14810,12 +18907,12 @@ export const zList46Data = z.object({
 });
 
 /**
- * list of vouchers
+ * Successful list vouchers response
  */
-export const zList46Response = zFortnoxVoucherListItemList;
+export const zVoucherControllerDoIndexResponse = zFortnoxBfVoucherListItemWrap;
 
-export const zCreate47Data = z.object({
-  body: zFortnoxVoucherWrap.optional(),
+export const zVoucherControllerDoCreateData = z.object({
+  body: zFortnoxBfVoucherSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z
     .object({
@@ -14837,30 +18934,89 @@ export const zCreate47Data = z.object({
 });
 
 /**
- * the created voucher
+ * Successful create voucher response
  */
-export const zCreate47Response = zFortnoxVoucherWrap;
+export const zVoucherControllerDoCreateResponse =
+  zFortnoxBfVoucherSingleItemWrap;
 
-export const zListVouchersData = z.object({
+export const zVoucherControllerDoSubListData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
-  query: z.never().optional(),
+  query: z
+    .object({
+      costcenter: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on cost center",
+        })
+        .optional(),
+      lastmodified: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "filter on last modified date",
+        })
+        .optional(),
+      fromdate: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "filter on from date",
+        })
+        .optional(),
+      todate: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "filter on to date",
+        })
+        .optional(),
+      voucherseries: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on voucher series",
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 /**
- * list of vouchers
+ * Successful list vouchers response
  */
-export const zListVouchersResponse = zFortnoxVoucherListItemList;
+export const zVoucherControllerDoSubListResponse =
+  zFortnoxBfVoucherListItemWrap;
 
-export const zListSeriesData = z.object({
+export const zVoucherControllerDoSublistWithParamData = z.object({
   body: z.never().optional(),
   path: z.object({
     VoucherSeries: z.string().register(z.globalRegistry, {
-      description: "identifies the voucher series",
+      description: "Voucher series of vouchers to list",
     }),
   }),
   query: z
     .object({
+      costcenter: z
+        .string()
+        .register(z.globalRegistry, {
+          description: "filter on cost center",
+        })
+        .optional(),
+      lastmodified: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "filter on last modified date",
+        })
+        .optional(),
+      fromdate: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "filter on from date",
+        })
+        .optional(),
+      todate: z.iso
+        .date()
+        .register(z.globalRegistry, {
+          description: "filter on to date",
+        })
+        .optional(),
       financialyear: z
         .int()
         .min(-2147483648, {
@@ -14878,11 +19034,12 @@ export const zListSeriesData = z.object({
 });
 
 /**
- * list of vouchers
+ * Successful list vouchers response
  */
-export const zListSeriesResponse = zFortnoxVoucherListItemList;
+export const zVoucherControllerDoSublistWithParamResponse =
+  zFortnoxBfVoucherListItemWrap;
 
-export const zGet57Data = z.object({
+export const zVoucherControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     VoucherSeries: z.string().register(z.globalRegistry, {
@@ -14919,130 +19076,140 @@ export const zGet57Data = z.object({
 });
 
 /**
- * a single voucher
+ * Successful show voucher response
  */
-export const zGet57Response = zFortnoxVoucherWrap;
+export const zVoucherControllerDoShowResponse = zFortnoxBfVoucherSingleItemWrap;
 
-export const zList47Data = z.object({
+export const zVoucherSeriesControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * a list of voucher series.
+ * Successful list voucher series collection response
  */
-export const zList47Response = zFortnoxVoucherSeriesListItemList;
+export const zVoucherSeriesControllerDoIndexResponse =
+  zFortnoxBfVoucherSeriesListItemWrap;
 
-export const zCreate48Data = z.object({
-  body: zFortnoxVoucherSeriesWrap.optional(),
+export const zVoucherSeriesControllerDoCreateData = z.object({
+  body: zFortnoxBfVoucherSeriesSinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created voucher series
+ * Successful create voucher series response
  */
-export const zCreate48Response = zFortnoxVoucherSeriesWrap;
+export const zVoucherSeriesControllerDoCreateResponse =
+  zFortnoxBfVoucherSeriesSingleItemWrap;
 
-export const zGet58Data = z.object({
+export const zVoucherSeriesControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
-      description: "identifies the voucher series",
+      description: "Code of voucher series to show",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the existing voucher series
+ * Successful show voucher series response
  */
-export const zGet58Response = zFortnoxVoucherSeriesWrap;
+export const zVoucherSeriesControllerDoShowResponse =
+  zFortnoxBfVoucherSeriesSingleItemWrap;
 
-export const zUpdate43Data = z.object({
-  body: zFortnoxVoucherSeriesWrap.optional(),
+export const zVoucherSeriesControllerDoUpdateData = z.object({
+  body: zFortnoxBfVoucherSeriesSinglePayloadItemWrap.optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
-      description: "identifies the voucher series",
+      description: "Code of voucher series to update",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the updated voucher series
+ * Successful update voucher series response
  */
-export const zUpdate43Response = zFortnoxVoucherSeriesWrap;
+export const zVoucherSeriesControllerDoUpdateResponse =
+  zFortnoxBfVoucherSeriesSingleItemWrap;
 
-export const zList48Data = z.object({
+export const zWayOfDeliveryControllerDoIndexData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * a list of way of deliveries
+ * Successful list way of deliveries response
  */
-export const zList48Response = zFortnoxWayOfDeliveryList;
+export const zWayOfDeliveryControllerDoIndexResponse =
+  zFortnoxWayOfDeliveryListItemWrap;
 
-export const zCreate49Data = z.object({
-  body: zFortnoxWayOfDeliveryWrap.optional(),
+export const zWayOfDeliveryControllerDoCreateData = z.object({
+  body: zFortnoxWayOfDeliverySinglePayloadItemWrap.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
 });
 
 /**
- * the created way of delivery
+ * Successful create way of delivery response
  */
-export const zCreate49Response = zFortnoxWayOfDeliveryWrap;
+export const zWayOfDeliveryControllerDoCreateResponse =
+  zFortnoxWayOfDeliverySingleItemWrap;
 
-export const zRemove26Data = z.object({
+export const zWayOfDeliveryControllerDoDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
-      description: "identifies the way of delivery",
+      description: "Code of way of delivery to delete",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * Successfully removed the specified resource.
+ * Successful delete way of delivery response with no content
  */
-export const zRemove26Response = z.void().register(z.globalRegistry, {
-  description: "Successfully removed the specified resource.",
-});
+export const zWayOfDeliveryControllerDoDeleteResponse = z
+  .void()
+  .register(z.globalRegistry, {
+    description: "Successful delete way of delivery response with no content",
+  });
 
-export const zGet59Data = z.object({
+export const zWayOfDeliveryControllerDoShowData = z.object({
   body: z.never().optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
-      description: "identifies the way of delivery",
+      description: "Code of way of delivery to show",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the existing way of delivery
+ * Successful show way of delivery response
  */
-export const zGet59Response = zFortnoxWayOfDeliveryWrap;
+export const zWayOfDeliveryControllerDoShowResponse =
+  zFortnoxWayOfDeliverySingleItemWrap;
 
-export const zUpdate44Data = z.object({
-  body: zFortnoxWayOfDeliveryWrap.optional(),
+export const zWayOfDeliveryControllerDoUpdateData = z.object({
+  body: zFortnoxWayOfDeliverySinglePayloadItemWrap.optional(),
   path: z.object({
     Code: z.string().register(z.globalRegistry, {
-      description: "identifies the way of delivery",
+      description: "Code of way of delivery to update",
     }),
   }),
   query: z.never().optional(),
 });
 
 /**
- * the updated way of delivery
+ * Successful update way of delivery response
  */
-export const zUpdate44Response = zFortnoxWayOfDeliveryWrap;
+export const zWayOfDeliveryControllerDoUpdateResponse =
+  zFortnoxWayOfDeliverySingleItemWrap;
 
 export const zGetAttachmentsData = z.object({
   body: z.never().optional(),
@@ -15287,7 +19454,7 @@ export const zGetAppSalesForSingleAppAndTenantData = z.object({
 export const zGetAppSalesForSingleAppAndTenantResponse =
   zIntegrationPartnerAppSalesResponse;
 
-export const zList82Data = z.object({
+export const zList8Data = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -15387,14 +19554,14 @@ export const zList82Data = z.object({
 /**
  * list of article registrations  <code>BaseArticleRegistration</code>
  */
-export const zList82Response = z
+export const zList8Response = z
   .array(zTimeReportingBaseArticleRegistration)
   .register(z.globalRegistry, {
     description:
       "list of article registrations  <code>BaseArticleRegistration</code>",
   });
 
-export const zList25Data = z.object({
+export const zList2Data = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -15501,14 +19668,14 @@ export const zList25Data = z.object({
  * list of registrations <code>DetailedRegistration</code>
  * <b>Note</b>: used by mobile client and in detailed chargeable units
  */
-export const zList25Response = z
+export const zList2Response = z
   .array(zTimeReportingDetailedRegistration)
   .register(z.globalRegistry, {
     description:
       "list of registrations <code>DetailedRegistration</code>\n <b>Note</b>: used by mobile client and in detailed chargeable units",
   });
 
-export const zGetAll2Data = z.object({
+export const zGetAllData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -15538,9 +19705,9 @@ export const zGetAll2Data = z.object({
 /**
  * A list of manual documents.
  */
-export const zGetAll2Response = zWarehouseManualDocument;
+export const zGetAllResponse = zWarehouseManualDocument;
 
-export const zCreate4Data = z.object({
+export const zCreateData = z.object({
   body: zWarehouseManualInboundDocument.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
@@ -15549,9 +19716,9 @@ export const zCreate4Data = z.object({
 /**
  * the <code>ManualInboundDocument</code> document.
  */
-export const zCreate4Response = zWarehouseManualInboundDocument;
+export const zCreateResponse = zWarehouseManualInboundDocument;
 
-export const zGet5Data = z.object({
+export const zGetData = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.coerce
@@ -15572,7 +19739,7 @@ export const zGet5Data = z.object({
 /**
  * the <code>ManualInboundDocument</code> document.
  */
-export const zGet5Response = zWarehouseManualInboundDocument;
+export const zGetResponse = zWarehouseManualInboundDocument;
 
 export const zUpdateNoteData = z.object({
   body: zWarehouseManualInboundDocumentPatch.optional(),
@@ -15599,7 +19766,7 @@ export const zUpdateNoteResponse = z.void().register(z.globalRegistry, {
   description: "Successfully applied partial modifications to the resource.",
 });
 
-export const zUpdate3Data = z.object({
+export const zUpdateData = z.object({
   body: zWarehouseManualInboundDocument.optional(),
   path: z.object({
     id: z.coerce
@@ -15620,7 +19787,7 @@ export const zUpdate3Data = z.object({
 /**
  * the <code>ManualInboundDocument</code> document.
  */
-export const zUpdate3Response = zWarehouseManualInboundDocument;
+export const zUpdateResponse = zWarehouseManualInboundDocument;
 
 export const zReleaseData = z.object({
   body: z.never().optional(),
@@ -15687,7 +19854,7 @@ export const zVoidDocumentResponse = z.void().register(z.globalRegistry, {
   description: "Successfully updated the specified resource.",
 });
 
-export const zCreate110Data = z.object({
+export const zCreate1Data = z.object({
   body: zWarehouseManualOutboundDocument.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
@@ -15696,9 +19863,9 @@ export const zCreate110Data = z.object({
 /**
  * the <code>ManualOutboundDocument</code> document.
  */
-export const zCreate110Response = zWarehouseManualOutboundDocument;
+export const zCreate1Response = zWarehouseManualOutboundDocument;
 
-export const zGet110Data = z.object({
+export const zGet1Data = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.coerce
@@ -15719,7 +19886,7 @@ export const zGet110Data = z.object({
 /**
  * the <code>ManualOutboundDocument</code> document.
  */
-export const zGet110Response = zWarehouseManualOutboundDocument;
+export const zGet1Response = zWarehouseManualOutboundDocument;
 
 export const zUpdateNote1Data = z.object({
   body: zWarehouseManualOutboundDocumentPatch.optional(),
@@ -15746,7 +19913,7 @@ export const zUpdateNote1Response = z.void().register(z.globalRegistry, {
   description: "Successfully applied partial modifications to the resource.",
 });
 
-export const zUpdate19Data = z.object({
+export const zUpdate1Data = z.object({
   body: zWarehouseManualOutboundDocument.optional(),
   path: z.object({
     id: z.coerce
@@ -15767,7 +19934,7 @@ export const zUpdate19Data = z.object({
 /**
  * the <code>ManualOutboundDocument</code> document.
  */
-export const zUpdate19Response = zWarehouseManualOutboundDocument;
+export const zUpdate1Response = zWarehouseManualOutboundDocument;
 
 export const zRelease1Data = z.object({
   body: z.never().optional(),
@@ -15840,7 +20007,7 @@ export const zGetAll6Data = z.object({
  */
 export const zGetAll6Response = zWarehouseCustomDocumentType;
 
-export const zCreate82Data = z.object({
+export const zCreate8Data = z.object({
   body: zWarehouseCustomDocumentType.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
@@ -15849,7 +20016,7 @@ export const zCreate82Data = z.object({
 /**
  * `1` if created, else `0` if type already exists.
  */
-export const zCreate82Response = z
+export const zCreate8Response = z
   .int()
   .min(-2147483648, {
     error: "Invalid value: Expected int32 to be >= -2147483648",
@@ -15861,7 +20028,7 @@ export const zCreate82Response = z
     description: "`1` if created, else `0` if type already exists.",
   });
 
-export const zGet112Data = z.object({
+export const zGet11Data = z.object({
   body: z.never().optional(),
   path: z.object({
     type: z.string().register(z.globalRegistry, {
@@ -15874,9 +20041,9 @@ export const zGet112Data = z.object({
 /**
  * A <code>CustomDocumentType</code>
  */
-export const zGet112Response = zWarehouseCustomDocumentType;
+export const zGet11Response = zWarehouseCustomDocumentType;
 
-export const zGet122Data = z.object({
+export const zGet12Data = z.object({
   body: z.never().optional(),
   path: z.object({
     type: z.string().register(z.globalRegistry, {
@@ -15892,7 +20059,7 @@ export const zGet122Data = z.object({
 /**
  * The <code>CustomInboundDocument</code>.
  */
-export const zGet122Response = zWarehouseCustomInboundDocument;
+export const zGet12Response = zWarehouseCustomInboundDocument;
 
 export const zSaveData = z.object({
   body: zWarehouseCustomInboundDocument.optional(),
@@ -15964,7 +20131,7 @@ export const zVoidDocument2Response = z.void().register(z.globalRegistry, {
   description: "Successfully updated the specified resource.",
 });
 
-export const zGet132Data = z.object({
+export const zGet13Data = z.object({
   body: z.never().optional(),
   path: z.object({
     type: z.string().register(z.globalRegistry, {
@@ -15980,7 +20147,7 @@ export const zGet132Data = z.object({
 /**
  * the fetched <code>CustomOutboundDocument</code>
  */
-export const zGet132Response = zWarehouseCustomOutboundDocument;
+export const zGet13Response = zWarehouseCustomOutboundDocument;
 
 export const zSave1Data = z.object({
   body: zWarehouseCustomOutboundDocument.optional(),
@@ -16125,7 +20292,7 @@ export const zGetAll7Response = z
     description: "A list of <code>IncomingGoods</code> documents.",
   });
 
-export const zCreate92Data = z.object({
+export const zCreate9Data = z.object({
   body: zWarehouseIncomingGoods.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
@@ -16134,9 +20301,9 @@ export const zCreate92Data = z.object({
 /**
  * The created <code>IncomingGoods</code> document.
  */
-export const zCreate92Response = zWarehouseIncomingGoods;
+export const zCreate9Response = zWarehouseIncomingGoods;
 
-export const zGet152Data = z.object({
+export const zGet15Data = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.coerce
@@ -16173,7 +20340,7 @@ export const zGet152Data = z.object({
 /**
  * The <code>IncomingGoods</code> document.
  */
-export const zGet152Response = zWarehouseIncomingGoods;
+export const zGet15Response = zWarehouseIncomingGoods;
 
 export const zPatchData = z.object({
   body: zWarehouseIncomingGoods.optional(),
@@ -16330,7 +20497,7 @@ export const zGetAll8Data = z.object({
  */
 export const zGetAll8Response = zWarehouseProductionOrder;
 
-export const zCreate102Data = z.object({
+export const zCreate10Data = z.object({
   body: zWarehouseProductionOrder.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
@@ -16339,7 +20506,7 @@ export const zCreate102Data = z.object({
 /**
  * the <code>ProductionOrder</code> document.
  */
-export const zCreate102Response = zWarehouseProductionOrder;
+export const zCreate10Response = zWarehouseProductionOrder;
 
 export const zGetRequiredProductionPartsData = z.object({
   body: z.never().optional(),
@@ -16437,7 +20604,7 @@ export const zVoidProductionOrderResponse = z
     description: "Successfully updated the specified resource.",
   });
 
-export const zGet162Data = z.object({
+export const zGet16Data = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.coerce
@@ -16458,7 +20625,7 @@ export const zGet162Data = z.object({
 /**
  * the <code>ProductionOrder</code> document.
  */
-export const zGet162Response = zWarehouseProductionOrder;
+export const zGet16Response = zWarehouseProductionOrder;
 
 export const zUpdateNote2Data = z.object({
   body: zWarehouseProductionOrderPatch.optional(),
@@ -16483,7 +20650,7 @@ export const zUpdateNote2Data = z.object({
  */
 export const zUpdateNote2Response = zWarehouseProductionOrder;
 
-export const zUpdate52Data = z.object({
+export const zUpdate5Data = z.object({
   body: zWarehouseProductionOrder.optional(),
   path: z.object({
     id: z.coerce
@@ -16504,7 +20671,7 @@ export const zUpdate52Data = z.object({
 /**
  * the <code>ProductionOrder</code> document.
  */
-export const zUpdate52Response = zWarehouseProductionOrder;
+export const zUpdate5Response = zWarehouseProductionOrder;
 
 export const zGetAll9Data = z.object({
   body: z.never().optional(),
@@ -16576,7 +20743,7 @@ export const zGetAll9Data = z.object({
  */
 export const zGetAll9Response = zWarehousePurchaseOrder;
 
-export const zCreate112Data = z.object({
+export const zCreate11Data = z.object({
   body: zWarehousePurchaseOrder.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
@@ -16585,7 +20752,7 @@ export const zCreate112Data = z.object({
 /**
  * The created <code>PurchaseOrder</code> document.
  */
-export const zCreate112Response = zWarehousePurchaseOrder;
+export const zCreate11Response = zWarehousePurchaseOrder;
 
 export const zGetCsvReportData = z.object({
   body: z.never().optional(),
@@ -16724,7 +20891,7 @@ export const zSendPurchaseOrdersResponse = z.void().register(z.globalRegistry, {
   description: "Successfully created a new resource.",
 });
 
-export const zGet172Data = z.object({
+export const zGet17Data = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.coerce
@@ -16761,9 +20928,9 @@ export const zGet172Data = z.object({
 /**
  * The <code>PurchaseOrder</code>.
  */
-export const zGet172Response = zWarehousePurchaseOrder;
+export const zGet17Response = zWarehousePurchaseOrder;
 
-export const zUpdate62Data = z.object({
+export const zUpdate6Data = z.object({
   body: zWarehousePurchaseOrder.optional(),
   path: z.object({
     id: z.coerce
@@ -16784,7 +20951,7 @@ export const zUpdate62Data = z.object({
 /**
  * The updated <code>PurchaseOrder</code>.
  */
-export const zUpdate62Response = zWarehousePurchaseOrder;
+export const zUpdate6Response = zWarehousePurchaseOrder;
 
 export const zSetManuallyCompletedData = z.object({
   body: z.never().optional(),
@@ -17006,7 +21173,7 @@ export const zGetStockBalanceData = z.object({
  */
 export const zGetStockBalanceResponse = zWarehouseStockBalance;
 
-export const zGetAll22Data = z.object({
+export const zGetAll2Data = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -17030,9 +21197,9 @@ export const zGetAll22Data = z.object({
 /**
  * A list of <code>StockPoints</code>.
  */
-export const zGetAll22Response = zWarehouseStockPoint;
+export const zGetAll2Response = zWarehouseStockPoint;
 
-export const zCreate310Data = z.object({
+export const zCreate3Data = z.object({
   body: zWarehouseStockPoint.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
@@ -17041,7 +21208,7 @@ export const zCreate310Data = z.object({
 /**
  * The created <code>StockPoint</code>.
  */
-export const zCreate310Response = zWarehouseStockPoint;
+export const zCreate3Response = zWarehouseStockPoint;
 
 export const zGetMany3Data = z.object({
   body: z.never().optional(),
@@ -17070,7 +21237,7 @@ export const zGetMany3Data = z.object({
  */
 export const zGetMany3Response = zWarehouseStockPoint;
 
-export const zDelete5Data = z.object({
+export const zDeleteData = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.uuid().register(z.globalRegistry, {
@@ -17083,7 +21250,7 @@ export const zDelete5Data = z.object({
 /**
  * The deleted <code>StockPoint</code>.
  */
-export const zDelete5Response = zWarehouseStockPoint;
+export const zDeleteResponse = zWarehouseStockPoint;
 
 export const zGetByAmbiguousIdData = z.object({
   body: z.never().optional(),
@@ -17120,7 +21287,7 @@ export const zAppendStockLocationsData = z.object({
  */
 export const zAppendStockLocationsResponse = zWarehouseStockLocation;
 
-export const zUpdate310Data = z.object({
+export const zUpdate3Data = z.object({
   body: zWarehouseStockPoint.optional(),
   path: z.object({
     id: z.uuid().register(z.globalRegistry, {
@@ -17133,7 +21300,7 @@ export const zUpdate310Data = z.object({
 /**
  * The updated <code>StockPoint</code>.
  */
-export const zUpdate310Response = zWarehouseStockPoint;
+export const zUpdate3Response = zWarehouseStockPoint;
 
 export const zGetStockLocationsByAmbiguousIdData = z.object({
   body: z.never().optional(),
@@ -17159,7 +21326,7 @@ export const zGetStockLocationsByAmbiguousIdData = z.object({
  */
 export const zGetStockLocationsByAmbiguousIdResponse = zWarehouseStockLocation;
 
-export const zGetAll12Data = z.object({
+export const zGetAll1Data = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z
@@ -17183,9 +21350,9 @@ export const zGetAll12Data = z.object({
 /**
  * A list of <code>StockTakings</code>.
  */
-export const zGetAll12Response = zWarehouseStockTaking;
+export const zGetAll1Response = zWarehouseStockTaking;
 
-export const zCreate24Data = z.object({
+export const zCreate2Data = z.object({
   body: zWarehouseStockTaking.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
@@ -17194,7 +21361,7 @@ export const zCreate24Data = z.object({
 /**
  * the created stock taking
  */
-export const zCreate24Response = zWarehouseStockTaking;
+export const zCreate2Response = zWarehouseStockTaking;
 
 export const zDeleteStockTakingData = z.object({
   body: z.never().optional(),
@@ -17221,7 +21388,7 @@ export const zDeleteStockTakingResponse = z.void().register(z.globalRegistry, {
   description: "Successfully removed the specified resource.",
 });
 
-export const zGet28Data = z.object({
+export const zGet2Data = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.coerce
@@ -17242,9 +21409,9 @@ export const zGet28Data = z.object({
 /**
  * The <code>StockTaking</code> document.
  */
-export const zGet28Response = zWarehouseStockTaking;
+export const zGet2Response = zWarehouseStockTaking;
 
-export const zUpdate23Data = z.object({
+export const zUpdate2Data = z.object({
   body: zWarehouseStockTaking.optional(),
   path: z.object({
     id: z.coerce
@@ -17265,7 +21432,7 @@ export const zUpdate23Data = z.object({
 /**
  * The <code>StockTaking</code> document.
  */
-export const zUpdate23Response = zWarehouseStockTaking;
+export const zUpdate2Response = zWarehouseStockTaking;
 
 export const zAddStockTakingRowsByFilterData = z.object({
   body: z.never().optional(),
@@ -17586,7 +21753,7 @@ export const zVoidStockTakingResponse = z.void().register(z.globalRegistry, {
   description: "Successfully updated the specified resource.",
 });
 
-export const zCreate52Data = z.object({
+export const zCreate5Data = z.object({
   body: zWarehouseStockTransferDocument.optional(),
   path: z.never().optional(),
   query: z.never().optional(),
@@ -17595,9 +21762,9 @@ export const zCreate52Data = z.object({
 /**
  * The <code>StockTransferDocument</code> document.
  */
-export const zCreate52Response = zWarehouseStockTransferDocument;
+export const zCreate5Response = zWarehouseStockTransferDocument;
 
-export const zGet410Data = z.object({
+export const zGet4Data = z.object({
   body: z.never().optional(),
   path: z.object({
     id: z.coerce
@@ -17618,9 +21785,9 @@ export const zGet410Data = z.object({
 /**
  * The <code>StockTransferDocument</code> document.
  */
-export const zGet410Response = zWarehouseStockTransferDocument;
+export const zGet4Response = zWarehouseStockTransferDocument;
 
-export const zUpdate45Data = z.object({
+export const zUpdate4Data = z.object({
   body: zWarehouseStockTransferDocument.optional(),
   path: z.object({
     id: z.coerce
@@ -17641,7 +21808,7 @@ export const zUpdate45Data = z.object({
 /**
  * The <code>StockTransferDocument</code> document.
  */
-export const zUpdate45Response = zWarehouseStockTransferDocument;
+export const zUpdate4Response = zWarehouseStockTransferDocument;
 
 export const zRelease3Data = z.object({
   body: z.never().optional(),

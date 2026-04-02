@@ -1,106 +1,109 @@
 import z from "zod";
 import {
-  zFortnoxAbsenceTransactionListItemWrap,
-  zFortnoxAbsenceTransactionSingleItemWrap,
-  zFortnoxAccountChartWrap,
-  zFortnoxAccountListItemWrap,
-  zFortnoxAccountSingleItemWrap,
-  zFortnoxFolderWrap,
-  zFortnoxArticleFileConnectionListItemWrap,
-  zFortnoxArticleFileConnectionWrap,
-  zFortnoxArticleListItemList,
-  zFortnoxArticleWrap,
-  zFortnoxArticleUrlConnectionListItemList,
-  zFortnoxArticleUrlConnectionWrap,
-  zFortnoxAssetFileConnectionResponse,
-  zFortnoxListAssetWrap,
-  zFortnoxAssetSingle,
-  zFortnoxAssetTypeWrapList,
-  zFortnoxAssetTypeWrapSingle,
-  zFortnoxAttendanceTransactionListItemList,
-  zFortnoxAttendanceTransactionWrap,
-  zFortnoxCompanyInfoWrap,
-  zFortnoxContractAccrualListItemList,
-  zFortnoxContractAccrualWrap,
-  zFortnoxContractListItemList,
-  zFortnoxContractWrap,
-  zFortnoxInvoiceWrap,
-  zFortnoxContractTemplateListItemList,
-  zFortnoxContractTemplateWrap,
-  zFortnoxCostCenterList,
-  zFortnoxCostCenterWrap,
-  zFortnoxCurrencyList,
-  zFortnoxCurrencyWrap,
-  zFortnoxCustomerReferenceWrap,
-  zFortnoxCustomerWrap,
-  zFortnoxCustomerListItemList,
-  zFortnoxTrustedEmailSenderWrap,
-  zFortnoxEmployeeListItemWrap,
-  zFortnoxEmployeeWrap,
-  zFortnoxEuVatLimitRegulationWrap,
-  zFortnoxExpenseListItemWrap,
-  zFortnoxExpenseWrap,
-  zFortnoxFinancialYearWrapList,
-  zFortnoxFinancialYearWrap,
-  zFortnoxInvoiceAccrualListItemList,
-  zFortnoxInvoiceAccrualWrap,
-  zFortnoxInvoicePaymentListItemList,
-  zFortnoxInvoicePaymentWrap,
-  zFortnoxInvoiceListItemWrap,
-  zFortnoxLabelList,
-  zFortnoxLabelWrap,
-  zFortnoxMeWrap,
-  zFortnoxModeOfPaymentList,
-  zFortnoxModeOfPaymentWrap,
-  zFortnoxInvoiceResponseWrap,
-  zFortnoxOfferListItemList,
-  zFortnoxOfferWrap,
-  zFortnoxOrderWrap,
-  zFortnoxOrderListItemList,
-  zFortnoxPredefinedAccountList,
-  zFortnoxPredefinedAccountWrap,
-  zFortnoxPredefinedVoucherSeriesList,
-  zFortnoxPredefinedVoucherSeriesWrap,
-  zFortnoxPriceListList,
-  zFortnoxPriceListWrap,
-  zFortnoxPriceWrap,
-  zFortnoxPriceListItemList,
-  zFortnoxPrintTemplateList,
-  zFortnoxProjectListItemList,
-  zFortnoxProjectWrap,
-  zFortnoxSalaryTransactionListItemList,
-  zFortnoxSalaryTransactionWrap,
-  zFortnoxScheduleTimeWrap,
-  zFortnoxCompanySettingsWrap,
-  zFortnoxLockedPeriodWrap,
-  zFortnoxSupplierInvoiceAccrualListItemList,
-  zFortnoxSupplierInvoiceAccrualWrap,
-  zFortnoxSupplierInvoiceExternalUrlConnectionSingle,
-  zFortnoxSupplierInvoiceFileConnectionList,
-  zFortnoxSupplierInvoiceFileConnectionWrap,
-  zFortnoxSupplierInvoicePaymentListItemList,
-  zFortnoxSupplierInvoicePaymentWrap,
-  zFortnoxSupplierInvoiceListItemWrap,
-  zFortnoxSupplierInvoiceWrap,
-  zFortnoxSupplierListItemList,
-  zFortnoxSupplierWrap,
-  zFortnoxTaxReductionListItemList,
-  zFortnoxTaxReductionWrap,
-  zFortnoxTermsOfDeliveryList,
-  zFortnoxTermsOfDeliveryWrap,
-  zFortnoxTermsOfPaymentList,
-  zFortnoxTermsOfPaymentWrap,
-  zFortnoxUnitList,
-  zFortnoxUnitWrap,
-  zFortnoxVacationDebtBasisWrap,
-  zFortnoxVoucherFileConnectionList,
-  zFortnoxVoucherFileConnectionWrap,
-  zFortnoxVoucherListItemList,
-  zFortnoxVoucherWrap,
-  zFortnoxVoucherSeriesListItemList,
-  zFortnoxVoucherSeriesWrap,
-  zFortnoxWayOfDeliveryList,
-  zFortnoxWayOfDeliveryWrap,
+  zFortnoxLonAbsenceTransactionsListItemWrap,
+  zFortnoxLonAbsenceTransactionsSingleItemWrap,
+  zFortnoxBfAccountChartListItemWrap,
+  zFortnoxBfAccountListItemWrap,
+  zFortnoxBfAccountSingleItemWrap,
+  zFortnoxFileStorageFolderSingleItemWrap,
+  zFortnoxDaArticleFileConnectionListItemWrap,
+  zFortnoxDaArticleFileConnectionSingleItemWrap,
+  zFortnoxArticleListItemWrap,
+  zFortnoxArticleSingleItemWrap,
+  zFortnoxItemUrlConnectionListItemWrap,
+  zFortnoxItemUrlConnectionSingleItemWrap,
+  zFortnoxDaAssetFileConnectionListItemWrap,
+  zFortnoxAnlAssetsListItemWrap,
+  zFortnoxAnlAssetsSingleItemResponseWrap,
+  zFortnoxAnlAssetsActionResponse,
+  zFortnoxAnlAssetsDepreciationResponseWrap,
+  zFortnoxAnlAssetTypesListResponseWrap,
+  zFortnoxAnlAssetTypesSingleResponseWrap,
+  zFortnoxLonAttendanceTransactionsListItemWrap,
+  zFortnoxLonAttendanceTransactionsSingleItemWrap,
+  zFortnoxCompanyInformationSingleItemWrap,
+  zFortnoxContractInvoiceContractAccrualListItemWrap,
+  zFortnoxContractInvoiceContractAccrualSingleItemWrap,
+  zFortnoxContractInvoiceContractListResponseWrap,
+  zFortnoxContractInvoiceContractResponseWrap,
+  zFortnoxContractInvoiceContractTemplateListResponseWrap,
+  zFortnoxContractInvoiceContractTemplateResponseWrap,
+  zFortnoxCostCenterListItemWrap,
+  zFortnoxCostCenterSingleItemWrap,
+  zFortnoxCurrencyListItemWrap,
+  zFortnoxCurrencySingleItemWrap,
+  zFortnoxKfCustomerReferenceSingleItemWrap,
+  zFortnoxKfCustomerListItemWrap,
+  zFortnoxKfCustomerSingleItemWrap,
+  zFortnoxDaEmailSendersWrap,
+  zFortnoxLonEmployeeListItemWrap,
+  zFortnoxLonEmployeeSingleItemWrap,
+  zFortnoxEuVatLimitRegulationResponseWrap,
+  zFortnoxLonExpensesListItemWrap,
+  zFortnoxLonExpensesSingleItemWrap,
+  zFortnoxBfFinancialYearListItemWrap,
+  zFortnoxBfFinancialYearSingleItemWrap,
+  zFortnoxDaInboxFolderResponseWrap,
+  zFortnoxKfInvoiceAccrualListItemWrap,
+  zFortnoxKfInvoiceAccrualSingleItemWrap,
+  zFortnoxKfInvoicePaymentListItemWrap,
+  zFortnoxKfInvoicePaymentSingleItemWrap,
+  zFortnoxKfInvoiceListResponseWrap,
+  zFortnoxKfInvoiceResponseWrap,
+  zFortnoxDocumentTagListItemWrap,
+  zFortnoxDocumentTagSingleItemWrap,
+  zFortnoxMeSingleItemWrap,
+  zFortnoxModeOfPaymentListItemWrap,
+  zFortnoxModeOfPaymentSingleItemWrap,
+  zFortnoxKfNoxInvoiceSingleItemWrap,
+  zFortnoxOfferOfferListResponseWrap,
+  zFortnoxOfferOfferResponseWrap,
+  zFortnoxOrderOrderListResponseWrap,
+  zFortnoxOrderOrderResponseWrap,
+  zFortnoxPreDefinedAccountListItemWrap,
+  zFortnoxPreDefinedAccountSingleItemWrap,
+  zFortnoxBfPreDefinedVoucherSeriesListItemWrap,
+  zFortnoxBfPreDefinedVoucherSeriesSingleItemWrap,
+  zFortnoxPriceListListItemWrap,
+  zFortnoxPriceListSingleItemWrap,
+  zFortnoxPriceSingleItemWrap,
+  zFortnoxPriceListItemWrap,
+  zFortnoxPrintTemplateListItemWrap,
+  zFortnoxProjectProjectListItemWrap,
+  zFortnoxProjectProjectSingleItemWrap,
+  zFortnoxLonSalaryTransactionsListItemWrap,
+  zFortnoxLonSalaryTransactionsSingleItemWrap,
+  zFortnoxLonScheduleTimeSingleItemWrap,
+  zFortnoxCompanyCompanySettingsResponseWrap,
+  zFortnoxLockedPeriodSettingsSingleItemWrap,
+  zFortnoxLfSupplierInvoiceAccrualListItemWrap,
+  zFortnoxLfSupplierInvoiceAccrualSingleItemWrap,
+  zFortnoxSinvoiceExternalUrlConnectionSingleItemWrap,
+  zFortnoxDaSupplierInvoiceFileConnectionListItemWrap,
+  zFortnoxDaSupplierInvoiceFileConnectionSingleItemWrap,
+  zFortnoxLfSupplierInvoicePaymentListItemWrap,
+  zFortnoxLfSupplierInvoicePaymentSingleItemWrap,
+  zFortnoxLfSupplierInvoiceListItemWrap,
+  zFortnoxLfSupplierInvoiceSingleItemWrap,
+  zFortnoxLfSupplierListItemWrap,
+  zFortnoxLfSupplierSingleItemWrap,
+  zFortnoxTaxReductionListItemWrap,
+  zFortnoxTaxReductionSingleItemWrap,
+  zFortnoxKfTermsOfDeliveryListItemWrap,
+  zFortnoxKfTermsOfDeliverySingleItemWrap,
+  zFortnoxTermsOfPaymentListItemWrap,
+  zFortnoxTermsOfPaymentSingleItemWrap,
+  zFortnoxUnitListItemWrap,
+  zFortnoxUnitSingleItemWrap,
+  zFortnoxLonVacationDebtBasisSingleItemWrap,
+  zFortnoxDaVoucherFileConnectionListItemWrap,
+  zFortnoxDaVoucherFileConnectionSingleItemWrap,
+  zFortnoxBfVoucherListItemWrap,
+  zFortnoxBfVoucherSingleItemWrap,
+  zFortnoxBfVoucherSeriesListItemWrap,
+  zFortnoxBfVoucherSeriesSingleItemWrap,
+  zFortnoxWayOfDeliveryListItemWrap,
+  zFortnoxWayOfDeliverySingleItemWrap,
   zFileattachmentsAttachment,
   zFileattachmentsNumberOfAttachments,
   zIntegrationPartnerAppSalesResponse,
@@ -139,7 +142,7 @@ export const paths = {
             .optional(),
         })
         .optional(),
-      output: zFortnoxAbsenceTransactionListItemWrap,
+      output: zFortnoxLonAbsenceTransactionsListItemWrap,
     },
     post: {
       input: z
@@ -147,7 +150,7 @@ export const paths = {
           body: z.any(),
         })
         .optional(),
-      output: z.unknown(),
+      output: zFortnoxLonAbsenceTransactionsSingleItemWrap,
     },
   },
   "/3/absencetransactions/{id}": {
@@ -157,7 +160,7 @@ export const paths = {
           id: z.uuid(),
         }),
       }),
-      output: zFortnoxAbsenceTransactionSingleItemWrap,
+      output: z.unknown(),
     },
     get: {
       input: z.object({
@@ -165,7 +168,7 @@ export const paths = {
           id: z.uuid(),
         }),
       }),
-      output: zFortnoxAbsenceTransactionSingleItemWrap,
+      output: zFortnoxLonAbsenceTransactionsSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -174,7 +177,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxAbsenceTransactionSingleItemWrap,
+      output: zFortnoxLonAbsenceTransactionsSingleItemWrap,
     },
   },
   "/3/absencetransactions/{id}/{Date}/{Code}": {
@@ -209,13 +212,13 @@ export const paths = {
           ]),
         }),
       }),
-      output: zFortnoxAbsenceTransactionListItemWrap,
+      output: zFortnoxLonAbsenceTransactionsListItemWrap,
     },
   },
   "/3/accountcharts": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxAccountChartWrap,
+      output: zFortnoxBfAccountChartListItemWrap,
     },
   },
   "/3/accounts": {
@@ -224,14 +227,14 @@ export const paths = {
         .object({
           query: z
             .object({
+              sortby: z.enum(["number"]).optional(),
               lastmodified: z.string().optional(),
               sru: z.int().optional(),
-              sortby: z.enum(["number"]).optional(),
             })
             .optional(),
         })
         .optional(),
-      output: zFortnoxAccountListItemWrap,
+      output: zFortnoxBfAccountListItemWrap,
     },
     post: {
       input: z
@@ -262,7 +265,7 @@ export const paths = {
           Number: z.int(),
         }),
       }),
-      output: zFortnoxAccountSingleItemWrap,
+      output: zFortnoxBfAccountSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -276,7 +279,7 @@ export const paths = {
           .optional(),
         body: z.any(),
       }),
-      output: zFortnoxAccountSingleItemWrap,
+      output: zFortnoxBfAccountSingleItemWrap,
     },
   },
   "/3/archive": {
@@ -303,15 +306,15 @@ export const paths = {
             .optional(),
         })
         .optional(),
-      output: zFortnoxFolderWrap,
+      output: zFortnoxFileStorageFolderSingleItemWrap,
     },
     post: {
       input: z
         .object({
           query: z
             .object({
-              path: z.string().optional(),
               folderid: z.string().optional(),
+              path: z.string().optional(),
             })
             .optional(),
           body: z.any(),
@@ -326,6 +329,11 @@ export const paths = {
         params: z.object({
           id: z.string(),
         }),
+        query: z
+          .object({
+            path: z.string().optional(),
+          })
+          .optional(),
       }),
       output: z.unknown(),
     },
@@ -336,6 +344,7 @@ export const paths = {
         }),
         query: z
           .object({
+            path: z.string().optional(),
             fileid: z.string().optional(),
           })
           .optional(),
@@ -345,8 +354,16 @@ export const paths = {
   },
   "/3/articlefileconnections": {
     get: {
-      input: z.object({}).optional(),
-      output: zFortnoxArticleFileConnectionListItemWrap,
+      input: z
+        .object({
+          query: z
+            .object({
+              articlenumber: z.string().optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      output: zFortnoxDaArticleFileConnectionListItemWrap,
     },
     post: {
       input: z
@@ -372,7 +389,7 @@ export const paths = {
           FileId: z.string(),
         }),
       }),
-      output: zFortnoxArticleFileConnectionWrap,
+      output: zFortnoxDaArticleFileConnectionSingleItemWrap,
     },
   },
   "/3/articles": {
@@ -382,14 +399,6 @@ export const paths = {
           query: z
             .object({
               filter: z.enum(["active", "inactive"]).optional(),
-              articlenumber: z.string().optional(),
-              description: z.string().optional(),
-              ean: z.string().optional(),
-              suppliernumber: z.string().optional(),
-              manufacturer: z.string().optional(),
-              manufacturerarticlenumber: z.string().optional(),
-              webshop: z.string().optional(),
-              lastmodified: z.string().optional(),
               sortby: z
                 .enum([
                   "articlenumber",
@@ -398,11 +407,19 @@ export const paths = {
                   "stockvalue",
                 ])
                 .optional(),
+              articlenumber: z.string().optional(),
+              description: z.string().optional(),
+              ean: z.string().optional(),
+              suppliernumber: z.string().optional(),
+              manufacturer: z.string().optional(),
+              manufacturerarticlenumber: z.string().optional(),
+              webshop: z.string().optional(),
+              lastmodified: z.string().optional(),
             })
             .optional(),
         })
         .optional(),
-      output: zFortnoxArticleListItemList,
+      output: zFortnoxArticleListItemWrap,
     },
     post: {
       input: z
@@ -428,7 +445,7 @@ export const paths = {
           ArticleNumber: z.int(),
         }),
       }),
-      output: zFortnoxArticleWrap,
+      output: zFortnoxArticleSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -437,13 +454,21 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxArticleWrap,
+      output: zFortnoxArticleSingleItemWrap,
     },
   },
   "/3/articleurlconnections": {
     get: {
-      input: z.object({}).optional(),
-      output: zFortnoxArticleUrlConnectionListItemList,
+      input: z
+        .object({
+          query: z
+            .object({
+              articlenumber: z.int().optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      output: zFortnoxItemUrlConnectionListItemWrap,
     },
     post: {
       input: z
@@ -469,7 +494,7 @@ export const paths = {
           id: z.string(),
         }),
       }),
-      output: zFortnoxArticleUrlConnectionWrap,
+      output: zFortnoxItemUrlConnectionSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -478,13 +503,21 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxArticleUrlConnectionWrap,
+      output: zFortnoxItemUrlConnectionSingleItemWrap,
     },
   },
   "/3/assetfileconnections": {
     get: {
-      input: z.object({}).optional(),
-      output: zFortnoxAssetFileConnectionResponse,
+      input: z
+        .object({
+          query: z
+            .object({
+              assetid: z.string().optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      output: zFortnoxDaAssetFileConnectionListItemWrap,
     },
     post: {
       input: z
@@ -495,11 +528,11 @@ export const paths = {
       output: z.unknown(),
     },
   },
-  "/3/assetfileconnections/{fileId}": {
+  "/3/assetfileconnections/{FileId}": {
     delete: {
       input: z.object({
         params: z.object({
-          fileId: z.string(),
+          FileId: z.string(),
         }),
       }),
       output: z.unknown(),
@@ -507,8 +540,19 @@ export const paths = {
   },
   "/3/assets": {
     get: {
-      input: z.object({}).optional(),
-      output: zFortnoxListAssetWrap,
+      input: z
+        .object({
+          query: z
+            .object({
+              number: z.string().optional(),
+              description: z.string().optional(),
+              type: z.string().optional(),
+              lastmodified: z.iso.date().optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      output: zFortnoxAnlAssetsListItemWrap,
     },
     post: {
       input: z
@@ -516,18 +560,18 @@ export const paths = {
           body: z.any(),
         })
         .optional(),
-      output: z.unknown(),
+      output: zFortnoxAnlAssetsSingleItemResponseWrap,
     },
   },
-  "/3/assets/changeob/{GivenNumber}": {
+  "/3/assets/changeob/{Id}": {
     put: {
       input: z.object({
         params: z.object({
-          GivenNumber: z.string(),
+          Id: z.string(),
         }),
         body: z.any(),
       }),
-      output: zFortnoxAssetSingle,
+      output: zFortnoxAnlAssetsActionResponse,
     },
   },
   "/3/assets/depreciate": {
@@ -537,7 +581,7 @@ export const paths = {
           body: z.any(),
         })
         .optional(),
-      output: z.unknown(),
+      output: zFortnoxAnlAssetsDepreciationResponseWrap,
     },
   },
   "/3/assets/depreciations/{ToDate}": {
@@ -547,35 +591,43 @@ export const paths = {
           ToDate: z.string(),
         }),
       }),
-      output: zFortnoxListAssetWrap,
+      output: zFortnoxAnlAssetsListItemWrap,
     },
   },
-  "/3/assets/scrap/{GivenNumber}": {
+  "/3/assets/scrap/{Id}": {
     put: {
       input: z.object({
         params: z.object({
-          GivenNumber: z.string(),
+          Id: z.string(),
         }),
         body: z.any(),
       }),
-      output: zFortnoxAssetSingle,
+      output: zFortnoxAnlAssetsActionResponse,
     },
   },
-  "/3/assets/sell/{GivenNumber}": {
+  "/3/assets/sell/{Id}": {
     put: {
       input: z.object({
         params: z.object({
-          GivenNumber: z.string(),
+          Id: z.string(),
         }),
         body: z.any(),
       }),
-      output: zFortnoxAssetSingle,
+      output: zFortnoxAnlAssetsActionResponse,
     },
   },
   "/3/assets/types": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxAssetTypeWrapList,
+      output: zFortnoxAnlAssetTypesListResponseWrap,
+    },
+    post: {
+      input: z
+        .object({
+          body: z.any(),
+        })
+        .optional(),
+      output: zFortnoxAnlAssetTypesSingleResponseWrap,
     },
   },
   "/3/assets/types/{id}": {
@@ -593,16 +645,7 @@ export const paths = {
           id: z.int(),
         }),
       }),
-      output: zFortnoxAssetTypeWrapSingle,
-    },
-    post: {
-      input: z.object({
-        params: z.object({
-          id: z.int(),
-        }),
-        body: z.any(),
-      }),
-      output: z.unknown(),
+      output: zFortnoxAnlAssetTypesSingleResponseWrap,
     },
     put: {
       input: z.object({
@@ -611,36 +654,36 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxAssetTypeWrapSingle,
+      output: zFortnoxAnlAssetTypesSingleResponseWrap,
     },
   },
-  "/3/assets/writedown/{GivenNumber}": {
+  "/3/assets/writedown/{Id}": {
     put: {
       input: z.object({
         params: z.object({
-          GivenNumber: z.string(),
+          Id: z.string(),
         }),
         body: z.any(),
       }),
-      output: zFortnoxAssetSingle,
+      output: zFortnoxAnlAssetsActionResponse,
     },
   },
-  "/3/assets/writeup/{GivenNumber}": {
+  "/3/assets/writeup/{Id}": {
     put: {
       input: z.object({
         params: z.object({
-          GivenNumber: z.string(),
+          Id: z.string(),
         }),
         body: z.any(),
       }),
-      output: zFortnoxAssetSingle,
+      output: zFortnoxAnlAssetsActionResponse,
     },
   },
-  "/3/assets/{GivenNumber}": {
+  "/3/assets/{Id}": {
     delete: {
       input: z.object({
         params: z.object({
-          GivenNumber: z.string(),
+          Id: z.string(),
         }),
         body: z.any(),
       }),
@@ -649,19 +692,19 @@ export const paths = {
     get: {
       input: z.object({
         params: z.object({
-          GivenNumber: z.string(),
+          Id: z.string(),
         }),
       }),
-      output: zFortnoxAssetSingle,
+      output: zFortnoxAnlAssetsSingleItemResponseWrap,
     },
     put: {
       input: z.object({
         params: z.object({
-          GivenNumber: z.string(),
+          Id: z.string(),
         }),
         body: z.any(),
       }),
-      output: zFortnoxAssetSingle,
+      output: zFortnoxAnlAssetsSingleItemResponseWrap,
     },
   },
   "/3/attendancetransactions": {
@@ -676,7 +719,7 @@ export const paths = {
             .optional(),
         })
         .optional(),
-      output: zFortnoxAttendanceTransactionListItemList,
+      output: zFortnoxLonAttendanceTransactionsListItemWrap,
     },
     post: {
       input: z
@@ -684,7 +727,7 @@ export const paths = {
           body: z.any(),
         })
         .optional(),
-      output: z.unknown(),
+      output: zFortnoxLonAttendanceTransactionsSingleItemWrap,
     },
   },
   "/3/attendancetransactions/{id}": {
@@ -694,7 +737,7 @@ export const paths = {
           id: z.uuid(),
         }),
       }),
-      output: zFortnoxAttendanceTransactionWrap,
+      output: z.unknown(),
     },
     get: {
       input: z.object({
@@ -702,7 +745,7 @@ export const paths = {
           id: z.uuid(),
         }),
       }),
-      output: zFortnoxAttendanceTransactionWrap,
+      output: zFortnoxLonAttendanceTransactionsSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -711,7 +754,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxAttendanceTransactionWrap,
+      output: zFortnoxLonAttendanceTransactionsSingleItemWrap,
     },
   },
   "/3/attendancetransactions/{id}/{Date}/{Code}": {
@@ -750,19 +793,19 @@ export const paths = {
           ]),
         }),
       }),
-      output: zFortnoxAttendanceTransactionListItemList,
+      output: zFortnoxLonAttendanceTransactionsListItemWrap,
     },
   },
   "/3/companyinformation": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxCompanyInfoWrap,
+      output: zFortnoxCompanyInformationSingleItemWrap,
     },
   },
   "/3/contractaccruals": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxContractAccrualListItemList,
+      output: zFortnoxContractInvoiceContractAccrualListItemWrap,
     },
     post: {
       input: z
@@ -777,7 +820,7 @@ export const paths = {
     delete: {
       input: z.object({
         params: z.object({
-          DocumentNumber: z.int(),
+          DocumentNumber: z.string(),
         }),
       }),
       output: z.unknown(),
@@ -785,19 +828,19 @@ export const paths = {
     get: {
       input: z.object({
         params: z.object({
-          DocumentNumber: z.int(),
+          DocumentNumber: z.string(),
         }),
       }),
-      output: zFortnoxContractAccrualWrap,
+      output: zFortnoxContractInvoiceContractAccrualSingleItemWrap,
     },
     put: {
       input: z.object({
         params: z.object({
-          DocumentNumber: z.int(),
+          DocumentNumber: z.string(),
         }),
         body: z.any(),
       }),
-      output: zFortnoxContractAccrualWrap,
+      output: zFortnoxContractInvoiceContractAccrualSingleItemWrap,
     },
   },
   "/3/contracts": {
@@ -806,12 +849,19 @@ export const paths = {
         .object({
           query: z
             .object({
+              periodstart: z.iso.date().optional(),
+              periodend: z.iso.date().optional(),
               filter: z.enum(["active", "inactive", "finished"]).optional(),
+              documentnumber: z.int().optional(),
+              customernumber: z.string().optional(),
+              templatenumber: z.int().optional(),
+              invoicesremaining: z.int().optional(),
+              lastmodified: z.iso.date().optional(),
             })
             .optional(),
         })
         .optional(),
-      output: zFortnoxContractListItemList,
+      output: zFortnoxContractInvoiceContractListResponseWrap,
     },
     post: {
       input: z
@@ -829,7 +879,7 @@ export const paths = {
           DocumentNumber: z.string(),
         }),
       }),
-      output: zFortnoxContractWrap,
+      output: zFortnoxContractInvoiceContractResponseWrap,
     },
     put: {
       input: z.object({
@@ -838,7 +888,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxContractWrap,
+      output: zFortnoxContractInvoiceContractResponseWrap,
     },
   },
   "/3/contracts/{DocumentNumber}/createinvoice": {
@@ -847,8 +897,14 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        query: z
+          .object({
+            invoicedate: z.iso.date().optional(),
+          })
+          .optional(),
+        body: z.any(),
       }),
-      output: zFortnoxInvoiceWrap,
+      output: zFortnoxContractInvoiceContractResponseWrap,
     },
   },
   "/3/contracts/{DocumentNumber}/finish": {
@@ -857,8 +913,9 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxContractWrap,
+      output: zFortnoxContractInvoiceContractResponseWrap,
     },
   },
   "/3/contracts/{DocumentNumber}/increaseinvoicecount": {
@@ -867,14 +924,15 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxContractWrap,
+      output: zFortnoxContractInvoiceContractResponseWrap,
     },
   },
   "/3/contracttemplates": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxContractTemplateListItemList,
+      output: zFortnoxContractInvoiceContractTemplateListResponseWrap,
     },
     post: {
       input: z
@@ -892,7 +950,7 @@ export const paths = {
           TemplateNumber: z.int(),
         }),
       }),
-      output: zFortnoxContractTemplateWrap,
+      output: zFortnoxContractInvoiceContractTemplateResponseWrap,
     },
     put: {
       input: z.object({
@@ -901,13 +959,13 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxContractTemplateWrap,
+      output: zFortnoxContractInvoiceContractTemplateResponseWrap,
     },
   },
   "/3/costcenters": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxCostCenterList,
+      output: zFortnoxCostCenterListItemWrap,
     },
     post: {
       input: z
@@ -933,7 +991,7 @@ export const paths = {
           Code: z.string(),
         }),
       }),
-      output: zFortnoxCostCenterWrap,
+      output: zFortnoxCostCenterSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -942,13 +1000,13 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxCostCenterWrap,
+      output: zFortnoxCostCenterSingleItemWrap,
     },
   },
   "/3/currencies": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxCurrencyList,
+      output: zFortnoxCurrencyListItemWrap,
     },
     post: {
       input: z
@@ -974,7 +1032,7 @@ export const paths = {
           Code: z.string(),
         }),
       }),
-      output: zFortnoxCurrencyWrap,
+      output: zFortnoxCurrencySingleItemWrap,
     },
     put: {
       input: z.object({
@@ -983,7 +1041,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxCurrencyWrap,
+      output: zFortnoxCurrencySingleItemWrap,
     },
   },
   "/3/customerreferences": {
@@ -997,7 +1055,7 @@ export const paths = {
             .optional(),
         })
         .optional(),
-      output: zFortnoxCustomerReferenceWrap,
+      output: zFortnoxKfCustomerReferenceSingleItemWrap,
     },
     post: {
       input: z
@@ -1023,7 +1081,7 @@ export const paths = {
           CustomerReferenceRowId: z.string(),
         }),
       }),
-      output: zFortnoxCustomerReferenceWrap,
+      output: zFortnoxKfCustomerReferenceSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -1032,7 +1090,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxCustomerWrap,
+      output: zFortnoxKfCustomerReferenceSingleItemWrap,
     },
   },
   "/3/customers": {
@@ -1042,6 +1100,7 @@ export const paths = {
           query: z
             .object({
               filter: z.enum(["active", "inactive"]).optional(),
+              sortby: z.enum(["customernumber", "name"]).optional(),
               customernumber: z.string().optional(),
               name: z.string().optional(),
               zipcode: z.string().optional(),
@@ -1052,12 +1111,11 @@ export const paths = {
               gln: z.string().optional(),
               glndelivery: z.string().optional(),
               lastmodified: z.string().optional(),
-              sortby: z.enum(["customernumber", "name"]).optional(),
             })
             .optional(),
         })
         .optional(),
-      output: zFortnoxCustomerListItemList,
+      output: zFortnoxKfCustomerListItemWrap,
     },
     post: {
       input: z
@@ -1083,7 +1141,7 @@ export const paths = {
           CustomerNumber: z.string(),
         }),
       }),
-      output: zFortnoxCustomerWrap,
+      output: zFortnoxKfCustomerSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -1092,13 +1150,13 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxCustomerWrap,
+      output: zFortnoxKfCustomerSingleItemWrap,
     },
   },
   "/3/emailsenders": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxTrustedEmailSenderWrap,
+      output: zFortnoxDaEmailSendersWrap,
     },
   },
   "/3/emailsenders/trusted": {
@@ -1124,7 +1182,7 @@ export const paths = {
   "/3/employees": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxEmployeeListItemWrap,
+      output: zFortnoxLonEmployeeListItemWrap,
     },
     post: {
       input: z
@@ -1132,7 +1190,7 @@ export const paths = {
           body: z.any(),
         })
         .optional(),
-      output: z.unknown(),
+      output: zFortnoxLonEmployeeSingleItemWrap,
     },
   },
   "/3/employees/{EmployeeId}": {
@@ -1142,7 +1200,7 @@ export const paths = {
           EmployeeId: z.string(),
         }),
       }),
-      output: zFortnoxEmployeeWrap,
+      output: zFortnoxLonEmployeeSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -1151,7 +1209,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxEmployeeWrap,
+      output: zFortnoxLonEmployeeSingleItemWrap,
     },
   },
   "/3/euvatlimitregulation": {
@@ -1165,13 +1223,13 @@ export const paths = {
             .optional(),
         })
         .optional(),
-      output: zFortnoxEuVatLimitRegulationWrap,
+      output: zFortnoxEuVatLimitRegulationResponseWrap,
     },
   },
   "/3/expenses": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxExpenseListItemWrap,
+      output: zFortnoxLonExpensesListItemWrap,
     },
     post: {
       input: z
@@ -1179,7 +1237,7 @@ export const paths = {
           body: z.any(),
         })
         .optional(),
-      output: z.unknown(),
+      output: zFortnoxLonExpensesSingleItemWrap,
     },
   },
   "/3/expenses/{ExpenseCode}": {
@@ -1189,7 +1247,7 @@ export const paths = {
           ExpenseCode: z.string(),
         }),
       }),
-      output: zFortnoxExpenseWrap,
+      output: zFortnoxLonExpensesSingleItemWrap,
     },
   },
   "/3/financialyears": {
@@ -1203,7 +1261,7 @@ export const paths = {
             .optional(),
         })
         .optional(),
-      output: zFortnoxFinancialYearWrapList,
+      output: zFortnoxBfFinancialYearListItemWrap,
     },
     post: {
       input: z
@@ -1221,13 +1279,13 @@ export const paths = {
           Id: z.int(),
         }),
       }),
-      output: zFortnoxFinancialYearWrap,
+      output: zFortnoxBfFinancialYearSingleItemWrap,
     },
   },
   "/3/inbox": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxFolderWrap,
+      output: zFortnoxDaInboxFolderResponseWrap,
     },
     post: {
       input: z
@@ -1265,7 +1323,7 @@ export const paths = {
   "/3/invoiceaccruals": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxInvoiceAccrualListItemList,
+      output: zFortnoxKfInvoiceAccrualListItemWrap,
     },
     post: {
       input: z
@@ -1280,7 +1338,7 @@ export const paths = {
     delete: {
       input: z.object({
         params: z.object({
-          InvoiceNumber: z.int(),
+          InvoiceNumber: z.string(),
         }),
       }),
       output: z.unknown(),
@@ -1288,19 +1346,19 @@ export const paths = {
     get: {
       input: z.object({
         params: z.object({
-          InvoiceNumber: z.int(),
+          InvoiceNumber: z.string(),
         }),
       }),
-      output: zFortnoxInvoiceAccrualWrap,
+      output: zFortnoxKfInvoiceAccrualSingleItemWrap,
     },
     put: {
       input: z.object({
         params: z.object({
-          InvoiceNumber: z.int(),
+          InvoiceNumber: z.string(),
         }),
         body: z.any(),
       }),
-      output: zFortnoxInvoiceAccrualWrap,
+      output: zFortnoxKfInvoiceAccrualSingleItemWrap,
     },
   },
   "/3/invoicepayments": {
@@ -1309,14 +1367,14 @@ export const paths = {
         .object({
           query: z
             .object({
+              sortby: z.enum(["paymentdate"]).optional(),
               invoicenumber: z.int().optional(),
               lastmodified: z.string().optional(),
-              sortby: z.enum(["paymentdate"]).optional(),
             })
             .optional(),
         })
         .optional(),
-      output: zFortnoxInvoicePaymentListItemList,
+      output: zFortnoxKfInvoicePaymentListItemWrap,
     },
     post: {
       input: z
@@ -1342,7 +1400,7 @@ export const paths = {
           Number: z.string(),
         }),
       }),
-      output: zFortnoxInvoicePaymentWrap,
+      output: zFortnoxKfInvoicePaymentSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -1351,7 +1409,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxInvoicePaymentWrap,
+      output: zFortnoxKfInvoicePaymentSingleItemWrap,
     },
   },
   "/3/invoicepayments/{Number}/bookkeep": {
@@ -1362,7 +1420,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxInvoicePaymentWrap,
+      output: zFortnoxKfInvoicePaymentSingleItemWrap,
     },
   },
   "/3/invoices": {
@@ -1371,6 +1429,8 @@ export const paths = {
         .object({
           query: z
             .object({
+              tofinalpaydate: z.string().optional(),
+              fromfinalpaydate: z.string().optional(),
               filter: z
                 .enum([
                   "cancelled",
@@ -1380,6 +1440,16 @@ export const paths = {
                   "unbooked",
                 ])
                 .optional(),
+              sortby: z
+                .enum([
+                  "customername",
+                  "customernumber",
+                  "documentnumber",
+                  "invoicedate",
+                  "ocr",
+                  "total",
+                ])
+                .optional(),
               costcenter: z.string().optional(),
               customername: z.string().optional(),
               customernumber: z.string().optional(),
@@ -1387,8 +1457,6 @@ export const paths = {
               documentnumber: z.string().optional(),
               fromdate: z.string().optional(),
               todate: z.string().optional(),
-              fromfinalpaydate: z.string().optional(),
-              tofinalpaydate: z.string().optional(),
               lastmodified: z.string().optional(),
               notcompleted: z.string().optional(),
               ocr: z.string().optional(),
@@ -1406,21 +1474,11 @@ export const paths = {
               accountnumberto: z.string().optional(),
               yourordernumber: z.string().optional(),
               credit: z.string().optional(),
-              sortby: z
-                .enum([
-                  "customername",
-                  "customernumber",
-                  "documentnumber",
-                  "invoicedate",
-                  "ocr",
-                  "total",
-                ])
-                .optional(),
             })
             .optional(),
         })
         .optional(),
-      output: zFortnoxInvoiceListItemWrap,
+      output: zFortnoxKfInvoiceListResponseWrap,
     },
     post: {
       input: z
@@ -1438,7 +1496,7 @@ export const paths = {
           DocumentNumber: z.string(),
         }),
       }),
-      output: zFortnoxInvoiceWrap,
+      output: zFortnoxKfInvoiceResponseWrap,
     },
     put: {
       input: z.object({
@@ -1447,7 +1505,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxInvoiceWrap,
+      output: zFortnoxKfInvoiceResponseWrap,
     },
   },
   "/3/invoices/{DocumentNumber}/bookkeep": {
@@ -1456,8 +1514,9 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxInvoiceWrap,
+      output: zFortnoxKfInvoiceResponseWrap,
     },
   },
   "/3/invoices/{DocumentNumber}/cancel": {
@@ -1466,8 +1525,9 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxInvoiceWrap,
+      output: zFortnoxKfInvoiceResponseWrap,
     },
   },
   "/3/invoices/{DocumentNumber}/credit": {
@@ -1476,8 +1536,9 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxInvoiceWrap,
+      output: zFortnoxKfInvoiceResponseWrap,
     },
   },
   "/3/invoices/{DocumentNumber}/einvoice": {
@@ -1487,7 +1548,7 @@ export const paths = {
           DocumentNumber: z.string(),
         }),
       }),
-      output: zFortnoxInvoiceWrap,
+      output: zFortnoxKfInvoiceResponseWrap,
     },
   },
   "/3/invoices/{DocumentNumber}/email": {
@@ -1497,7 +1558,7 @@ export const paths = {
           DocumentNumber: z.string(),
         }),
       }),
-      output: zFortnoxInvoiceWrap,
+      output: zFortnoxKfInvoiceResponseWrap,
     },
   },
   "/3/invoices/{DocumentNumber}/eprint": {
@@ -1507,7 +1568,7 @@ export const paths = {
           DocumentNumber: z.string(),
         }),
       }),
-      output: zFortnoxInvoiceWrap,
+      output: zFortnoxKfInvoiceResponseWrap,
     },
   },
   "/3/invoices/{DocumentNumber}/externalprint": {
@@ -1516,8 +1577,9 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxInvoiceWrap,
+      output: zFortnoxKfInvoiceResponseWrap,
     },
   },
   "/3/invoices/{DocumentNumber}/preview": {
@@ -1556,14 +1618,15 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxInvoiceWrap,
+      output: zFortnoxKfInvoiceResponseWrap,
     },
   },
   "/3/labels": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxLabelList,
+      output: zFortnoxDocumentTagListItemWrap,
     },
     post: {
       input: z
@@ -1590,19 +1653,19 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxLabelWrap,
+      output: zFortnoxDocumentTagSingleItemWrap,
     },
   },
   "/3/me": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxMeWrap,
+      output: zFortnoxMeSingleItemWrap,
     },
   },
   "/3/modesofpayments": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxModeOfPaymentList,
+      output: zFortnoxModeOfPaymentListItemWrap,
     },
     post: {
       input: z
@@ -1628,7 +1691,7 @@ export const paths = {
           Code: z.string(),
         }),
       }),
-      output: zFortnoxModeOfPaymentWrap,
+      output: zFortnoxModeOfPaymentSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -1637,7 +1700,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxModeOfPaymentWrap,
+      output: zFortnoxModeOfPaymentSingleItemWrap,
     },
   },
   "/3/noxfinansinvoices": {
@@ -1647,69 +1710,72 @@ export const paths = {
           body: z.any(),
         })
         .optional(),
-      output: z.unknown(),
+      output: zFortnoxKfNoxInvoiceSingleItemWrap,
     },
   },
-  "/3/noxfinansinvoices/{Number}": {
+  "/3/noxfinansinvoices/{InvoiceNumber}": {
     get: {
       input: z.object({
         params: z.object({
-          Number: z.string(),
+          InvoiceNumber: z.string(),
         }),
       }),
-      output: zFortnoxInvoiceResponseWrap,
+      output: zFortnoxKfNoxInvoiceSingleItemWrap,
     },
   },
-  "/3/noxfinansinvoices/{Number}/pause": {
+  "/3/noxfinansinvoices/{InvoiceNumber}/pause": {
     put: {
       input: z.object({
         params: z.object({
-          Number: z.string(),
+          InvoiceNumber: z.string(),
         }),
         body: z.any(),
       }),
-      output: zFortnoxInvoiceResponseWrap,
+      output: zFortnoxKfNoxInvoiceSingleItemWrap,
     },
   },
-  "/3/noxfinansinvoices/{Number}/report-payment": {
+  "/3/noxfinansinvoices/{InvoiceNumber}/report-payment": {
     put: {
       input: z.object({
         params: z.object({
-          Number: z.string(),
+          InvoiceNumber: z.string(),
         }),
         body: z.any(),
       }),
-      output: zFortnoxInvoiceResponseWrap,
+      output: zFortnoxKfNoxInvoiceSingleItemWrap,
     },
   },
-  "/3/noxfinansinvoices/{Number}/stop": {
+  "/3/noxfinansinvoices/{InvoiceNumber}/stop": {
     put: {
       input: z.object({
         params: z.object({
-          Number: z.string(),
+          InvoiceNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxInvoiceResponseWrap,
+      output: zFortnoxKfNoxInvoiceSingleItemWrap,
     },
   },
-  "/3/noxfinansinvoices/{Number}/take-fees": {
+  "/3/noxfinansinvoices/{InvoiceNumber}/take-fees": {
     put: {
       input: z.object({
         params: z.object({
-          Number: z.string(),
+          InvoiceNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxInvoiceResponseWrap,
+      output: zFortnoxKfNoxInvoiceSingleItemWrap,
     },
   },
-  "/3/noxfinansinvoices/{Number}/unpause": {
+  "/3/noxfinansinvoices/{InvoiceNumber}/unpause": {
     put: {
       input: z.object({
         params: z.object({
-          Number: z.string(),
+          InvoiceNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxInvoiceResponseWrap,
+      output: zFortnoxKfNoxInvoiceSingleItemWrap,
     },
   },
   "/3/offers": {
@@ -1718,6 +1784,8 @@ export const paths = {
         .object({
           query: z
             .object({
+              todate: z.string().optional(),
+              fromdate: z.string().optional(),
               filter: z
                 .enum([
                   "cancelled",
@@ -1728,27 +1796,25 @@ export const paths = {
                   "ordernotcreated",
                 ])
                 .optional(),
+              sortby: z
+                .enum(["customerName", "id", "transactionDate", "total"])
+                .optional(),
               customername: z.string().optional(),
               customernumber: z.string().optional(),
               documentnumber: z.string().optional(),
               costcenter: z.string().optional(),
               label: z.string().optional(),
-              fromdate: z.string().optional(),
-              todate: z.string().optional(),
               project: z.string().optional(),
               sent: z.boolean().optional(),
               notcompleted: z.boolean().optional(),
               ourreference: z.string().optional(),
               yourreference: z.string().optional(),
               lastmodified: z.string().optional(),
-              sortby: z
-                .enum(["customerName", "id", "transactionDate", "total"])
-                .optional(),
             })
             .optional(),
         })
         .optional(),
-      output: zFortnoxOfferListItemList,
+      output: zFortnoxOfferOfferListResponseWrap,
     },
     post: {
       input: z
@@ -1766,7 +1832,7 @@ export const paths = {
           DocumentNumber: z.string(),
         }),
       }),
-      output: zFortnoxOfferWrap,
+      output: zFortnoxOfferOfferResponseWrap,
     },
     put: {
       input: z.object({
@@ -1775,7 +1841,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxOfferWrap,
+      output: zFortnoxOfferOfferResponseWrap,
     },
   },
   "/3/offers/{DocumentNumber}/cancel": {
@@ -1784,8 +1850,9 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxOfferWrap,
+      output: zFortnoxOfferOfferResponseWrap,
     },
   },
   "/3/offers/{DocumentNumber}/createinvoice": {
@@ -1794,8 +1861,9 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxOrderWrap,
+      output: zFortnoxOfferOfferResponseWrap,
     },
   },
   "/3/offers/{DocumentNumber}/createorder": {
@@ -1804,8 +1872,9 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxOrderWrap,
+      output: zFortnoxOfferOfferResponseWrap,
     },
   },
   "/3/offers/{DocumentNumber}/email": {
@@ -1815,7 +1884,7 @@ export const paths = {
           DocumentNumber: z.string(),
         }),
       }),
-      output: zFortnoxOfferWrap,
+      output: zFortnoxOfferOfferResponseWrap,
     },
   },
   "/3/offers/{DocumentNumber}/externalprint": {
@@ -1824,8 +1893,9 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxOfferWrap,
+      output: zFortnoxOfferOfferResponseWrap,
     },
   },
   "/3/offers/{DocumentNumber}/preview": {
@@ -1854,6 +1924,8 @@ export const paths = {
         .object({
           query: z
             .object({
+              todate: z.string().optional(),
+              fromdate: z.string().optional(),
               filter: z
                 .enum([
                   "cancelled",
@@ -1862,22 +1934,6 @@ export const paths = {
                   "invoicenotcreated",
                 ])
                 .optional(),
-              customername: z.string().optional(),
-              customernumber: z.string().optional(),
-              label: z.string().optional(),
-              documentnumber: z.string().optional(),
-              externalinvoicereference1: z.string().optional(),
-              externalinvoicereference2: z.string().optional(),
-              fromdate: z.string().optional(),
-              todate: z.string().optional(),
-              costcenter: z.string().optional(),
-              project: z.string().optional(),
-              sent: z.boolean().optional(),
-              notcompleted: z.boolean().optional(),
-              ourreference: z.string().optional(),
-              yourreference: z.string().optional(),
-              lastmodified: z.string().optional(),
-              ordertype: z.string().optional(),
               sortby: z
                 .enum([
                   "customername",
@@ -1887,11 +1943,25 @@ export const paths = {
                   "total",
                 ])
                 .optional(),
+              customername: z.string().optional(),
+              customernumber: z.string().optional(),
+              label: z.string().optional(),
+              documentnumber: z.string().optional(),
+              externalinvoicereference1: z.string().optional(),
+              externalinvoicereference2: z.string().optional(),
+              costcenter: z.string().optional(),
+              project: z.string().optional(),
+              sent: z.boolean().optional(),
+              notcompleted: z.boolean().optional(),
+              ourreference: z.string().optional(),
+              yourreference: z.string().optional(),
+              lastmodified: z.string().optional(),
+              ordertype: z.string().optional(),
             })
             .optional(),
         })
         .optional(),
-      output: zFortnoxOrderListItemList,
+      output: zFortnoxOrderOrderListResponseWrap,
     },
     post: {
       input: z
@@ -1909,7 +1979,7 @@ export const paths = {
           DocumentNumber: z.string(),
         }),
       }),
-      output: zFortnoxOrderWrap,
+      output: zFortnoxOrderOrderResponseWrap,
     },
     put: {
       input: z.object({
@@ -1918,7 +1988,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxOrderWrap,
+      output: zFortnoxOrderOrderResponseWrap,
     },
   },
   "/3/orders/{DocumentNumber}/cancel": {
@@ -1927,8 +1997,9 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxOrderWrap,
+      output: zFortnoxOrderOrderResponseWrap,
     },
   },
   "/3/orders/{DocumentNumber}/createinvoice": {
@@ -1937,8 +2008,9 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxInvoiceWrap,
+      output: zFortnoxOrderOrderResponseWrap,
     },
   },
   "/3/orders/{DocumentNumber}/email": {
@@ -1948,7 +2020,7 @@ export const paths = {
           DocumentNumber: z.string(),
         }),
       }),
-      output: zFortnoxOrderWrap,
+      output: zFortnoxOrderOrderResponseWrap,
     },
   },
   "/3/orders/{DocumentNumber}/externalprint": {
@@ -1957,8 +2029,9 @@ export const paths = {
         params: z.object({
           DocumentNumber: z.string(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxOrderWrap,
+      output: zFortnoxOrderOrderResponseWrap,
     },
   },
   "/3/orders/{DocumentNumber}/preview": {
@@ -1984,7 +2057,7 @@ export const paths = {
   "/3/predefinedaccounts": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxPredefinedAccountList,
+      output: zFortnoxPreDefinedAccountListItemWrap,
     },
   },
   "/3/predefinedaccounts/{name}": {
@@ -1994,7 +2067,7 @@ export const paths = {
           name: z.string(),
         }),
       }),
-      output: zFortnoxPredefinedAccountWrap,
+      output: zFortnoxPreDefinedAccountSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2003,13 +2076,13 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxPredefinedAccountWrap,
+      output: zFortnoxPreDefinedAccountSingleItemWrap,
     },
   },
   "/3/predefinedvoucherseries": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxPredefinedVoucherSeriesList,
+      output: zFortnoxBfPreDefinedVoucherSeriesListItemWrap,
     },
   },
   "/3/predefinedvoucherseries/{Name}": {
@@ -2019,7 +2092,7 @@ export const paths = {
           Name: z.string(),
         }),
       }),
-      output: zFortnoxPredefinedVoucherSeriesWrap,
+      output: zFortnoxBfPreDefinedVoucherSeriesSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2028,13 +2101,13 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxPredefinedVoucherSeriesWrap,
+      output: zFortnoxBfPreDefinedVoucherSeriesSingleItemWrap,
     },
   },
   "/3/pricelists": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxPriceListList,
+      output: zFortnoxPriceListListItemWrap,
     },
     post: {
       input: z
@@ -2052,7 +2125,7 @@ export const paths = {
           Code: z.string(),
         }),
       }),
-      output: zFortnoxPriceListWrap,
+      output: zFortnoxPriceListSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2061,13 +2134,21 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxPriceListWrap,
+      output: zFortnoxPriceListSingleItemWrap,
     },
   },
   "/3/prices": {
     get: {
-      input: z.object({}).optional(),
-      output: zFortnoxPriceWrap,
+      input: z
+        .object({
+          query: z
+            .object({
+              fromquantity: z.number().optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      output: zFortnoxPriceSingleItemWrap,
     },
     post: {
       input: z
@@ -2085,8 +2166,13 @@ export const paths = {
           PriceList: z.string(),
           ArticleNumber: z.string(),
         }),
+        query: z
+          .object({
+            fromquantity: z.number().optional(),
+          })
+          .optional(),
       }),
-      output: zFortnoxPriceListItemList,
+      output: zFortnoxPriceListItemWrap,
     },
   },
   "/3/prices/{PriceList}/{ArticleNumber}": {
@@ -2096,8 +2182,13 @@ export const paths = {
           PriceList: z.string(),
           ArticleNumber: z.string(),
         }),
+        query: z
+          .object({
+            fromquantity: z.number().optional(),
+          })
+          .optional(),
       }),
-      output: zFortnoxPriceWrap,
+      output: zFortnoxPriceSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2107,7 +2198,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxPriceWrap,
+      output: zFortnoxPriceSingleItemWrap,
     },
   },
   "/3/prices/{PriceList}/{ArticleNumber}/{FromQuantity}": {
@@ -2116,7 +2207,7 @@ export const paths = {
         params: z.object({
           PriceList: z.string(),
           ArticleNumber: z.string(),
-          FromQuantity: z.number(),
+          FromQuantity: z.string(),
         }),
       }),
       output: z.unknown(),
@@ -2126,33 +2217,50 @@ export const paths = {
         params: z.object({
           PriceList: z.string(),
           ArticleNumber: z.string(),
-          FromQuantity: z.number(),
+          FromQuantity: z.string(),
         }),
       }),
-      output: zFortnoxPriceWrap,
+      output: zFortnoxPriceSingleItemWrap,
     },
     put: {
       input: z.object({
         params: z.object({
           PriceList: z.string(),
           ArticleNumber: z.string(),
-          FromQuantity: z.number(),
+          FromQuantity: z.string(),
         }),
         body: z.any(),
       }),
-      output: zFortnoxPriceWrap,
+      output: zFortnoxPriceSingleItemWrap,
     },
   },
   "/3/printtemplates": {
     get: {
-      input: z.object({}).optional(),
-      output: zFortnoxPrintTemplateList,
+      input: z
+        .object({
+          query: z
+            .object({
+              type: z.string().optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      output: zFortnoxPrintTemplateListItemWrap,
     },
   },
   "/3/projects": {
     get: {
-      input: z.object({}).optional(),
-      output: zFortnoxProjectListItemList,
+      input: z
+        .object({
+          query: z
+            .object({
+              description: z.string().optional(),
+              projectleader: z.string().optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      output: zFortnoxProjectProjectListItemWrap,
     },
     post: {
       input: z
@@ -2178,7 +2286,7 @@ export const paths = {
           ProjectNumber: z.int(),
         }),
       }),
-      output: zFortnoxProjectWrap,
+      output: zFortnoxProjectProjectSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2187,7 +2295,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxProjectWrap,
+      output: zFortnoxProjectProjectSingleItemWrap,
     },
   },
   "/3/salarytransactions": {
@@ -2196,13 +2304,13 @@ export const paths = {
         .object({
           query: z
             .object({
-              employeeId: z.string().optional(),
               date: z.iso.date().optional(),
+              employeeId: z.string().optional(),
             })
             .optional(),
         })
         .optional(),
-      output: zFortnoxSalaryTransactionListItemList,
+      output: zFortnoxLonSalaryTransactionsListItemWrap,
     },
     post: {
       input: z
@@ -2210,7 +2318,7 @@ export const paths = {
           body: z.any(),
         })
         .optional(),
-      output: z.unknown(),
+      output: zFortnoxLonSalaryTransactionsSingleItemWrap,
     },
   },
   "/3/salarytransactions/{SalaryRow}": {
@@ -2220,7 +2328,7 @@ export const paths = {
           SalaryRow: z.int(),
         }),
       }),
-      output: zFortnoxSalaryTransactionWrap,
+      output: z.unknown(),
     },
     get: {
       input: z.object({
@@ -2228,7 +2336,7 @@ export const paths = {
           SalaryRow: z.int(),
         }),
       }),
-      output: zFortnoxSalaryTransactionWrap,
+      output: zFortnoxLonSalaryTransactionsSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2237,7 +2345,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxSalaryTransactionWrap,
+      output: zFortnoxLonSalaryTransactionsSingleItemWrap,
     },
   },
   "/3/scheduletimes/{EmployeeId}/{Date}": {
@@ -2248,7 +2356,7 @@ export const paths = {
           Date: z.iso.date(),
         }),
       }),
-      output: zFortnoxScheduleTimeWrap,
+      output: zFortnoxLonScheduleTimeSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2258,7 +2366,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxScheduleTimeWrap,
+      output: zFortnoxLonScheduleTimeSingleItemWrap,
     },
   },
   "/3/scheduletimes/{EmployeeId}/{Date}/resetday": {
@@ -2268,20 +2376,21 @@ export const paths = {
           EmployeeId: z.string(),
           Date: z.iso.date(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxScheduleTimeWrap,
+      output: zFortnoxLonScheduleTimeSingleItemWrap,
     },
   },
   "/3/settings/company": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxCompanySettingsWrap,
+      output: zFortnoxCompanyCompanySettingsResponseWrap,
     },
   },
   "/3/settings/lockedperiod": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxLockedPeriodWrap,
+      output: zFortnoxLockedPeriodSettingsSingleItemWrap,
     },
   },
   "/3/sie/{Type}": {
@@ -2292,7 +2401,11 @@ export const paths = {
         }),
         query: z
           .object({
+            selection: z.string().optional(),
             financialYear: z.int().optional(),
+            exportall: z.string().optional(),
+            fromdate: z.iso.date().optional(),
+            todate: z.iso.date().optional(),
           })
           .optional(),
       }),
@@ -2302,7 +2415,7 @@ export const paths = {
   "/3/supplierinvoiceaccruals": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxSupplierInvoiceAccrualListItemList,
+      output: zFortnoxLfSupplierInvoiceAccrualListItemWrap,
     },
     post: {
       input: z
@@ -2317,7 +2430,7 @@ export const paths = {
     delete: {
       input: z.object({
         params: z.object({
-          SupplierInvoiceNumber: z.int(),
+          SupplierInvoiceNumber: z.string(),
         }),
       }),
       output: z.unknown(),
@@ -2325,19 +2438,19 @@ export const paths = {
     get: {
       input: z.object({
         params: z.object({
-          SupplierInvoiceNumber: z.int(),
+          SupplierInvoiceNumber: z.string(),
         }),
       }),
-      output: zFortnoxSupplierInvoiceAccrualWrap,
+      output: zFortnoxLfSupplierInvoiceAccrualSingleItemWrap,
     },
     put: {
       input: z.object({
         params: z.object({
-          SupplierInvoiceNumber: z.int(),
+          SupplierInvoiceNumber: z.string(),
         }),
         body: z.any(),
       }),
-      output: zFortnoxSupplierInvoiceAccrualWrap,
+      output: zFortnoxLfSupplierInvoiceAccrualSingleItemWrap,
     },
   },
   "/3/supplierinvoiceexternalurlconnections": {
@@ -2365,7 +2478,7 @@ export const paths = {
           Id: z.int(),
         }),
       }),
-      output: zFortnoxSupplierInvoiceExternalUrlConnectionSingle,
+      output: zFortnoxSinvoiceExternalUrlConnectionSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2374,13 +2487,21 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxSupplierInvoiceExternalUrlConnectionSingle,
+      output: zFortnoxSinvoiceExternalUrlConnectionSingleItemWrap,
     },
   },
   "/3/supplierinvoicefileconnections": {
     get: {
-      input: z.object({}).optional(),
-      output: zFortnoxSupplierInvoiceFileConnectionList,
+      input: z
+        .object({
+          query: z
+            .object({
+              supplierinvoicenumber: z.int().optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      output: zFortnoxDaSupplierInvoiceFileConnectionListItemWrap,
     },
     post: {
       input: z
@@ -2406,13 +2527,22 @@ export const paths = {
           FileId: z.string(),
         }),
       }),
-      output: zFortnoxSupplierInvoiceFileConnectionWrap,
+      output: zFortnoxDaSupplierInvoiceFileConnectionSingleItemWrap,
     },
   },
   "/3/supplierinvoicepayments": {
     get: {
-      input: z.object({}).optional(),
-      output: zFortnoxSupplierInvoicePaymentListItemList,
+      input: z
+        .object({
+          query: z
+            .object({
+              invoicenumber: z.int().optional(),
+              lastmodified: z.iso.date().optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      output: zFortnoxLfSupplierInvoicePaymentListItemWrap,
     },
     post: {
       input: z
@@ -2438,7 +2568,7 @@ export const paths = {
           Number: z.int(),
         }),
       }),
-      output: zFortnoxSupplierInvoicePaymentWrap,
+      output: zFortnoxLfSupplierInvoicePaymentSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2447,7 +2577,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxSupplierInvoicePaymentWrap,
+      output: zFortnoxLfSupplierInvoicePaymentSingleItemWrap,
     },
   },
   "/3/supplierinvoicepayments/{Number}/bookkeep": {
@@ -2456,8 +2586,9 @@ export const paths = {
         params: z.object({
           Number: z.int(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxSupplierInvoicePaymentWrap,
+      output: zFortnoxLfSupplierInvoicePaymentSingleItemWrap,
     },
   },
   "/3/supplierinvoices": {
@@ -2466,6 +2597,8 @@ export const paths = {
         .object({
           query: z
             .object({
+              tofinalpaydate: z.iso.date().optional(),
+              fromfinalpaydate: z.iso.date().optional(),
               filter: z
                 .enum([
                   "cancelled",
@@ -2477,11 +2610,23 @@ export const paths = {
                   "authorizepending",
                 ])
                 .optional(),
+              lastmodified: z.iso.date().optional(),
+              suppliernumber: z.string().optional(),
+              suppliername: z.string().optional(),
+              ocr: z.string().optional(),
+              invoicenumber: z.string().optional(),
+              serialnumber: z.string().optional(),
+              costcenter: z.string().optional(),
+              project: z.string().optional(),
+              ourreference: z.string().optional(),
+              yourreference: z.string().optional(),
+              fromdate: z.iso.date().optional(),
+              todate: z.iso.date().optional(),
             })
             .optional(),
         })
         .optional(),
-      output: zFortnoxSupplierInvoiceListItemWrap,
+      output: zFortnoxLfSupplierInvoiceListItemWrap,
     },
     post: {
       input: z
@@ -2499,7 +2644,7 @@ export const paths = {
           GivenNumber: z.int(),
         }),
       }),
-      output: zFortnoxSupplierInvoiceWrap,
+      output: zFortnoxLfSupplierInvoiceSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2508,7 +2653,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxSupplierInvoiceWrap,
+      output: zFortnoxLfSupplierInvoiceSingleItemWrap,
     },
   },
   "/3/supplierinvoices/{GivenNumber}/approvalbookkeep": {
@@ -2517,8 +2662,9 @@ export const paths = {
         params: z.object({
           GivenNumber: z.int(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxSupplierInvoiceWrap,
+      output: zFortnoxLfSupplierInvoiceSingleItemWrap,
     },
   },
   "/3/supplierinvoices/{GivenNumber}/approvalpayment": {
@@ -2527,8 +2673,9 @@ export const paths = {
         params: z.object({
           GivenNumber: z.int(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxSupplierInvoiceWrap,
+      output: zFortnoxLfSupplierInvoiceSingleItemWrap,
     },
   },
   "/3/supplierinvoices/{GivenNumber}/bookkeep": {
@@ -2537,8 +2684,9 @@ export const paths = {
         params: z.object({
           GivenNumber: z.int(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxSupplierInvoiceWrap,
+      output: zFortnoxLfSupplierInvoiceSingleItemWrap,
     },
   },
   "/3/supplierinvoices/{GivenNumber}/cancel": {
@@ -2547,8 +2695,9 @@ export const paths = {
         params: z.object({
           GivenNumber: z.int(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxSupplierInvoiceWrap,
+      output: zFortnoxLfSupplierInvoiceSingleItemWrap,
     },
   },
   "/3/supplierinvoices/{GivenNumber}/credit": {
@@ -2557,14 +2706,30 @@ export const paths = {
         params: z.object({
           GivenNumber: z.int(),
         }),
+        body: z.any(),
       }),
-      output: zFortnoxSupplierInvoiceWrap,
+      output: zFortnoxLfSupplierInvoiceSingleItemWrap,
     },
   },
   "/3/suppliers": {
     get: {
-      input: z.object({}).optional(),
-      output: zFortnoxSupplierListItemList,
+      input: z
+        .object({
+          query: z
+            .object({
+              suppliernumber: z.string().optional(),
+              name: z.string().optional(),
+              organisationnumber: z.string().optional(),
+              phone: z.string().optional(),
+              zipcode: z.string().optional(),
+              city: z.string().optional(),
+              email: z.string().optional(),
+              lastmodified: z.iso.date().optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      output: zFortnoxLfSupplierListItemWrap,
     },
     post: {
       input: z
@@ -2582,7 +2747,7 @@ export const paths = {
           SupplierNumber: z.string(),
         }),
       }),
-      output: zFortnoxSupplierWrap,
+      output: zFortnoxLfSupplierSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2591,7 +2756,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxSupplierWrap,
+      output: zFortnoxLfSupplierSingleItemWrap,
     },
   },
   "/3/taxreductions": {
@@ -2605,7 +2770,7 @@ export const paths = {
             .optional(),
         })
         .optional(),
-      output: zFortnoxTaxReductionListItemList,
+      output: zFortnoxTaxReductionListItemWrap,
     },
     post: {
       input: z
@@ -2631,7 +2796,7 @@ export const paths = {
           Id: z.int(),
         }),
       }),
-      output: zFortnoxTaxReductionWrap,
+      output: zFortnoxTaxReductionSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2640,13 +2805,13 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxTaxReductionWrap,
+      output: zFortnoxTaxReductionSingleItemWrap,
     },
   },
   "/3/termsofdeliveries": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxTermsOfDeliveryList,
+      output: zFortnoxKfTermsOfDeliveryListItemWrap,
     },
     post: {
       input: z
@@ -2664,7 +2829,7 @@ export const paths = {
           Code: z.string(),
         }),
       }),
-      output: zFortnoxTermsOfDeliveryWrap,
+      output: zFortnoxKfTermsOfDeliverySingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2673,13 +2838,13 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxTermsOfDeliveryWrap,
+      output: zFortnoxKfTermsOfDeliverySingleItemWrap,
     },
   },
   "/3/termsofpayments": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxTermsOfPaymentList,
+      output: zFortnoxTermsOfPaymentListItemWrap,
     },
     post: {
       input: z
@@ -2705,7 +2870,7 @@ export const paths = {
           Code: z.string(),
         }),
       }),
-      output: zFortnoxTermsOfPaymentWrap,
+      output: zFortnoxTermsOfPaymentSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2714,13 +2879,13 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxTermsOfPaymentWrap,
+      output: zFortnoxTermsOfPaymentSingleItemWrap,
     },
   },
   "/3/units": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxUnitList,
+      output: zFortnoxUnitListItemWrap,
     },
     post: {
       input: z
@@ -2746,7 +2911,7 @@ export const paths = {
           Code: z.string(),
         }),
       }),
-      output: zFortnoxUnitWrap,
+      output: zFortnoxUnitSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2755,7 +2920,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxUnitWrap,
+      output: zFortnoxUnitSingleItemWrap,
     },
   },
   "/3/vacationdebtbasis/{Year}/{Month}": {
@@ -2766,13 +2931,24 @@ export const paths = {
           Month: z.int(),
         }),
       }),
-      output: zFortnoxVacationDebtBasisWrap,
+      output: zFortnoxLonVacationDebtBasisSingleItemWrap,
     },
   },
   "/3/voucherfileconnections": {
     get: {
-      input: z.object({}).optional(),
-      output: zFortnoxVoucherFileConnectionList,
+      input: z
+        .object({
+          query: z
+            .object({
+              voucheryear: z.int().optional(),
+              voucherdescription: z.string().optional(),
+              vouchernumber: z.int().optional(),
+              voucherseries: z.string().optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      output: zFortnoxDaVoucherFileConnectionListItemWrap,
     },
     post: {
       input: z
@@ -2798,7 +2974,7 @@ export const paths = {
           FileId: z.string(),
         }),
       }),
-      output: zFortnoxVoucherFileConnectionWrap,
+      output: zFortnoxDaVoucherFileConnectionSingleItemWrap,
     },
   },
   "/3/vouchers": {
@@ -2807,12 +2983,17 @@ export const paths = {
         .object({
           query: z
             .object({
+              costcenter: z.string().optional(),
+              lastmodified: z.iso.date().optional(),
+              fromdate: z.iso.date().optional(),
+              todate: z.iso.date().optional(),
+              voucherseries: z.string().optional(),
               financialyear: z.int().optional(),
             })
             .optional(),
         })
         .optional(),
-      output: zFortnoxVoucherListItemList,
+      output: zFortnoxBfVoucherListItemWrap,
     },
     post: {
       input: z
@@ -2830,8 +3011,20 @@ export const paths = {
   },
   "/3/vouchers/sublist": {
     get: {
-      input: z.object({}).optional(),
-      output: zFortnoxVoucherListItemList,
+      input: z
+        .object({
+          query: z
+            .object({
+              costcenter: z.string().optional(),
+              lastmodified: z.iso.date().optional(),
+              fromdate: z.iso.date().optional(),
+              todate: z.iso.date().optional(),
+              voucherseries: z.string().optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      output: zFortnoxBfVoucherListItemWrap,
     },
   },
   "/3/vouchers/sublist/{VoucherSeries}": {
@@ -2842,11 +3035,15 @@ export const paths = {
         }),
         query: z
           .object({
+            costcenter: z.string().optional(),
+            lastmodified: z.iso.date().optional(),
+            fromdate: z.iso.date().optional(),
+            todate: z.iso.date().optional(),
             financialyear: z.int().optional(),
           })
           .optional(),
       }),
-      output: zFortnoxVoucherListItemList,
+      output: zFortnoxBfVoucherListItemWrap,
     },
   },
   "/3/vouchers/{VoucherSeries}/{VoucherNumber}": {
@@ -2862,13 +3059,13 @@ export const paths = {
           })
           .optional(),
       }),
-      output: zFortnoxVoucherWrap,
+      output: zFortnoxBfVoucherSingleItemWrap,
     },
   },
   "/3/voucherseries": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxVoucherSeriesListItemList,
+      output: zFortnoxBfVoucherSeriesListItemWrap,
     },
     post: {
       input: z
@@ -2886,7 +3083,7 @@ export const paths = {
           Code: z.string(),
         }),
       }),
-      output: zFortnoxVoucherSeriesWrap,
+      output: zFortnoxBfVoucherSeriesSingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2895,13 +3092,13 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxVoucherSeriesWrap,
+      output: zFortnoxBfVoucherSeriesSingleItemWrap,
     },
   },
   "/3/wayofdeliveries": {
     get: {
       input: z.object({}).optional(),
-      output: zFortnoxWayOfDeliveryList,
+      output: zFortnoxWayOfDeliveryListItemWrap,
     },
     post: {
       input: z
@@ -2927,7 +3124,7 @@ export const paths = {
           Code: z.string(),
         }),
       }),
-      output: zFortnoxWayOfDeliveryWrap,
+      output: zFortnoxWayOfDeliverySingleItemWrap,
     },
     put: {
       input: z.object({
@@ -2936,7 +3133,7 @@ export const paths = {
         }),
         body: z.any(),
       }),
-      output: zFortnoxWayOfDeliveryWrap,
+      output: zFortnoxWayOfDeliverySingleItemWrap,
     },
   },
   "/api/fileattachments/attachments-v1": {

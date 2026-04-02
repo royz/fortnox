@@ -7,25 +7,23 @@
  * successful 200 response always contains the wrapped entity.
  */
 
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { OpenAPIV3 } from "openapi-types";
+import { getSpecFromFile } from "../tests/utils";
 
-const specPath = path.join(import.meta.dirname, "../spec/openapi.json");
-const outputPath = path.join(import.meta.dirname, "../spec/openapi-patched.json");
+const specDir = path.join(import.meta.dirname, "../spec");
+const outputPath = path.join(specDir, "openapi-patched.json");
 
-const spec = JSON.parse(
-  await readFile(specPath, "utf-8")
-) as OpenAPIV3.Document;
-
-const schemas = (spec.components?.schemas ?? {}) as Record<
-  string,
-  OpenAPIV3.SchemaObject
->;
+const spec = await getSpecFromFile("original");
+const schemas = (spec.components?.schemas ?? {}) as Record<string, OpenAPIV3.SchemaObject>;
 
 // Schemas whose names match these patterns are response wrappers: they contain
 // exactly one property (or a list property) that is always present on success.
 const WRAPPER_PATTERN = /(_Wrap|Wrap|_List|_WrapList|ListItem)$/;
+
+// List-response wrappers that should always carry MetaInformation pagination data.
+const LIST_WRAP_PATTERN = /List(.*?)_Wrap$/;
 
 for (const [name, schema] of Object.entries(schemas)) {
   if (
@@ -36,6 +34,24 @@ for (const [name, schema] of Object.entries(schemas)) {
   ) {
     schema.required = Object.keys(schema.properties);
   }
+
+  if (
+    LIST_WRAP_PATTERN.test(name) &&
+    schema.type === "object" &&
+    schema.properties &&
+    !schema.properties.MetaInformation
+  ) {
+    schema.properties.MetaInformation = {
+      $ref: "#/components/schemas/fortnox_MetaInformation",
+    } as OpenAPIV3.ReferenceObject;
+    schema.required = [...(schema.required ?? []), "MetaInformation"];
+  }
+}
+
+// MetaInformation fields are always present on paginated responses.
+const metaInfo = schemas.fortnox_MetaInformation;
+if (metaInfo?.properties) {
+  metaInfo.required = Object.keys(metaInfo.properties);
 }
 
 await writeFile(outputPath, JSON.stringify(spec, null, 2), "utf-8");
