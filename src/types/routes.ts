@@ -1,7 +1,7 @@
 import type { FileattachmentsAttachment, FileattachmentsNumberOfAttachments, FortnoxAnlAdjustAssetValueWrap, FortnoxAnlAssetActionsSingleItem, FortnoxAnlAssetTypesListResponseWrap, FortnoxAnlAssetTypesSingleResponseWrap, FortnoxAnlAssetsActionResponse, FortnoxAnlAssetsDepreciationResponseWrap, FortnoxAnlAssetsListItemWrap, FortnoxAnlAssetsSingleItemResponseWrap, FortnoxAnlAssetsSinglePayloadItemWrap, FortnoxAnlCreateAssetTypeWrap, FortnoxAnlDepreciationWrap, FortnoxAnlScrapAssetWrap, FortnoxAnlSellAssetWrap, FortnoxAnlUpdateAssetTypeWrap, FortnoxArticleListItemWrap, FortnoxArticleSingleItemWrap, FortnoxArticleSinglePayloadItemWrap, FortnoxBfAccountChartListItemWrap, FortnoxBfAccountListItemWrap, FortnoxBfAccountSingleItemWrap, FortnoxBfAccountSinglePayloadItemWrap, FortnoxBfFinancialYearListItemWrap, FortnoxBfFinancialYearSingleItemWrap, FortnoxBfFinancialYearSinglePayloadItemWrap, FortnoxBfPreDefinedVoucherSeriesListItemWrap, FortnoxBfPreDefinedVoucherSeriesSingleItemWrap, FortnoxBfPreDefinedVoucherSeriesSinglePayloadItemWrap, FortnoxBfVoucherListItemWrap, FortnoxBfVoucherSeriesListItemWrap, FortnoxBfVoucherSeriesSingleItemWrap, FortnoxBfVoucherSeriesSinglePayloadItemWrap, FortnoxBfVoucherSingleItemWrap, FortnoxBfVoucherSinglePayloadItemWrap, FortnoxCompanyCompanySettingsResponseWrap, FortnoxCompanyInformationSingleItemWrap, FortnoxContractInvoiceContractAccrualListItemWrap, FortnoxContractInvoiceContractAccrualSingleItemWrap, FortnoxContractInvoiceContractAccrualSinglePayloadItemWrap, FortnoxContractInvoiceContractCreatePayloadWrap, FortnoxContractInvoiceContractListResponseWrap, FortnoxContractInvoiceContractResponseWrap, FortnoxContractInvoiceContractTemplateListResponseWrap, FortnoxContractInvoiceContractTemplateResponseWrap, FortnoxContractInvoiceContractTemplateSinglePayloadItemWrap, FortnoxContractInvoiceContractUpdateAndCreateInvoicePayloadWrap, FortnoxContractInvoiceContractUpdateAndFinishPayloadWrap, FortnoxContractInvoiceContractUpdateAndIncreaseInvoiceCountPayloadWrap, FortnoxContractInvoiceContractUpdatePayloadWrap, FortnoxCostCenterListItemWrap, FortnoxCostCenterSingleItemWrap, FortnoxCostCenterSinglePayloadItemWrap, FortnoxCurrencyListItemWrap, FortnoxCurrencySingleItemWrap, FortnoxCurrencySinglePayloadItemWrap, FortnoxDaArticleFileConnectionListItemWrap, FortnoxDaArticleFileConnectionSingleItemWrap, FortnoxDaArticleFileConnectionSinglePayloadItemWrap, FortnoxDaAssetFileConnectionCreatePayload, FortnoxDaAssetFileConnectionListItemWrap, FortnoxDaEmailSenderTrustedWrap, FortnoxDaEmailSendersWrap, FortnoxDaInboxFolderResponseWrap, FortnoxDaSupplierInvoiceFileConnectionListItemWrap, FortnoxDaSupplierInvoiceFileConnectionSingleItemWrap, FortnoxDaSupplierInvoiceFileConnectionSinglePayloadItemWrap, FortnoxDaVoucherFileConnectionListItemWrap, FortnoxDaVoucherFileConnectionSingleItemWrap, FortnoxDaVoucherFileConnectionSinglePayloadItemWrap, FortnoxDeleteWrap, FortnoxDocumentTagListItemWrap, FortnoxDocumentTagSingleItemWrap, FortnoxDocumentTagSinglePayloadItemWrap, FortnoxEUVatLimitRegulationResponseWrap, FortnoxFileStorageFolderSingleItemWrap, FortnoxItemUrlConnectionListItemWrap, FortnoxItemUrlConnectionSingleItemWrap, FortnoxItemUrlConnectionSinglePayloadItemWrap, FortnoxKfCustomerListItemWrap, FortnoxKfCustomerReferenceRowRowWrap, FortnoxKfCustomerReferenceSingleItemWrap, FortnoxKfCustomerSingleItemWrap, FortnoxKfCustomerSinglePayloadItemWrap, FortnoxKfInvoiceAccrualListItemWrap, FortnoxKfInvoiceAccrualSingleItemWrap, FortnoxKfInvoiceAccrualSinglePayloadItemWrap, FortnoxKfInvoiceListResponseWrap, FortnoxKfInvoicePaymentListItemWrap, FortnoxKfInvoicePaymentSingleItemWrap, FortnoxKfInvoicePaymentSinglePayloadItemWrap, FortnoxKfInvoiceResponseWrap, FortnoxKfInvoiceSinglePayloadItemWrap, FortnoxKfNoxInvoiceCreatePayloadWrap, FortnoxKfNoxInvoiceSingleItemWrap, FortnoxKfNoxInvoiceUpdateAndPausePayloadWrap, FortnoxKfNoxInvoiceUpdateAndRepostPaymentPayloadWrap, FortnoxKfNoxInvoiceUpdateAndStopPayloadWrap, FortnoxKfNoxInvoiceUpdateAndTakeFeesPayloadWrap, FortnoxKfNoxInvoiceUpdateAndUnpausePayloadWrap, FortnoxKfTermsOfDeliveryListItemWrap, FortnoxKfTermsOfDeliverySingleItemWrap, FortnoxKfTermsOfDeliverySinglePayloadItemWrap, FortnoxLfSupplierInvoiceAccrualListItemWrap, FortnoxLfSupplierInvoiceAccrualSingleItemWrap, FortnoxLfSupplierInvoiceAccrualSinglePayloadItemWrap, FortnoxLfSupplierInvoiceListItemWrap, FortnoxLfSupplierInvoicePaymentListItemWrap, FortnoxLfSupplierInvoicePaymentSingleItemWrap, FortnoxLfSupplierInvoicePaymentSinglePayloadItemWrap, FortnoxLfSupplierInvoiceSingleItemWrap, FortnoxLfSupplierInvoiceSinglePayloadItemWrap, FortnoxLfSupplierListItemWrap, FortnoxLfSupplierSingleItemWrap, FortnoxLfSupplierSinglePayloadItemWrap, FortnoxLockedPeriodSettingsSingleItemWrap, FortnoxLonAbsenceTransactionsListItemWrap, FortnoxLonAbsenceTransactionsSingleItemWrap, FortnoxLonAbsenceTransactionsSinglePayloadItemWrap, FortnoxLonAttendanceTransactionsListItemWrap, FortnoxLonAttendanceTransactionsSingleItemWrap, FortnoxLonAttendanceTransactionsSinglePayloadItemWrap, FortnoxLonEmployeeListItemWrap, FortnoxLonEmployeeSingleItemWrap, FortnoxLonEmployeeSinglePayloadItemWrap, FortnoxLonExpensesListItemWrap, FortnoxLonExpensesSingleItemWrap, FortnoxLonExpensesSinglePayloadItemWrap, FortnoxLonSalaryTransactionsListItemWrap, FortnoxLonSalaryTransactionsSingleItemWrap, FortnoxLonSalaryTransactionsSinglePayloadItemWrap, FortnoxLonScheduleTimeSingleItemWrap, FortnoxLonScheduleTimeSinglePayloadItemWrap, FortnoxLonVacationDebtBasisSingleItemWrap, FortnoxMeSingleItemWrap, FortnoxModeOfPaymentListItemWrap, FortnoxModeOfPaymentSingleItemWrap, FortnoxModeOfPaymentSinglePayloadItemWrap, FortnoxOfferOfferListResponseWrap, FortnoxOfferOfferResponseWrap, FortnoxOfferOfferSinglePayloadItemWrap, FortnoxOrderOrderListResponseWrap, FortnoxOrderOrderResponseWrap, FortnoxOrderOrderSinglePayloadItemWrap, FortnoxPreDefinedAccountListItemWrap, FortnoxPreDefinedAccountSingleItemWrap, FortnoxPreDefinedAccountSinglePayloadItemWrap, FortnoxPriceListItemWrap, FortnoxPriceListListItemWrap, FortnoxPriceListSingleItemWrap, FortnoxPriceListSinglePayloadItemWrap, FortnoxPriceSingleItemWrap, FortnoxPriceSinglePayloadItemWrap, FortnoxPrintTemplateListItemWrap, FortnoxProjectProjectListItemWrap, FortnoxProjectProjectSingleItemWrap, FortnoxProjectProjectSinglePayloadItemWrap, FortnoxSinvoiceExternalUrlConnectionSingleItemWrap, FortnoxSinvoiceExternalUrlConnectionSinglePayloadItem, FortnoxTaxReductionCreatePayloadWrap, FortnoxTaxReductionListItemWrap, FortnoxTaxReductionSingleItemWrap, FortnoxTaxReductionUpdatePayloadWrap, FortnoxTermsOfPaymentListItemWrap, FortnoxTermsOfPaymentSingleItemWrap, FortnoxTermsOfPaymentSinglePayloadItemWrap, FortnoxUnitListItemWrap, FortnoxUnitSingleItemWrap, FortnoxUnitSinglePayloadItemWrap, FortnoxWayOfDeliveryListItemWrap, FortnoxWayOfDeliverySingleItemWrap, FortnoxWayOfDeliverySinglePayloadItemWrap, IntegrationPartnerAppSalesResponse, WarehouseCustomDocumentType, WarehouseCustomInboundDocument, WarehouseCustomOutboundDocument, WarehouseDocumentReference, WarehouseIncomingGoods, WarehouseManualDocument, WarehouseManualInboundDocument, WarehouseManualInboundDocumentPatch, WarehouseManualOutboundDocument, WarehouseManualOutboundDocumentPatch, WarehousePackageItem, WarehousePartialPurchaseOrder, WarehouseProductionOrder, WarehouseProductionOrderPatch, WarehousePurchaseOrder, WarehousePurchaseOrderMailSettings, WarehousePurchaseOrderRowNote, WarehouseReleaseParentOrder, WarehouseResponseStateChange, WarehouseStockBalance, WarehouseStockLocation, WarehouseStockPoint, WarehouseStockTaking, WarehouseStockTakingRow, WarehouseStockTransferDocument, WarehouseTenantInfo } from "./official-schemas";
 
 export interface Routes {
-  "/3/absencetransactions"?: {
+  "/3/absencetransactions": {
     get: {
       request: {
         params: never;
@@ -32,7 +32,7 @@ export interface Routes {
       };
     };
   };
-  "/3/absencetransactions/{id}"?: {
+  "/3/absencetransactions/{id}": {
     get: {
       request: {
         params: {
@@ -79,7 +79,7 @@ export interface Routes {
       };
     };
   };
-  "/3/absencetransactions/{id}/{Date}/{Code}"?: {
+  "/3/absencetransactions/{id}/{Date}/{Code}": {
     get: {
       request: {
         params: {
@@ -126,7 +126,7 @@ export interface Routes {
       };
     };
   };
-  "/3/accountcharts"?: {
+  "/3/accountcharts": {
     get: {
       request: {
         params: never;
@@ -138,7 +138,7 @@ export interface Routes {
       };
     };
   };
-  "/3/accounts"?: {
+  "/3/accounts": {
     get: {
       request: {
         params: never;
@@ -178,7 +178,7 @@ export interface Routes {
       };
     };
   };
-  "/3/accounts/{Number}"?: {
+  "/3/accounts/{Number}": {
     get: {
       request: {
         params: {
@@ -230,7 +230,7 @@ export interface Routes {
       };
     };
   };
-  "/3/archive"?: {
+  "/3/archive": {
     get: {
       request: {
         params: never;
@@ -285,7 +285,7 @@ export interface Routes {
       };
     };
   };
-  "/3/archive/{id}"?: {
+  "/3/archive/{id}": {
     get: {
       request: {
         params: {
@@ -331,7 +331,7 @@ export interface Routes {
       };
     };
   };
-  "/3/articlefileconnections"?: {
+  "/3/articlefileconnections": {
     get: {
       request: {
         params: never;
@@ -358,7 +358,7 @@ export interface Routes {
       };
     };
   };
-  "/3/articlefileconnections/{FileId}"?: {
+  "/3/articlefileconnections/{FileId}": {
     get: {
       request: {
         params: {
@@ -390,7 +390,7 @@ export interface Routes {
       };
     };
   };
-  "/3/articles"?: {
+  "/3/articles": {
     get: {
       request: {
         params: never;
@@ -453,7 +453,7 @@ export interface Routes {
       };
     };
   };
-  "/3/articles/{ArticleNumber}"?: {
+  "/3/articles/{ArticleNumber}": {
     get: {
       request: {
         params: {
@@ -500,7 +500,7 @@ export interface Routes {
       };
     };
   };
-  "/3/articleurlconnections"?: {
+  "/3/articleurlconnections": {
     get: {
       request: {
         params: never;
@@ -527,7 +527,7 @@ export interface Routes {
       };
     };
   };
-  "/3/articleurlconnections/{id}"?: {
+  "/3/articleurlconnections/{id}": {
     get: {
       request: {
         params: {
@@ -574,7 +574,7 @@ export interface Routes {
       };
     };
   };
-  "/3/assetfileconnections"?: {
+  "/3/assetfileconnections": {
     get: {
       request: {
         params: never;
@@ -601,7 +601,7 @@ export interface Routes {
       };
     };
   };
-  "/3/assetfileconnections/{FileId}"?: {
+  "/3/assetfileconnections/{FileId}": {
     delete: {
       request: {
         params: {
@@ -618,7 +618,7 @@ export interface Routes {
       };
     };
   };
-  "/3/assets"?: {
+  "/3/assets": {
     get: {
       request: {
         params: never;
@@ -657,7 +657,7 @@ export interface Routes {
       };
     };
   };
-  "/3/assets/changeob/{Id}"?: {
+  "/3/assets/changeob/{Id}": {
     put: {
       request: {
         params: {
@@ -674,7 +674,7 @@ export interface Routes {
       };
     };
   };
-  "/3/assets/depreciate"?: {
+  "/3/assets/depreciate": {
     post: {
       request: {
         params: never;
@@ -686,7 +686,7 @@ export interface Routes {
       };
     };
   };
-  "/3/assets/depreciations/{ToDate}"?: {
+  "/3/assets/depreciations/{ToDate}": {
     get: {
       request: {
         params: {
@@ -703,7 +703,7 @@ export interface Routes {
       };
     };
   };
-  "/3/assets/scrap/{Id}"?: {
+  "/3/assets/scrap/{Id}": {
     put: {
       request: {
         params: {
@@ -720,7 +720,7 @@ export interface Routes {
       };
     };
   };
-  "/3/assets/sell/{Id}"?: {
+  "/3/assets/sell/{Id}": {
     put: {
       request: {
         params: {
@@ -737,7 +737,7 @@ export interface Routes {
       };
     };
   };
-  "/3/assets/types"?: {
+  "/3/assets/types": {
     get: {
       request: {
         params: never;
@@ -759,7 +759,7 @@ export interface Routes {
       };
     };
   };
-  "/3/assets/types/{id}"?: {
+  "/3/assets/types/{id}": {
     get: {
       request: {
         params: {
@@ -806,7 +806,7 @@ export interface Routes {
       };
     };
   };
-  "/3/assets/writedown/{Id}"?: {
+  "/3/assets/writedown/{Id}": {
     put: {
       request: {
         params: {
@@ -823,7 +823,7 @@ export interface Routes {
       };
     };
   };
-  "/3/assets/writeup/{Id}"?: {
+  "/3/assets/writeup/{Id}": {
     put: {
       request: {
         params: {
@@ -840,7 +840,7 @@ export interface Routes {
       };
     };
   };
-  "/3/assets/{Id}"?: {
+  "/3/assets/{Id}": {
     get: {
       request: {
         params: {
@@ -887,7 +887,7 @@ export interface Routes {
       };
     };
   };
-  "/3/attendancetransactions"?: {
+  "/3/attendancetransactions": {
     get: {
       request: {
         params: never;
@@ -918,7 +918,7 @@ export interface Routes {
       };
     };
   };
-  "/3/attendancetransactions/{id}"?: {
+  "/3/attendancetransactions/{id}": {
     get: {
       request: {
         params: {
@@ -965,7 +965,7 @@ export interface Routes {
       };
     };
   };
-  "/3/attendancetransactions/{id}/{Date}/{Code}"?: {
+  "/3/attendancetransactions/{id}/{Date}/{Code}": {
     get: {
       request: {
         params: {
@@ -1016,7 +1016,7 @@ export interface Routes {
       };
     };
   };
-  "/3/companyinformation"?: {
+  "/3/companyinformation": {
     get: {
       request: {
         params: never;
@@ -1028,7 +1028,7 @@ export interface Routes {
       };
     };
   };
-  "/3/contractaccruals"?: {
+  "/3/contractaccruals": {
     get: {
       request: {
         params: never;
@@ -1050,7 +1050,7 @@ export interface Routes {
       };
     };
   };
-  "/3/contractaccruals/{DocumentNumber}"?: {
+  "/3/contractaccruals/{DocumentNumber}": {
     get: {
       request: {
         params: {
@@ -1097,7 +1097,7 @@ export interface Routes {
       };
     };
   };
-  "/3/contracts"?: {
+  "/3/contracts": {
     get: {
       request: {
         params: never;
@@ -1152,7 +1152,7 @@ export interface Routes {
       };
     };
   };
-  "/3/contracts/{DocumentNumber}"?: {
+  "/3/contracts/{DocumentNumber}": {
     get: {
       request: {
         params: {
@@ -1184,7 +1184,7 @@ export interface Routes {
       };
     };
   };
-  "/3/contracts/{DocumentNumber}/createinvoice"?: {
+  "/3/contracts/{DocumentNumber}/createinvoice": {
     put: {
       request: {
         params: {
@@ -1206,7 +1206,7 @@ export interface Routes {
       };
     };
   };
-  "/3/contracts/{DocumentNumber}/finish"?: {
+  "/3/contracts/{DocumentNumber}/finish": {
     put: {
       request: {
         params: {
@@ -1223,7 +1223,7 @@ export interface Routes {
       };
     };
   };
-  "/3/contracts/{DocumentNumber}/increaseinvoicecount"?: {
+  "/3/contracts/{DocumentNumber}/increaseinvoicecount": {
     put: {
       request: {
         params: {
@@ -1240,7 +1240,7 @@ export interface Routes {
       };
     };
   };
-  "/3/contracttemplates"?: {
+  "/3/contracttemplates": {
     get: {
       request: {
         params: never;
@@ -1262,7 +1262,7 @@ export interface Routes {
       };
     };
   };
-  "/3/contracttemplates/{TemplateNumber}"?: {
+  "/3/contracttemplates/{TemplateNumber}": {
     get: {
       request: {
         params: {
@@ -1294,7 +1294,7 @@ export interface Routes {
       };
     };
   };
-  "/3/costcenters"?: {
+  "/3/costcenters": {
     get: {
       request: {
         params: never;
@@ -1316,7 +1316,7 @@ export interface Routes {
       };
     };
   };
-  "/3/costcenters/{Code}"?: {
+  "/3/costcenters/{Code}": {
     get: {
       request: {
         params: {
@@ -1363,7 +1363,7 @@ export interface Routes {
       };
     };
   };
-  "/3/currencies"?: {
+  "/3/currencies": {
     get: {
       request: {
         params: never;
@@ -1385,7 +1385,7 @@ export interface Routes {
       };
     };
   };
-  "/3/currencies/{Code}"?: {
+  "/3/currencies/{Code}": {
     get: {
       request: {
         params: {
@@ -1432,7 +1432,7 @@ export interface Routes {
       };
     };
   };
-  "/3/customerreferences"?: {
+  "/3/customerreferences": {
     get: {
       request: {
         params: never;
@@ -1459,7 +1459,7 @@ export interface Routes {
       };
     };
   };
-  "/3/customerreferences/{CustomerReferenceRowId}"?: {
+  "/3/customerreferences/{CustomerReferenceRowId}": {
     get: {
       request: {
         params: {
@@ -1506,7 +1506,7 @@ export interface Routes {
       };
     };
   };
-  "/3/customers"?: {
+  "/3/customers": {
     get: {
       request: {
         params: never;
@@ -1577,7 +1577,7 @@ export interface Routes {
       };
     };
   };
-  "/3/customers/{CustomerNumber}"?: {
+  "/3/customers/{CustomerNumber}": {
     get: {
       request: {
         params: {
@@ -1624,7 +1624,7 @@ export interface Routes {
       };
     };
   };
-  "/3/emailsenders"?: {
+  "/3/emailsenders": {
     get: {
       request: {
         params: never;
@@ -1636,7 +1636,7 @@ export interface Routes {
       };
     };
   };
-  "/3/emailsenders/trusted"?: {
+  "/3/emailsenders/trusted": {
     post: {
       request: {
         params: never;
@@ -1648,7 +1648,7 @@ export interface Routes {
       };
     };
   };
-  "/3/emailsenders/trusted/{Id}"?: {
+  "/3/emailsenders/trusted/{Id}": {
     delete: {
       request: {
         params: {
@@ -1665,7 +1665,7 @@ export interface Routes {
       };
     };
   };
-  "/3/employees"?: {
+  "/3/employees": {
     get: {
       request: {
         params: never;
@@ -1687,7 +1687,7 @@ export interface Routes {
       };
     };
   };
-  "/3/employees/{EmployeeId}"?: {
+  "/3/employees/{EmployeeId}": {
     get: {
       request: {
         params: {
@@ -1719,7 +1719,7 @@ export interface Routes {
       };
     };
   };
-  "/3/euvatlimitregulation"?: {
+  "/3/euvatlimitregulation": {
     get: {
       request: {
         params: never;
@@ -1736,7 +1736,7 @@ export interface Routes {
       };
     };
   };
-  "/3/expenses"?: {
+  "/3/expenses": {
     get: {
       request: {
         params: never;
@@ -1758,7 +1758,7 @@ export interface Routes {
       };
     };
   };
-  "/3/expenses/{ExpenseCode}"?: {
+  "/3/expenses/{ExpenseCode}": {
     get: {
       request: {
         params: {
@@ -1775,7 +1775,7 @@ export interface Routes {
       };
     };
   };
-  "/3/financialyears"?: {
+  "/3/financialyears": {
     get: {
       request: {
         params: never;
@@ -1802,7 +1802,7 @@ export interface Routes {
       };
     };
   };
-  "/3/financialyears/{Id}"?: {
+  "/3/financialyears/{Id}": {
     get: {
       request: {
         params: {
@@ -1819,7 +1819,7 @@ export interface Routes {
       };
     };
   };
-  "/3/inbox"?: {
+  "/3/inbox": {
     get: {
       request: {
         params: never;
@@ -1850,7 +1850,7 @@ export interface Routes {
       };
     };
   };
-  "/3/inbox/{Id}"?: {
+  "/3/inbox/{Id}": {
     get: {
       request: {
         params: {
@@ -1882,7 +1882,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoiceaccruals"?: {
+  "/3/invoiceaccruals": {
     get: {
       request: {
         params: never;
@@ -1904,7 +1904,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoiceaccruals/{InvoiceNumber}"?: {
+  "/3/invoiceaccruals/{InvoiceNumber}": {
     get: {
       request: {
         params: {
@@ -1951,7 +1951,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoicepayments"?: {
+  "/3/invoicepayments": {
     get: {
       request: {
         params: never;
@@ -1986,7 +1986,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoicepayments/{Number}"?: {
+  "/3/invoicepayments/{Number}": {
     get: {
       request: {
         params: {
@@ -2033,7 +2033,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoicepayments/{Number}/bookkeep"?: {
+  "/3/invoicepayments/{Number}/bookkeep": {
     put: {
       request: {
         params: {
@@ -2050,7 +2050,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoices"?: {
+  "/3/invoices": {
     get: {
       request: {
         params: never;
@@ -2185,7 +2185,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoices/{DocumentNumber}"?: {
+  "/3/invoices/{DocumentNumber}": {
     get: {
       request: {
         params: {
@@ -2217,7 +2217,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoices/{DocumentNumber}/bookkeep"?: {
+  "/3/invoices/{DocumentNumber}/bookkeep": {
     put: {
       request: {
         params: {
@@ -2234,7 +2234,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoices/{DocumentNumber}/cancel"?: {
+  "/3/invoices/{DocumentNumber}/cancel": {
     put: {
       request: {
         params: {
@@ -2251,7 +2251,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoices/{DocumentNumber}/credit"?: {
+  "/3/invoices/{DocumentNumber}/credit": {
     put: {
       request: {
         params: {
@@ -2268,7 +2268,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoices/{DocumentNumber}/einvoice"?: {
+  "/3/invoices/{DocumentNumber}/einvoice": {
     get: {
       request: {
         params: {
@@ -2285,7 +2285,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoices/{DocumentNumber}/email"?: {
+  "/3/invoices/{DocumentNumber}/email": {
     get: {
       request: {
         params: {
@@ -2302,7 +2302,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoices/{DocumentNumber}/eprint"?: {
+  "/3/invoices/{DocumentNumber}/eprint": {
     get: {
       request: {
         params: {
@@ -2319,7 +2319,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoices/{DocumentNumber}/externalprint"?: {
+  "/3/invoices/{DocumentNumber}/externalprint": {
     put: {
       request: {
         params: {
@@ -2336,7 +2336,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoices/{DocumentNumber}/preview"?: {
+  "/3/invoices/{DocumentNumber}/preview": {
     get: {
       request: {
         params: {
@@ -2353,7 +2353,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoices/{DocumentNumber}/print"?: {
+  "/3/invoices/{DocumentNumber}/print": {
     get: {
       request: {
         params: {
@@ -2370,7 +2370,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoices/{DocumentNumber}/printreminder"?: {
+  "/3/invoices/{DocumentNumber}/printreminder": {
     get: {
       request: {
         params: {
@@ -2387,7 +2387,7 @@ export interface Routes {
       };
     };
   };
-  "/3/invoices/{DocumentNumber}/warehouseready"?: {
+  "/3/invoices/{DocumentNumber}/warehouseready": {
     put: {
       request: {
         params: {
@@ -2404,7 +2404,7 @@ export interface Routes {
       };
     };
   };
-  "/3/labels"?: {
+  "/3/labels": {
     get: {
       request: {
         params: never;
@@ -2426,7 +2426,7 @@ export interface Routes {
       };
     };
   };
-  "/3/labels/{Id}"?: {
+  "/3/labels/{Id}": {
     put: {
       request: {
         params: {
@@ -2458,7 +2458,7 @@ export interface Routes {
       };
     };
   };
-  "/3/me"?: {
+  "/3/me": {
     get: {
       request: {
         params: never;
@@ -2470,7 +2470,7 @@ export interface Routes {
       };
     };
   };
-  "/3/modesofpayments"?: {
+  "/3/modesofpayments": {
     get: {
       request: {
         params: never;
@@ -2492,7 +2492,7 @@ export interface Routes {
       };
     };
   };
-  "/3/modesofpayments/{Code}"?: {
+  "/3/modesofpayments/{Code}": {
     get: {
       request: {
         params: {
@@ -2539,7 +2539,7 @@ export interface Routes {
       };
     };
   };
-  "/3/noxfinansinvoices"?: {
+  "/3/noxfinansinvoices": {
     post: {
       request: {
         params: never;
@@ -2551,7 +2551,7 @@ export interface Routes {
       };
     };
   };
-  "/3/noxfinansinvoices/{InvoiceNumber}"?: {
+  "/3/noxfinansinvoices/{InvoiceNumber}": {
     get: {
       request: {
         params: {
@@ -2568,7 +2568,7 @@ export interface Routes {
       };
     };
   };
-  "/3/noxfinansinvoices/{InvoiceNumber}/pause"?: {
+  "/3/noxfinansinvoices/{InvoiceNumber}/pause": {
     put: {
       request: {
         params: {
@@ -2585,7 +2585,7 @@ export interface Routes {
       };
     };
   };
-  "/3/noxfinansinvoices/{InvoiceNumber}/report-payment"?: {
+  "/3/noxfinansinvoices/{InvoiceNumber}/report-payment": {
     put: {
       request: {
         params: {
@@ -2602,7 +2602,7 @@ export interface Routes {
       };
     };
   };
-  "/3/noxfinansinvoices/{InvoiceNumber}/stop"?: {
+  "/3/noxfinansinvoices/{InvoiceNumber}/stop": {
     put: {
       request: {
         params: {
@@ -2619,7 +2619,7 @@ export interface Routes {
       };
     };
   };
-  "/3/noxfinansinvoices/{InvoiceNumber}/take-fees"?: {
+  "/3/noxfinansinvoices/{InvoiceNumber}/take-fees": {
     put: {
       request: {
         params: {
@@ -2636,7 +2636,7 @@ export interface Routes {
       };
     };
   };
-  "/3/noxfinansinvoices/{InvoiceNumber}/unpause"?: {
+  "/3/noxfinansinvoices/{InvoiceNumber}/unpause": {
     put: {
       request: {
         params: {
@@ -2653,7 +2653,7 @@ export interface Routes {
       };
     };
   };
-  "/3/offers"?: {
+  "/3/offers": {
     get: {
       request: {
         params: never;
@@ -2736,7 +2736,7 @@ export interface Routes {
       };
     };
   };
-  "/3/offers/{DocumentNumber}"?: {
+  "/3/offers/{DocumentNumber}": {
     get: {
       request: {
         params: {
@@ -2768,7 +2768,7 @@ export interface Routes {
       };
     };
   };
-  "/3/offers/{DocumentNumber}/cancel"?: {
+  "/3/offers/{DocumentNumber}/cancel": {
     put: {
       request: {
         params: {
@@ -2785,7 +2785,7 @@ export interface Routes {
       };
     };
   };
-  "/3/offers/{DocumentNumber}/createinvoice"?: {
+  "/3/offers/{DocumentNumber}/createinvoice": {
     put: {
       request: {
         params: {
@@ -2802,7 +2802,7 @@ export interface Routes {
       };
     };
   };
-  "/3/offers/{DocumentNumber}/createorder"?: {
+  "/3/offers/{DocumentNumber}/createorder": {
     put: {
       request: {
         params: {
@@ -2819,7 +2819,7 @@ export interface Routes {
       };
     };
   };
-  "/3/offers/{DocumentNumber}/email"?: {
+  "/3/offers/{DocumentNumber}/email": {
     get: {
       request: {
         params: {
@@ -2836,7 +2836,7 @@ export interface Routes {
       };
     };
   };
-  "/3/offers/{DocumentNumber}/externalprint"?: {
+  "/3/offers/{DocumentNumber}/externalprint": {
     put: {
       request: {
         params: {
@@ -2853,7 +2853,7 @@ export interface Routes {
       };
     };
   };
-  "/3/offers/{DocumentNumber}/preview"?: {
+  "/3/offers/{DocumentNumber}/preview": {
     get: {
       request: {
         params: {
@@ -2870,7 +2870,7 @@ export interface Routes {
       };
     };
   };
-  "/3/offers/{DocumentNumber}/print"?: {
+  "/3/offers/{DocumentNumber}/print": {
     get: {
       request: {
         params: {
@@ -2887,7 +2887,7 @@ export interface Routes {
       };
     };
   };
-  "/3/orders"?: {
+  "/3/orders": {
     get: {
       request: {
         params: never;
@@ -2982,7 +2982,7 @@ export interface Routes {
       };
     };
   };
-  "/3/orders/{DocumentNumber}"?: {
+  "/3/orders/{DocumentNumber}": {
     get: {
       request: {
         params: {
@@ -3014,7 +3014,7 @@ export interface Routes {
       };
     };
   };
-  "/3/orders/{DocumentNumber}/cancel"?: {
+  "/3/orders/{DocumentNumber}/cancel": {
     put: {
       request: {
         params: {
@@ -3031,7 +3031,7 @@ export interface Routes {
       };
     };
   };
-  "/3/orders/{DocumentNumber}/createinvoice"?: {
+  "/3/orders/{DocumentNumber}/createinvoice": {
     put: {
       request: {
         params: {
@@ -3048,7 +3048,7 @@ export interface Routes {
       };
     };
   };
-  "/3/orders/{DocumentNumber}/email"?: {
+  "/3/orders/{DocumentNumber}/email": {
     get: {
       request: {
         params: {
@@ -3065,7 +3065,7 @@ export interface Routes {
       };
     };
   };
-  "/3/orders/{DocumentNumber}/externalprint"?: {
+  "/3/orders/{DocumentNumber}/externalprint": {
     put: {
       request: {
         params: {
@@ -3082,7 +3082,7 @@ export interface Routes {
       };
     };
   };
-  "/3/orders/{DocumentNumber}/preview"?: {
+  "/3/orders/{DocumentNumber}/preview": {
     get: {
       request: {
         params: {
@@ -3099,7 +3099,7 @@ export interface Routes {
       };
     };
   };
-  "/3/orders/{DocumentNumber}/print"?: {
+  "/3/orders/{DocumentNumber}/print": {
     get: {
       request: {
         params: {
@@ -3116,7 +3116,7 @@ export interface Routes {
       };
     };
   };
-  "/3/predefinedaccounts"?: {
+  "/3/predefinedaccounts": {
     get: {
       request: {
         params: never;
@@ -3128,7 +3128,7 @@ export interface Routes {
       };
     };
   };
-  "/3/predefinedaccounts/{name}"?: {
+  "/3/predefinedaccounts/{name}": {
     get: {
       request: {
         params: {
@@ -3160,7 +3160,7 @@ export interface Routes {
       };
     };
   };
-  "/3/predefinedvoucherseries"?: {
+  "/3/predefinedvoucherseries": {
     get: {
       request: {
         params: never;
@@ -3172,7 +3172,7 @@ export interface Routes {
       };
     };
   };
-  "/3/predefinedvoucherseries/{Name}"?: {
+  "/3/predefinedvoucherseries/{Name}": {
     get: {
       request: {
         params: {
@@ -3204,7 +3204,7 @@ export interface Routes {
       };
     };
   };
-  "/3/pricelists"?: {
+  "/3/pricelists": {
     get: {
       request: {
         params: never;
@@ -3226,7 +3226,7 @@ export interface Routes {
       };
     };
   };
-  "/3/pricelists/{Code}"?: {
+  "/3/pricelists/{Code}": {
     get: {
       request: {
         params: {
@@ -3258,7 +3258,7 @@ export interface Routes {
       };
     };
   };
-  "/3/prices"?: {
+  "/3/prices": {
     get: {
       request: {
         params: never;
@@ -3285,7 +3285,7 @@ export interface Routes {
       };
     };
   };
-  "/3/prices/sublist/{PriceList}/{ArticleNumber}"?: {
+  "/3/prices/sublist/{PriceList}/{ArticleNumber}": {
     get: {
       request: {
         params: {
@@ -3311,7 +3311,7 @@ export interface Routes {
       };
     };
   };
-  "/3/prices/{PriceList}/{ArticleNumber}"?: {
+  "/3/prices/{PriceList}/{ArticleNumber}": {
     get: {
       request: {
         params: {
@@ -3356,7 +3356,7 @@ export interface Routes {
       };
     };
   };
-  "/3/prices/{PriceList}/{ArticleNumber}/{FromQuantity}"?: {
+  "/3/prices/{PriceList}/{ArticleNumber}/{FromQuantity}": {
     get: {
       request: {
         params: {
@@ -3427,7 +3427,7 @@ export interface Routes {
       };
     };
   };
-  "/3/printtemplates"?: {
+  "/3/printtemplates": {
     get: {
       request: {
         params: never;
@@ -3444,7 +3444,7 @@ export interface Routes {
       };
     };
   };
-  "/3/projects"?: {
+  "/3/projects": {
     get: {
       request: {
         params: never;
@@ -3475,7 +3475,7 @@ export interface Routes {
       };
     };
   };
-  "/3/projects/{ProjectNumber}"?: {
+  "/3/projects/{ProjectNumber}": {
     get: {
       request: {
         params: {
@@ -3522,7 +3522,7 @@ export interface Routes {
       };
     };
   };
-  "/3/salarytransactions"?: {
+  "/3/salarytransactions": {
     get: {
       request: {
         params: never;
@@ -3553,7 +3553,7 @@ export interface Routes {
       };
     };
   };
-  "/3/salarytransactions/{SalaryRow}"?: {
+  "/3/salarytransactions/{SalaryRow}": {
     get: {
       request: {
         params: {
@@ -3600,7 +3600,7 @@ export interface Routes {
       };
     };
   };
-  "/3/scheduletimes/{EmployeeId}/{Date}"?: {
+  "/3/scheduletimes/{EmployeeId}/{Date}": {
     get: {
       request: {
         params: {
@@ -3640,7 +3640,7 @@ export interface Routes {
       };
     };
   };
-  "/3/scheduletimes/{EmployeeId}/{Date}/resetday"?: {
+  "/3/scheduletimes/{EmployeeId}/{Date}/resetday": {
     put: {
       request: {
         params: {
@@ -3661,7 +3661,7 @@ export interface Routes {
       };
     };
   };
-  "/3/settings/company"?: {
+  "/3/settings/company": {
     get: {
       request: {
         params: never;
@@ -3673,7 +3673,7 @@ export interface Routes {
       };
     };
   };
-  "/3/settings/lockedperiod"?: {
+  "/3/settings/lockedperiod": {
     get: {
       request: {
         params: never;
@@ -3685,7 +3685,7 @@ export interface Routes {
       };
     };
   };
-  "/3/sie/{Type}"?: {
+  "/3/sie/{Type}": {
     get: {
       request: {
         params: {
@@ -3723,7 +3723,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoiceaccruals"?: {
+  "/3/supplierinvoiceaccruals": {
     get: {
       request: {
         params: never;
@@ -3745,7 +3745,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoiceaccruals/{SupplierInvoiceNumber}"?: {
+  "/3/supplierinvoiceaccruals/{SupplierInvoiceNumber}": {
     get: {
       request: {
         params: {
@@ -3792,7 +3792,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoiceexternalurlconnections"?: {
+  "/3/supplierinvoiceexternalurlconnections": {
     post: {
       request: {
         params: never;
@@ -3804,7 +3804,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoiceexternalurlconnections/{Id}"?: {
+  "/3/supplierinvoiceexternalurlconnections/{Id}": {
     get: {
       request: {
         params: {
@@ -3851,7 +3851,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoicefileconnections"?: {
+  "/3/supplierinvoicefileconnections": {
     get: {
       request: {
         params: never;
@@ -3878,7 +3878,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoicefileconnections/{FileId}"?: {
+  "/3/supplierinvoicefileconnections/{FileId}": {
     get: {
       request: {
         params: {
@@ -3910,7 +3910,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoicepayments"?: {
+  "/3/supplierinvoicepayments": {
     get: {
       request: {
         params: never;
@@ -3941,7 +3941,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoicepayments/{Number}"?: {
+  "/3/supplierinvoicepayments/{Number}": {
     get: {
       request: {
         params: {
@@ -3988,7 +3988,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoicepayments/{Number}/bookkeep"?: {
+  "/3/supplierinvoicepayments/{Number}/bookkeep": {
     put: {
       request: {
         params: {
@@ -4005,7 +4005,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoices"?: {
+  "/3/supplierinvoices": {
     get: {
       request: {
         params: never;
@@ -4095,7 +4095,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoices/{GivenNumber}"?: {
+  "/3/supplierinvoices/{GivenNumber}": {
     get: {
       request: {
         params: {
@@ -4127,7 +4127,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoices/{GivenNumber}/approvalbookkeep"?: {
+  "/3/supplierinvoices/{GivenNumber}/approvalbookkeep": {
     put: {
       request: {
         params: {
@@ -4144,7 +4144,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoices/{GivenNumber}/approvalpayment"?: {
+  "/3/supplierinvoices/{GivenNumber}/approvalpayment": {
     put: {
       request: {
         params: {
@@ -4161,7 +4161,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoices/{GivenNumber}/bookkeep"?: {
+  "/3/supplierinvoices/{GivenNumber}/bookkeep": {
     put: {
       request: {
         params: {
@@ -4178,7 +4178,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoices/{GivenNumber}/cancel"?: {
+  "/3/supplierinvoices/{GivenNumber}/cancel": {
     put: {
       request: {
         params: {
@@ -4195,7 +4195,7 @@ export interface Routes {
       };
     };
   };
-  "/3/supplierinvoices/{GivenNumber}/credit"?: {
+  "/3/supplierinvoices/{GivenNumber}/credit": {
     put: {
       request: {
         params: {
@@ -4212,7 +4212,7 @@ export interface Routes {
       };
     };
   };
-  "/3/suppliers"?: {
+  "/3/suppliers": {
     get: {
       request: {
         params: never;
@@ -4267,7 +4267,7 @@ export interface Routes {
       };
     };
   };
-  "/3/suppliers/{SupplierNumber}"?: {
+  "/3/suppliers/{SupplierNumber}": {
     get: {
       request: {
         params: {
@@ -4299,7 +4299,7 @@ export interface Routes {
       };
     };
   };
-  "/3/taxreductions"?: {
+  "/3/taxreductions": {
     get: {
       request: {
         params: never;
@@ -4326,7 +4326,7 @@ export interface Routes {
       };
     };
   };
-  "/3/taxreductions/{Id}"?: {
+  "/3/taxreductions/{Id}": {
     get: {
       request: {
         params: {
@@ -4373,7 +4373,7 @@ export interface Routes {
       };
     };
   };
-  "/3/termsofdeliveries"?: {
+  "/3/termsofdeliveries": {
     get: {
       request: {
         params: never;
@@ -4395,7 +4395,7 @@ export interface Routes {
       };
     };
   };
-  "/3/termsofdeliveries/{Code}"?: {
+  "/3/termsofdeliveries/{Code}": {
     get: {
       request: {
         params: {
@@ -4427,7 +4427,7 @@ export interface Routes {
       };
     };
   };
-  "/3/termsofpayments"?: {
+  "/3/termsofpayments": {
     get: {
       request: {
         params: never;
@@ -4449,7 +4449,7 @@ export interface Routes {
       };
     };
   };
-  "/3/termsofpayments/{Code}"?: {
+  "/3/termsofpayments/{Code}": {
     get: {
       request: {
         params: {
@@ -4496,7 +4496,7 @@ export interface Routes {
       };
     };
   };
-  "/3/units"?: {
+  "/3/units": {
     get: {
       request: {
         params: never;
@@ -4518,7 +4518,7 @@ export interface Routes {
       };
     };
   };
-  "/3/units/{Code}"?: {
+  "/3/units/{Code}": {
     get: {
       request: {
         params: {
@@ -4565,7 +4565,7 @@ export interface Routes {
       };
     };
   };
-  "/3/vacationdebtbasis/{Year}/{Month}"?: {
+  "/3/vacationdebtbasis/{Year}/{Month}": {
     get: {
       request: {
         params: {
@@ -4586,7 +4586,7 @@ export interface Routes {
       };
     };
   };
-  "/3/voucherfileconnections"?: {
+  "/3/voucherfileconnections": {
     get: {
       request: {
         params: never;
@@ -4625,7 +4625,7 @@ export interface Routes {
       };
     };
   };
-  "/3/voucherfileconnections/{FileId}"?: {
+  "/3/voucherfileconnections/{FileId}": {
     get: {
       request: {
         params: {
@@ -4657,7 +4657,7 @@ export interface Routes {
       };
     };
   };
-  "/3/vouchers"?: {
+  "/3/vouchers": {
     get: {
       request: {
         params: never;
@@ -4709,7 +4709,7 @@ export interface Routes {
       };
     };
   };
-  "/3/vouchers/sublist"?: {
+  "/3/vouchers/sublist": {
     get: {
       request: {
         params: never;
@@ -4742,7 +4742,7 @@ export interface Routes {
       };
     };
   };
-  "/3/vouchers/sublist/{VoucherSeries}"?: {
+  "/3/vouchers/sublist/{VoucherSeries}": {
     get: {
       request: {
         params: {
@@ -4780,7 +4780,7 @@ export interface Routes {
       };
     };
   };
-  "/3/vouchers/{VoucherSeries}/{VoucherNumber}"?: {
+  "/3/vouchers/{VoucherSeries}/{VoucherNumber}": {
     get: {
       request: {
         params: {
@@ -4806,7 +4806,7 @@ export interface Routes {
       };
     };
   };
-  "/3/voucherseries"?: {
+  "/3/voucherseries": {
     get: {
       request: {
         params: never;
@@ -4828,7 +4828,7 @@ export interface Routes {
       };
     };
   };
-  "/3/voucherseries/{Code}"?: {
+  "/3/voucherseries/{Code}": {
     get: {
       request: {
         params: {
@@ -4860,7 +4860,7 @@ export interface Routes {
       };
     };
   };
-  "/3/wayofdeliveries"?: {
+  "/3/wayofdeliveries": {
     get: {
       request: {
         params: never;
@@ -4882,7 +4882,7 @@ export interface Routes {
       };
     };
   };
-  "/3/wayofdeliveries/{Code}"?: {
+  "/3/wayofdeliveries/{Code}": {
     get: {
       request: {
         params: {
@@ -4929,7 +4929,7 @@ export interface Routes {
       };
     };
   };
-  "/api/fileattachments/attachments-v1"?: {
+  "/api/fileattachments/attachments-v1": {
     get: {
       request: {
         params: never;
@@ -4960,7 +4960,7 @@ export interface Routes {
       };
     };
   };
-  "/api/fileattachments/attachments-v1/numberofattachments"?: {
+  "/api/fileattachments/attachments-v1/numberofattachments": {
     get: {
       request: {
         params: never;
@@ -4981,7 +4981,7 @@ export interface Routes {
       };
     };
   };
-  "/api/fileattachments/attachments-v1/validateincludedonsend"?: {
+  "/api/fileattachments/attachments-v1/validateincludedonsend": {
     post: {
       request: {
         params: never;
@@ -4993,7 +4993,7 @@ export interface Routes {
       };
     };
   };
-  "/api/fileattachments/attachments-v1/{attachmentId}"?: {
+  "/api/fileattachments/attachments-v1/{attachmentId}": {
     put: {
       request: {
         params: {
@@ -5025,7 +5025,7 @@ export interface Routes {
       };
     };
   };
-  "/api/integration-developer/ratings-v1"?: {
+  "/api/integration-developer/ratings-v1": {
     get: {
       request: {
         params: never;
@@ -5037,7 +5037,7 @@ export interface Routes {
       };
     };
   };
-  "/api/integration-developer/sales-v1/{integrationId}"?: {
+  "/api/integration-developer/sales-v1/{integrationId}": {
     get: {
       request: {
         params: {
@@ -5054,7 +5054,7 @@ export interface Routes {
       };
     };
   };
-  "/api/integration-developer/users/users-v1/{integrationId}/{tenantId}"?: {
+  "/api/integration-developer/users/users-v1/{integrationId}/{tenantId}": {
     get: {
       request: {
         params: {
@@ -5069,7 +5069,7 @@ export interface Routes {
       };
     };
   };
-  "/api/integration-partner/apps/sales-v1/{appId}"?: {
+  "/api/integration-partner/apps/sales-v1/{appId}": {
     get: {
       request: {
         params: {
@@ -5086,7 +5086,7 @@ export interface Routes {
       };
     };
   };
-  "/api/integration-partner/apps/sales-v1/{appId}/{tenantId}"?: {
+  "/api/integration-partner/apps/sales-v1/{appId}/{tenantId}": {
     get: {
       request: {
         params: {
@@ -5107,7 +5107,7 @@ export interface Routes {
       };
     };
   };
-  "/api/time/articles-v1"?: {
+  "/api/time/articles-v1": {
     get: {
       request: {
         params: never;
@@ -5179,7 +5179,7 @@ export interface Routes {
       };
     };
   };
-  "/api/time/registrations-v2"?: {
+  "/api/time/registrations-v2": {
     get: {
       request: {
         params: never;
@@ -5256,7 +5256,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/deliveries-v1"?: {
+  "/api/warehouse/deliveries-v1": {
     get: {
       request: {
         params: never;
@@ -5281,7 +5281,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/deliveries-v1/inbounddeliveries"?: {
+  "/api/warehouse/deliveries-v1/inbounddeliveries": {
     post: {
       request: {
         params: never;
@@ -5293,7 +5293,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/deliveries-v1/inbounddeliveries/{id}"?: {
+  "/api/warehouse/deliveries-v1/inbounddeliveries/{id}": {
     get: {
       request: {
         params: {
@@ -5340,7 +5340,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/deliveries-v1/inbounddeliveries/{id}/release"?: {
+  "/api/warehouse/deliveries-v1/inbounddeliveries/{id}/release": {
     put: {
       request: {
         params: {
@@ -5357,7 +5357,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/deliveries-v1/inbounddeliveries/{id}/void"?: {
+  "/api/warehouse/deliveries-v1/inbounddeliveries/{id}/void": {
     put: {
       request: {
         params: {
@@ -5383,7 +5383,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/deliveries-v1/outbounddeliveries"?: {
+  "/api/warehouse/deliveries-v1/outbounddeliveries": {
     post: {
       request: {
         params: never;
@@ -5395,7 +5395,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/deliveries-v1/outbounddeliveries/{id}"?: {
+  "/api/warehouse/deliveries-v1/outbounddeliveries/{id}": {
     get: {
       request: {
         params: {
@@ -5442,7 +5442,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/deliveries-v1/outbounddeliveries/{id}/release"?: {
+  "/api/warehouse/deliveries-v1/outbounddeliveries/{id}/release": {
     put: {
       request: {
         params: {
@@ -5459,7 +5459,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/deliveries-v1/outbounddeliveries/{id}/void"?: {
+  "/api/warehouse/deliveries-v1/outbounddeliveries/{id}/void": {
     put: {
       request: {
         params: {
@@ -5481,7 +5481,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/documentdeliveries/custom/documenttypes-v1"?: {
+  "/api/warehouse/documentdeliveries/custom/documenttypes-v1": {
     get: {
       request: {
         params: never;
@@ -5503,7 +5503,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/documentdeliveries/custom/documenttypes-v1/{type}"?: {
+  "/api/warehouse/documentdeliveries/custom/documenttypes-v1/{type}": {
     get: {
       request: {
         params: {
@@ -5520,7 +5520,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/documentdeliveries/custom/inbound-v1/{type}/{id}"?: {
+  "/api/warehouse/documentdeliveries/custom/inbound-v1/{type}/{id}": {
     get: {
       request: {
         params: {
@@ -5566,7 +5566,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/documentdeliveries/custom/inbound-v1/{type}/{id}/release"?: {
+  "/api/warehouse/documentdeliveries/custom/inbound-v1/{type}/{id}/release": {
     put: {
       request: {
         params: {
@@ -5587,7 +5587,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/documentdeliveries/custom/inbound-v1/{type}/{id}/void"?: {
+  "/api/warehouse/documentdeliveries/custom/inbound-v1/{type}/{id}/void": {
     put: {
       request: {
         params: {
@@ -5613,7 +5613,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/documentdeliveries/custom/outbound-v1/{type}/{id}"?: {
+  "/api/warehouse/documentdeliveries/custom/outbound-v1/{type}/{id}": {
     get: {
       request: {
         params: {
@@ -5653,7 +5653,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/documentdeliveries/custom/outbound-v1/{type}/{id}/release"?: {
+  "/api/warehouse/documentdeliveries/custom/outbound-v1/{type}/{id}/release": {
     put: {
       request: {
         params: {
@@ -5674,7 +5674,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/documentdeliveries/custom/outbound-v1/{type}/{id}/void"?: {
+  "/api/warehouse/documentdeliveries/custom/outbound-v1/{type}/{id}/void": {
     put: {
       request: {
         params: {
@@ -5700,7 +5700,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/incominggoods-v1"?: {
+  "/api/warehouse/incominggoods-v1": {
     get: {
       request: {
         params: never;
@@ -5758,7 +5758,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/incominggoods-v1/{id}"?: {
+  "/api/warehouse/incominggoods-v1/{id}": {
     get: {
       request: {
         params: {
@@ -5810,7 +5810,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/incominggoods-v1/{id}/completed"?: {
+  "/api/warehouse/incominggoods-v1/{id}/completed": {
     put: {
       request: {
         params: {
@@ -5827,7 +5827,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/incominggoods-v1/{id}/release"?: {
+  "/api/warehouse/incominggoods-v1/{id}/release": {
     put: {
       request: {
         params: {
@@ -5844,7 +5844,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/incominggoods-v1/{id}/void"?: {
+  "/api/warehouse/incominggoods-v1/{id}/void": {
     put: {
       request: {
         params: {
@@ -5861,7 +5861,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/productionorders-v1"?: {
+  "/api/warehouse/productionorders-v1": {
     get: {
       request: {
         params: never;
@@ -5894,7 +5894,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/productionorders-v1/billofmaterials/{itemId}"?: {
+  "/api/warehouse/productionorders-v1/billofmaterials/{itemId}": {
     get: {
       request: {
         params: {
@@ -5920,7 +5920,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/productionorders-v1/release/{id}"?: {
+  "/api/warehouse/productionorders-v1/release/{id}": {
     put: {
       request: {
         params: {
@@ -5937,7 +5937,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/productionorders-v1/void/{id}"?: {
+  "/api/warehouse/productionorders-v1/void/{id}": {
     put: {
       request: {
         params: {
@@ -5959,7 +5959,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/productionorders-v1/{id}"?: {
+  "/api/warehouse/productionorders-v1/{id}": {
     get: {
       request: {
         params: {
@@ -6006,7 +6006,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/purchaseorders-v1"?: {
+  "/api/warehouse/purchaseorders-v1": {
     get: {
       request: {
         params: never;
@@ -6057,7 +6057,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/purchaseorders-v1/csv"?: {
+  "/api/warehouse/purchaseorders-v1/csv": {
     get: {
       request: {
         params: never;
@@ -6102,7 +6102,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/purchaseorders-v1/response"?: {
+  "/api/warehouse/purchaseorders-v1/response": {
     put: {
       request: {
         params: never;
@@ -6119,7 +6119,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/purchaseorders-v1/sendpurchaseorders"?: {
+  "/api/warehouse/purchaseorders-v1/sendpurchaseorders": {
     post: {
       request: {
         params: never;
@@ -6131,7 +6131,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/purchaseorders-v1/{id}"?: {
+  "/api/warehouse/purchaseorders-v1/{id}": {
     get: {
       request: {
         params: {
@@ -6168,7 +6168,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/purchaseorders-v1/{id}/complete"?: {
+  "/api/warehouse/purchaseorders-v1/{id}/complete": {
     put: {
       request: {
         params: {
@@ -6185,7 +6185,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/purchaseorders-v1/{id}/dropshipcomplete"?: {
+  "/api/warehouse/purchaseorders-v1/{id}/dropshipcomplete": {
     put: {
       request: {
         params: {
@@ -6202,7 +6202,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/purchaseorders-v1/{id}/matches"?: {
+  "/api/warehouse/purchaseorders-v1/{id}/matches": {
     get: {
       request: {
         params: {
@@ -6219,7 +6219,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/purchaseorders-v1/{id}/notes"?: {
+  "/api/warehouse/purchaseorders-v1/{id}/notes": {
     get: {
       request: {
         params: {
@@ -6236,7 +6236,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/purchaseorders-v1/{id}/partial"?: {
+  "/api/warehouse/purchaseorders-v1/{id}/partial": {
     patch: {
       request: {
         params: {
@@ -6253,7 +6253,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/purchaseorders-v1/{id}/response"?: {
+  "/api/warehouse/purchaseorders-v1/{id}/response": {
     put: {
       request: {
         params: {
@@ -6270,7 +6270,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/purchaseorders-v1/{id}/send"?: {
+  "/api/warehouse/purchaseorders-v1/{id}/send": {
     post: {
       request: {
         params: {
@@ -6287,7 +6287,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/purchaseorders-v1/{id}/void"?: {
+  "/api/warehouse/purchaseorders-v1/{id}/void": {
     put: {
       request: {
         params: {
@@ -6304,7 +6304,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/status-v1/stockbalance"?: {
+  "/api/warehouse/status-v1/stockbalance": {
     get: {
       request: {
         params: never;
@@ -6325,7 +6325,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stockpoints-v1"?: {
+  "/api/warehouse/stockpoints-v1": {
     get: {
       request: {
         params: never;
@@ -6356,7 +6356,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stockpoints-v1/multi"?: {
+  "/api/warehouse/stockpoints-v1/multi": {
     get: {
       request: {
         params: never;
@@ -6377,7 +6377,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stockpoints-v1/{id}"?: {
+  "/api/warehouse/stockpoints-v1/{id}": {
     get: {
       request: {
         params: {
@@ -6439,7 +6439,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stockpoints-v1/{id}/stocklocations"?: {
+  "/api/warehouse/stockpoints-v1/{id}/stocklocations": {
     get: {
       request: {
         params: {
@@ -6461,7 +6461,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stocktaking-v1"?: {
+  "/api/warehouse/stocktaking-v1": {
     get: {
       request: {
         params: never;
@@ -6492,7 +6492,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stocktaking-v1/{id}"?: {
+  "/api/warehouse/stocktaking-v1/{id}": {
     get: {
       request: {
         params: {
@@ -6539,7 +6539,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stocktaking-v1/{id}/addrows"?: {
+  "/api/warehouse/stocktaking-v1/{id}/addrows": {
     post: {
       request: {
         params: {
@@ -6566,7 +6566,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stocktaking-v1/{id}/candidates"?: {
+  "/api/warehouse/stocktaking-v1/{id}/candidates": {
     get: {
       request: {
         params: {
@@ -6596,7 +6596,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stocktaking-v1/{id}/release"?: {
+  "/api/warehouse/stocktaking-v1/{id}/release": {
     put: {
       request: {
         params: {
@@ -6613,7 +6613,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stocktaking-v1/{id}/rows"?: {
+  "/api/warehouse/stocktaking-v1/{id}/rows": {
     get: {
       request: {
         params: {
@@ -6695,7 +6695,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stocktaking-v1/{id}/rows/{rowId}"?: {
+  "/api/warehouse/stocktaking-v1/{id}/rows/{rowId}": {
     delete: {
       request: {
         params: {
@@ -6716,7 +6716,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stocktaking-v1/{id}/void"?: {
+  "/api/warehouse/stocktaking-v1/{id}/void": {
     put: {
       request: {
         params: {
@@ -6733,7 +6733,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stocktransfer-v1"?: {
+  "/api/warehouse/stocktransfer-v1": {
     post: {
       request: {
         params: never;
@@ -6745,7 +6745,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stocktransfer-v1/{id}"?: {
+  "/api/warehouse/stocktransfer-v1/{id}": {
     get: {
       request: {
         params: {
@@ -6777,7 +6777,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stocktransfer-v1/{id}/release"?: {
+  "/api/warehouse/stocktransfer-v1/{id}/release": {
     put: {
       request: {
         params: {
@@ -6794,7 +6794,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/stocktransfer-v1/{id}/void"?: {
+  "/api/warehouse/stocktransfer-v1/{id}/void": {
     put: {
       request: {
         params: {
@@ -6813,7 +6813,7 @@ export interface Routes {
       };
     };
   };
-  "/api/warehouse/tenants-v4"?: {
+  "/api/warehouse/tenants-v4": {
     get: {
       request: {
         params: never;

@@ -166,6 +166,7 @@ export async function extractRoutes() {
     type: "object",
     additionalProperties: false,
     properties: pathProperties,
+    required: Object.keys(pathProperties),
   };
 
   const routesString = await compile(routes, "Routes", {
