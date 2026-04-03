@@ -102,6 +102,18 @@ export async function extractRoutes() {
       }
       const bodySchema: JSONSchema = bodyTypeName ? { tsType: bodyTypeName } : { tsType: "never" };
 
+      // Response body → response.body
+      const responseSchema200 = (operation.responses?.["200"] as OpenAPIV3.ResponseObject | undefined)
+        ?.content?.["application/json"]?.schema;
+      let responseBodyTypeName: string | null = null;
+      if (responseSchema200 && isReferenceObject(responseSchema200)) {
+        responseBodyTypeName = generateTypeNameFromRef(responseSchema200.$ref);
+        bodyTypeNames.add(responseBodyTypeName);
+      }
+      const responseBodySchema: JSONSchema = responseBodyTypeName
+        ? { tsType: responseBodyTypeName }
+        : { tsType: "never" };
+
       const required: string[] = ["params", "body"];
       if (!hasQuery) required.push("query");
 
@@ -116,13 +128,23 @@ export async function extractRoutes() {
         required,
       };
 
+      const responseSchema: JSONSchema = {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          body: responseBodySchema,
+        },
+        required: ["body"],
+      };
+
       methodProperties[method] = {
         type: "object",
         additionalProperties: false,
         properties: {
           request: requestSchema,
+          response: responseSchema,
         },
-        required: ["request"],
+        required: ["request", "response"],
       };
     }
 
