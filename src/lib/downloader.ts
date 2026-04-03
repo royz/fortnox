@@ -1,13 +1,13 @@
 import { mkdir, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { getFileHash } from "../tests/utils";
 import os from "node:os";
 import { existsSync } from "node:fs";
+import { getFileHash } from "./utils";
 
 const REDOC_URL = "https://api.fortnox.se/apidocs";
 const REDOC_STATE_MARKER = "const __redoc_state =";
 
-const SPEC_DIR = path.join(import.meta.dirname, "../spec");
+const SPEC_DIR = path.join(import.meta.dirname, "../../spec");
 const TEMP_FILE_PATH = path.join(os.tmpdir(), `fortnox-openapi-spec.json`);
 const OUTPUT_PATH = path.join(SPEC_DIR, "openapi.json");
 const HASH_FILE_PATH = path.join(SPEC_DIR, "openapi.hash");

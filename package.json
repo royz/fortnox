@@ -5,10 +5,10 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "pretypegen": "pnpm run patch",
-    "typegen": "openapi-ts",
-    "download": "tsx scripts/download-official-spec.ts",
-    "patch": "tsx scripts/patch-spec.ts"
+    "download": "tsx src/lib/downloader.ts",
+    "test:typegen": "pnpm run test:patch && openapi-ts",
+    "test:download": "tsx scripts/download-official-spec.ts",
+    "test:patch": "tsx scripts/patch-spec.ts"
   },
   "keywords": [],
   "author": "",
@@ -30,5 +30,9 @@
   },
   "peerDependencies": {
     "zod": "^4.3.6"
+  },
+  "dependencies": {
+    "json-schema-to-typescript": "^15.0.4",
+    "openapi-typescript": "^7.13.0"
   }
 }
