@@ -15,7 +15,7 @@ const HTTP_METHODS = [
 ] as const;
 
 const TYPES_DIR = path.join(import.meta.dirname, "../types");
-const OUT_FILE = path.join(TYPES_DIR, "routes.ts");
+const OUT_FILE = path.join(TYPES_DIR, "official-routes.ts");
 
 
 export async function extractRoutes() {
