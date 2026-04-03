@@ -1,7 +1,8 @@
 import { compile, type JSONSchema } from "json-schema-to-typescript";
 import type { OpenAPIV3 } from "openapi-types";
-import { getSpecFromFile, isReferenceObject } from "./utils";
+import { getSpecFromFile, generateTypeNameFromRef, isReferenceObject } from "./utils";
 import { writeFile } from "node:fs/promises";
+import path from "node:path";
 
 const HTTP_METHODS = [
   "get",
@@ -13,98 +14,20 @@ const HTTP_METHODS = [
   "options",
 ] as const;
 
-function resolveRef(
-  schema: OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject,
-  allSchemas: Record<string, OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject>,
-  visiting: Set<string> = new Set(),
-): OpenAPIV3.SchemaObject {
-  if (!isReferenceObject(schema)) return schema;
+const TYPES_DIR = path.join(import.meta.dirname, "../types");
+const OUT_FILE = path.join(TYPES_DIR, "routes.ts");
 
-  const refName = schema.$ref.split("/").at(-1);
-  if (!refName) throw new Error(`Invalid $ref: ${schema.$ref}`);
-  if (visiting.has(refName)) return {};
 
-  const resolved = allSchemas[refName];
-  if (!resolved) throw new Error(`Schema not found: ${schema.$ref}`);
-
-  return flattenSchema(resolved, allSchemas, new Set([...visiting, refName]));
-}
-
-function flattenSchema(
-  schema: OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject,
-  allSchemas: Record<string, OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject>,
-  visiting: Set<string> = new Set(),
-): OpenAPIV3.SchemaObject {
-  if (isReferenceObject(schema)) {
-    return resolveRef(schema, allSchemas, visiting);
-  }
-
-  const result: Record<string, unknown> = { ...schema, additionalProperties: false };
-
-  if (result.properties && typeof result.properties === "object") {
-    result.properties = Object.fromEntries(
-      Object.entries(
-        result.properties as Record<string, OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject>,
-      ).map(([key, value]) => [key, flattenSchema(value, allSchemas, visiting)]),
-    );
-  }
-
-  for (const key of ["allOf", "anyOf", "oneOf"] as const) {
-    if (Array.isArray(result[key])) {
-      result[key] = (result[key] as (OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject)[]).map(
-        (s) => flattenSchema(s, allSchemas, visiting),
-      );
-    }
-  }
-
-  if (result.items) {
-    if (Array.isArray(result.items)) {
-      result.items = (result.items as (OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject)[]).map(
-        (s) => flattenSchema(s, allSchemas, visiting),
-      );
-    } else {
-      result.items = flattenSchema(
-        result.items as OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject,
-        allSchemas,
-        visiting,
-      );
-    }
-  }
-
-  return result as OpenAPIV3.SchemaObject;
-}
-
-// It generates a JSONSchema for the Routes type, which looks like this:
-// type Routes = {
-//   "/3/invoices/{DocumentNumber}": {
-//     get: {
-//       params: {
-//         /** identifies the invoice */
-//         DocumentNumber: string;
-//       },
-//       query?: {},
-//       body?: never;
-//     }
-//     put: {
-//       params: {
-//         /** identifies the invoice */
-//         DocumentNumber: string;
-//       },
-//       query?: {},
-//       body: {...};
-//     }
-// }
 export async function extractRoutes() {
   const spec = await getSpecFromFile("original");
   const paths = spec.paths;
   if (!paths) throw new Error("No paths found in the OpenAPI specification.");
 
-  const allSchemas = (spec.components?.schemas ?? {}) as Record<
-    string,
-    OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject
-  >;
+  const allSchemas = spec.components?.schemas;
+  if (!allSchemas) throw new Error("No schemas found in the OpenAPI specification.");
 
   const pathProperties: Record<string, JSONSchema> = {};
+  const bodyTypeNames = new Set<string>();
 
   for (const [path, pathItem] of Object.entries(paths)) {
     const methodProperties: Record<string, JSONSchema> = {};
@@ -123,23 +46,23 @@ export async function extractRoutes() {
       const paramsRequired: string[] = [];
 
       for (const param of pathParams) {
-        const paramSchema = param.schema as
-          | OpenAPIV3.ReferenceObject
-          | OpenAPIV3.SchemaObject
-          | undefined;
+        const paramSchema = param.schema as OpenAPIV3.SchemaObject | undefined;
         paramsProperties[param.name] = {
-          ...(paramSchema ? flattenSchema(paramSchema, allSchemas) : { type: "string" }),
+          ...(paramSchema ? paramSchema : { type: "string" }),
           ...(param.description ? { description: param.description } : {}),
         };
         if (param.required) paramsRequired.push(param.name);
       }
 
-      const paramsSchema: JSONSchema = {
-        type: "object",
-        additionalProperties: false,
-        properties: paramsProperties,
-        ...(paramsRequired.length > 0 ? { required: paramsRequired } : {}),
-      };
+      const hasParams = pathParams.length > 0;
+      const paramsSchema: JSONSchema = hasParams
+        ? {
+          type: "object",
+          additionalProperties: false,
+          properties: paramsProperties,
+          ...(paramsRequired.length > 0 ? { required: paramsRequired } : {}),
+        }
+        : { tsType: "never" };
 
       // Query parameters → query
       const queryParams = parameters.filter((p) => p.in === "query");
@@ -151,35 +74,38 @@ export async function extractRoutes() {
           | OpenAPIV3.SchemaObject
           | undefined;
         queryProperties[param.name] = {
-          ...(paramSchema ? flattenSchema(paramSchema, allSchemas) : { type: "string" }),
+          ...(paramSchema ? paramSchema : { type: "string" }),
           ...(param.description ? { description: param.description } : {}),
         };
       }
 
-      const querySchema: JSONSchema = {
-        type: "object",
-        additionalProperties: false,
-        properties: queryProperties,
-      };
+      const hasQuery = queryParams.length > 0;
+      const querySchema: JSONSchema = hasQuery
+        ? {
+          type: "object",
+          additionalProperties: false,
+          properties: queryProperties,
+        }
+        : { tsType: "never" };
 
       // Request body → body
-      let bodySchema: JSONSchema;
       const requestBody = operation.requestBody as OpenAPIV3.RequestBodyObject | undefined;
-
+      let bodyTypeName: string | null = null;
       if (requestBody) {
         const content = requestBody.content;
-        const mediaType =
-          content["application/json"] ?? content["*/*"] ?? Object.values(content)[0];
-        bodySchema = mediaType?.schema
-          ? flattenSchema(mediaType.schema as OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject, allSchemas)
-          : { not: {} };
-      } else {
-        bodySchema = { not: {} };
+        const mediaType = content["application/json"] ?? content["*/*"] ?? Object.values(content)[0];
+        const schema = mediaType?.schema;
+        if (schema && isReferenceObject(schema)) {
+          bodyTypeName = generateTypeNameFromRef(schema.$ref);
+          bodyTypeNames.add(bodyTypeName);
+        }
       }
+      const bodySchema: JSONSchema = bodyTypeName ? { tsType: bodyTypeName } : { tsType: "never" };
 
-      const methodRequired = ["params", ...(requestBody ? ["body"] : [])];
+      const required: string[] = ["params", "body"];
+      if (!hasQuery) required.push("query");
 
-      methodProperties[method] = {
+      const requestSchema: JSONSchema = {
         type: "object",
         additionalProperties: false,
         properties: {
@@ -187,14 +113,29 @@ export async function extractRoutes() {
           query: querySchema,
           body: bodySchema,
         },
-        required: methodRequired,
+        required,
+      };
+
+      methodProperties[method] = {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          request: requestSchema,
+        },
+        required: ["request"],
       };
     }
+
+    const requiredMethods = Object.keys(methodProperties).filter((method) => {
+      const m = methodProperties[method] as JSONSchema & { required?: string[] };
+      return m.required && m.required.length > 0;
+    });
 
     pathProperties[path] = {
       type: "object",
       additionalProperties: false,
       properties: methodProperties,
+      ...(requiredMethods.length > 0 ? { required: requiredMethods } : {}),
     };
   }
 
@@ -208,7 +149,15 @@ export async function extractRoutes() {
   const routesString = await compile(routes, "Routes", {
     additionalProperties: false,
     bannerComment: "",
-  })
+  });
 
-  await writeFile("routes.ts", routesString);
+  const importStatement = bodyTypeNames.size > 0
+    ? `import type { ${[...bodyTypeNames].sort().join(", ")} } from "./official-schemas";\n\n`
+    : "";
+
+  await writeFile(OUT_FILE, importStatement + routesString);
+}
+
+if (import.meta.filename === process.argv[1]) {
+  await extractRoutes();
 }

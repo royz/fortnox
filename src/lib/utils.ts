@@ -66,7 +66,9 @@ export function capitalizeFirstLetter(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-export function generateTypeNameFromSchemaName(schemaName: string): string {
+export function generateTypeNameFromRef(ref: string): string {
+  const schemaName = ref.split("/").at(-1);
+  if (!schemaName) throw new Error(`Invalid reference: ${ref}`);
   return schemaName
     .split(/[.\s_-]+/)
     .map(capitalizeFirstLetter)

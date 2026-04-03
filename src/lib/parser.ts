@@ -1,6 +1,6 @@
 import { compile, type JSONSchema } from "json-schema-to-typescript";
 import type { OpenAPIV3 } from "openapi-types";
-import { generateTypeNameFromSchemaName, isReferenceObject } from "./utils";
+import { generateTypeNameRef, isReferenceObject } from "./utils";
 
 export class SchemasParser {
   spec: OpenAPIV3.Document;
@@ -10,7 +10,7 @@ export class SchemasParser {
   private refToTitle(ref: string) {
     const schemaName = ref.split("/").at(-1);
     if (!schemaName) throw new Error(`Invalid reference: ${ref}`);
-    return generateTypeNameFromSchemaName(schemaName);
+    return generateTypeNameRef(schemaName);
   }
 
   constructor(spec: OpenAPIV3.Document) {
@@ -28,7 +28,7 @@ export class SchemasParser {
     name: string,
     schema: OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject,
   ) {
-    const title = generateTypeNameFromSchemaName(name);
+    const title = generateTypeNameRef(name);
     console.log(`Parsing schema: ${title}`);
     if (this.jsonSchemas.has(title)) {
       return;
