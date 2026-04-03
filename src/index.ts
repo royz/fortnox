@@ -38,6 +38,13 @@ type FortnoxInput<
   TMethod extends keyof Routes[TPath],
 > = Routes[TPath][TMethod] extends { request: infer R } ? R : never;
 
+type OmitNever<T> = { [K in keyof T as T[K] extends never ? never : K]: T[K] };
+
+type FortnoxInputCleaned<
+  TPath extends keyof Routes,
+  TMethod extends keyof Routes[TPath],
+> = OmitNever<FortnoxInput<TPath, TMethod>>;
+
 type FortnoxOutput<
   TPath extends keyof Routes,
   TMethod extends keyof Routes[TPath],
@@ -52,10 +59,10 @@ type FortnoxMethods<TPath extends keyof Routes> = {
     request: { params: never; body: never };
   }
   ? (
-    options?: FortnoxInput<TPath, TMethod>,
+    options?: FortnoxInputCleaned<TPath, TMethod>,
   ) => FortnoxResult<FortnoxOutput<TPath, TMethod>>
   : (
-    options: FortnoxInput<TPath, TMethod>,
+    options: FortnoxInputCleaned<TPath, TMethod>,
   ) => FortnoxResult<FortnoxOutput<TPath, TMethod>>;
 };
 
@@ -148,20 +155,3 @@ export function initFortnox(initOptions: InitFortnoxOptions): FortnoxFn {
     ) as unknown as FortnoxMethods<TPath>;
   };
 }
-
-
-const fx = initFortnox({
-  proxy: {
-    apiKey: "",
-    baseUrl: "",
-    tenantId: "",
-  },
-})
-
-// const { data, error } = await fx("/3/invoices/{DocumentNumber}")
-//   .get({
-
-//   });
-
-
-// if (error) throw error;
