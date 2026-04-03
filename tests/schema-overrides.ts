@@ -5,23 +5,22 @@
 
 import { type ZodType, z } from "zod";
 
-
 type Method = "get" | "post" | "put" | "delete" | "patch";
 
 type SchemaOverride = {
-  [path in Method]?: {
-    params?: ZodType;
-    query?: ZodType;
-    body?: ZodType;
-  }
-}
+	[path in Method]?: {
+		params?: ZodType;
+		query?: ZodType;
+		body?: ZodType;
+	};
+};
 
 export const schemaOverrides: { [path: string]: SchemaOverride } = {
-  "/3/invoices/{DocumentNumber}": {
-    get: {
-      params: z.object({
-        DocumentNumber: z.int(),
-      }),
-    }
-  }
+	"/3/invoices/{DocumentNumber}": {
+		get: {
+			params: z.object({
+				DocumentNumber: z.int(),
+			}),
+		},
+	},
 };

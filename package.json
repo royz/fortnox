@@ -1,38 +1,39 @@
 {
-  "name": "@unifetch/fortnox",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "download": "tsx src/lib/downloader.ts",
-    "test:typegen": "pnpm run test:patch && openapi-ts",
-    "test:download": "tsx scripts/download-official-spec.ts",
-    "test:patch": "tsx scripts/patch-spec.ts"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "files": [
-    "dist"
-  ],
-  "packageManager": "pnpm@10.12.2",
-  "devDependencies": {
-    "@hey-api/openapi-ts": "^0.94.1",
-    "@types/node": "^25.5.0",
-    "dedent": "^1.7.2",
-    "dotenv": "^17.3.1",
-    "openapi-types": "^12.1.3",
-    "prettier": "^3.8.1",
-    "tsdown": "^0.21.7",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
-  },
-  "peerDependencies": {
-    "zod": "^4.3.6"
-  },
-  "dependencies": {
-    "json-schema-to-typescript": "^15.0.4",
-    "openapi-typescript": "^7.13.0"
-  }
+	"name": "@unifetch/fortnox",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"type": "module",
+	"scripts": {
+		"download": "tsx src/lib/downloader.ts",
+		"test:typegen": "pnpm run test:patch && openapi-ts",
+		"test:download": "tsx scripts/download-official-spec.ts",
+		"test:patch": "tsx scripts/patch-spec.ts"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"files": [
+		"dist"
+	],
+	"packageManager": "pnpm@10.12.2",
+	"devDependencies": {
+		"@hey-api/openapi-ts": "^0.94.1",
+		"@types/node": "^25.5.0",
+		"dedent": "^1.7.2",
+		"dotenv": "^17.3.1",
+		"openapi-types": "^12.1.3",
+		"prettier": "^3.8.1",
+		"tsdown": "^0.21.7",
+		"tsx": "^4.21.0",
+		"typescript": "^5.9.3"
+	},
+	"peerDependencies": {
+		"zod": "^4.3.6"
+	},
+	"dependencies": {
+		"@biomejs/biome": "^2.4.10",
+		"json-schema-to-typescript": "^15.0.4",
+		"openapi-typescript": "^7.13.0"
+	}
 }
