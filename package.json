@@ -1,29 +1,60 @@
 {
-  "name": "fortnox-ts",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "openapi-ts": "openapi-ts"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "files": [
-    "dist"
-  ],
-  "packageManager": "pnpm@10.12.2",
-  "devDependencies": {
-    "@hey-api/openapi-ts": "^0.94.1",
-    "@types/node": "^25.5.0",
-    "openapi-types": "^12.1.3",
-    "prettier": "^3.8.1",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
-  },
-  "dependencies": {},
-  "peerDependencies": {
-    "zod": "^4.3.6"
-  }
+	"name": "@unifetch/fortnox",
+	"version": "1.0.0",
+	"description": "TypeScript SDK for the Fortnox API, with full type safety generated from the official OpenAPI specification.",
+	"type": "module",
+	"scripts": {
+		"generate": "tsx lib/generate.ts",
+		"postgenerate": "biome check --write ./src/types",
+		"build": "tsdown",
+		"biome:check": "biome check --write",
+		"changeset": "changeset",
+		"version": "changeset version",
+		"ship": "tsx scripts/release.ts"
+	},
+	"keywords": [
+		"fortnox",
+		"api",
+		"openapi",
+		"typescript",
+		"sdk"
+	],
+	"author": "Rajorshi Roy",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/royz/fortnox"
+	},
+	"license": "ISC",
+	"files": [
+		"dist"
+	],
+	"packageManager": "pnpm@10.12.2",
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.10",
+		"@changesets/cli": "^2.30.0",
+		"@types/node": "^25.5.0",
+		"dotenv": "^17.3.1",
+		"json-schema-to-typescript": "^15.0.4",
+		"openapi-types": "^12.1.3",
+		"tsdown": "^0.21.7",
+		"tsx": "^4.21.0",
+		"typescript": "^5.9.3"
+	},
+	"exports": {
+		".": {
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.cjs"
+		},
+		"./official": {
+			"import": "./dist/official.mjs",
+			"require": "./dist/official.cjs"
+		},
+		"./patched": {
+			"import": "./dist/patched.mjs",
+			"require": "./dist/patched.cjs"
+		}
+	},
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.cts"
 }

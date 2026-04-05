@@ -1,0 +1,1 @@
+export { initFortnox } from "./official";
