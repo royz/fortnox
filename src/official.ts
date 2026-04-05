@@ -1,4 +1,4 @@
-import type { Routes } from "./types/official-routes";
+import type { Routes } from "./types/official-routes.gen";
 
 const METHODS = ["get", "post", "put", "delete", "patch"] as const;
 

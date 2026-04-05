@@ -198,7 +198,7 @@ import type {
 	WarehouseStockTakingRow,
 	WarehouseStockTransferDocument,
 	WarehouseTenantInfo,
-} from "./official-schemas";
+} from "./patched-schemas.gen";
 
 export interface Routes {
 	"/3/absencetransactions": {

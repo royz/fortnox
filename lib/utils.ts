@@ -3,8 +3,7 @@ import { createReadStream } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { OpenAPIV3 } from "openapi-types";
-
-const SPEC_DIR = path.join(import.meta.dirname, "../../spec");
+import { SPEC_DIR } from "../config";
 
 /** Get the OpenAPI specification (original or patched) from a file
  * @param type - "original" to get the original spec, "patched" to get the patched spec

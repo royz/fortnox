@@ -103,7 +103,7 @@ function stringifySpec(spec: unknown) {
 	return `${JSON.stringify(spec, null, 2)}\n`;
 }
 
-async function main() {
+export async function downloadSpec() {
 	console.log("Downloading and extracting OpenAPI spec from ReDoc...");
 	const newSpec = await downloadAndExtractSpec();
 
@@ -129,4 +129,6 @@ async function main() {
 	});
 }
 
-await main();
+if (import.meta.filename === process.argv[1]) {
+	await downloadSpec();
+}

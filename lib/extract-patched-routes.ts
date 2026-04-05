@@ -19,9 +19,9 @@ const HTTP_METHODS = [
 	"options",
 ] as const;
 
-const OUT_FILE = path.join(TYPES_DIR, "official-routes.gen.ts");
+const OUT_FILE = path.join(TYPES_DIR, "patched-routes.gen.ts");
 
-export async function extractOfficialRoutes() {
+export async function extractPatchedRoutes() {
 	const spec = await getSpecFromFile("original");
 	const paths = spec.paths;
 	if (!paths) throw new Error("No paths found in the OpenAPI specification.");
@@ -191,12 +191,12 @@ export async function extractOfficialRoutes() {
 
 	const importStatement =
 		bodyTypeNames.size > 0
-			? `import type { ${[...bodyTypeNames].sort().join(", ")} } from "./official-schemas.gen";\n\n`
+			? `import type { ${[...bodyTypeNames].sort().join(", ")} } from "./patched-schemas.gen";\n\n`
 			: "";
 
 	await writeFile(OUT_FILE, importStatement + routesString);
 }
 
 if (import.meta.filename === process.argv[1]) {
-	await extractOfficialRoutes();
+	await extractPatchedRoutes();
 }
