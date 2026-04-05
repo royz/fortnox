@@ -10,7 +10,7 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { OpenAPIV3 } from "openapi-types";
-import { getSpecFromFile } from "../tests/utils";
+import { getSpecFromFile } from "../lib/utils";
 
 const specDir = path.join(import.meta.dirname, "../spec");
 const outputPath = path.join(specDir, "openapi-patched.json");
