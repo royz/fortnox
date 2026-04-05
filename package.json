@@ -7,8 +7,10 @@
 		"generate": "tsx lib/generate.ts",
 		"postgenerate": "biome check --write ./src/types",
 		"build": "tsdown",
-		"download": "tsx lib/downloader.ts",
-		"biome:check": "biome check --write"
+		"biome:check": "biome check --write",
+		"changeset": "changeset",
+		"version": "changeset version",
+		"ship": "tsx scripts/release.ts"
 	},
 	"keywords": [
 		"fortnox",
@@ -29,6 +31,7 @@
 	"packageManager": "pnpm@10.12.2",
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.10",
+		"@changesets/cli": "^2.30.0",
 		"@types/node": "^25.5.0",
 		"dotenv": "^17.3.1",
 		"json-schema-to-typescript": "^15.0.4",
