@@ -10,6 +10,7 @@
 		"biome:check": "biome check --write",
 		"changeset": "changeset",
 		"version": "changeset version",
+		"release": "pnpm build && pnpm exec changeset publish",
 		"ship": "tsx scripts/release.ts"
 	},
 	"keywords": [

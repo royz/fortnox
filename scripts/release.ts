@@ -21,6 +21,7 @@ run("git push");
 run("git push --tags");
 
 // 4. Build + publish
-run("pnpm release");
+run("pnpm build");
+run("pnpm exec changeset publish");
 
 console.log(`\nPublished ${version}`);
