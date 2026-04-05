@@ -2,16 +2,18 @@
   "name": "@unifetch/fortnox",
   "version": "1.0.0",
   "description": "TypeScript SDK for the Fortnox API, with full type safety generated from the official OpenAPI specification.",
-  "main": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "download": "tsx src/lib/downloader.ts",
-    "test:typegen": "pnpm run test:patch && openapi-ts",
-    "test:download": "tsx scripts/download-official-spec.ts",
-    "test:patch": "tsx scripts/patch-spec.ts"
+    "build": "tsdown",
+    "download": "tsx lib/downloader.ts"
   },
-  "keywords": ["fortnox", "api", "openapi", "typescript", "sdk"],
+  "keywords": [
+    "fortnox",
+    "api",
+    "openapi",
+    "typescript",
+    "sdk"
+  ],
   "author": "Rajorshi Roy",
   "repository": {
     "type": "git",
@@ -30,5 +32,22 @@
     "typescript": "^5.9.3",
     "@biomejs/biome": "^2.4.10",
     "json-schema-to-typescript": "^15.0.4"
-  }
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./official": {
+      "import": "./dist/official.mjs",
+      "require": "./dist/official.cjs"
+    },
+    "./patched": {
+      "import": "./dist/patched.mjs",
+      "require": "./dist/patched.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts"
 }
