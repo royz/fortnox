@@ -4,7 +4,7 @@
 	"description": "TypeScript SDK for the Fortnox API, with full type safety generated from the official OpenAPI specification.",
 	"type": "module",
 	"scripts": {
-		"generate": "tsx lib/generate.ts",
+		"generate": "tsx scripts/generate.ts",
 		"postgenerate": "biome check --write ./src/types",
 		"build": "tsdown",
 		"biome:check": "biome check --write",
