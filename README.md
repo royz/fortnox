@@ -1,6 +1,6 @@
 # @unifetch/fortnox
 
-TypeScript SDK for the [Fortnox](https://www.fortnox.se/) API, fully typed from the official OpenAPI specification — with corrections applied where the spec has incorrect or overly permissive types.
+TypeScript SDK for the [Fortnox API](https://api.fortnox.se/apidocs), fully typed from the official OpenAPI specification — with corrections applied where the spec has incorrect or overly permissive types.
 
 ## Installation
 
