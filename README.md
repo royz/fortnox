@@ -2,6 +2,8 @@
 
 TypeScript SDK for the [Fortnox API](https://api.fortnox.se/apidocs), fully typed from the official OpenAPI specification — with corrections applied where the spec has incorrect or overly permissive types.
 
+Zero dependencies. Fully compatible with edge runtimes such as [Cloudflare Workers](https://workers.cloudflare.com/) and Vercel Edge Functions.
+
 ## Installation
 
 ```bash

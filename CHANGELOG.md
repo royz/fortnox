@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.0.1
+
+### Patch Changes
+
+- Update readme and specify edge runtime compatibility
+
 ## 2.0.0
 
 ### Major Changes
