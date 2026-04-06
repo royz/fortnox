@@ -58,7 +58,7 @@ function patchSpec(spec: OpenAPIV3.Document): OpenAPIV3.Document {
 export async function generatePatchedSchemas() {
 	const outputPath = path.join(TYPES_DIR, "patched-schemas.gen.ts");
 
-	const spec = await getSpecFromFile("original");
+	const spec = await getSpecFromFile();
 	const patchedSpec = patchSpec(spec);
 
 	const parser = new SchemasParser(patchedSpec);

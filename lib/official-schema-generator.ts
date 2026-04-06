@@ -7,7 +7,7 @@ import { getSpecFromFile } from "./utils";
 export async function generateOfficialSchemas() {
 	const outputPath = path.join(TYPES_DIR, "official-schemas.gen.ts");
 
-	const spec = await getSpecFromFile("original");
+	const spec = await getSpecFromFile();
 	const parser = new SchemasParser(spec);
 	const schemaString = await parser.parse();
 

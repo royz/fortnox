@@ -22,7 +22,7 @@ const HTTP_METHODS = [
 const OUT_FILE = path.join(TYPES_DIR, "official-routes.gen.ts");
 
 export async function extractOfficialRoutes() {
-	const spec = await getSpecFromFile("original");
+	const spec = await getSpecFromFile();
 	const paths = spec.paths;
 	if (!paths) throw new Error("No paths found in the OpenAPI specification.");
 

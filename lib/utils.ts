@@ -10,15 +10,12 @@ import { SPEC_DIR } from "../config";
  * @param bypassHashCheck - If true, will skip the hash check for the original spec file (useful for testing with modified spec files)
  * @returns The OpenAPI specification as a OpenAPIV3.Document object
  */
-export async function getSpecFromFile(
-	type: "original" | "patched",
-	bypassHashCheck?: boolean,
-): Promise<OpenAPIV3.Document> {
-	const fileName =
-		type === "original" ? "openapi.json" : "openapi-patched.json";
-	const filePath = path.join(SPEC_DIR, fileName);
+export async function getSpecFromFile(options?: {
+	bypassHashCheck?: boolean;
+}): Promise<OpenAPIV3.Document> {
+	const filePath = path.join(SPEC_DIR, "openapi.json");
 
-	if (type === "original" && !bypassHashCheck) {
+	if (!options?.bypassHashCheck) {
 		const fileHash = await getFileHash(filePath);
 		const hashPath = path.join(SPEC_DIR, "openapi.hash");
 
@@ -32,7 +29,7 @@ export async function getSpecFromFile(
 			);
 		}
 	}
-	return JSON.parse(await readFile(path.join(SPEC_DIR, fileName), "utf-8"));
+	return JSON.parse(await readFile(filePath, "utf-8"));
 }
 
 export async function getFileHash(filePath: string) {
