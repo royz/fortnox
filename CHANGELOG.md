@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.3.0
+
+### Minor Changes
+
+- Export the full client and mini client from sperate paths for better tree-shaking. Create official/patched client by providing a genering to the init function.
+
 ## 2.2.0
 
 ### Minor Changes
