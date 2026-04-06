@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.3.1
+
+### Patch Changes
+
+- Add bundle size comparison in README.
+
 ## 2.3.0
 
 ### Minor Changes

@@ -34,6 +34,16 @@ Includes **only** the path-based API (`fortnox.path()`). The entire resource-bas
 import { initFortnoxMini } from "@unifetch/fortnox/mini";
 ```
 
+The difference in practice, measured with `wrangler deploy --dry-run` on a fresh Hono + Cloudflare Workers project:
+
+| | Size | Gzip |
+|---|---|---|
+| Fresh Hono project (baseline) | 61.96 KiB | 15.05 KiB |
+| With `initFortnox` | 99.92 KiB | 19.61 KiB |
+| With `initFortnoxMini` | 64.63 KiB | 15.84 KiB |
+
+`initFortnoxMini` adds less than **0.8 KiB gzipped** over the baseline, versus over **4.5 KiB** for the full client.
+
 ---
 
 ## Route variant
