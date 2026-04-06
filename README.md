@@ -44,26 +44,31 @@ const fortnox = initFortnox({
 
 ## Usage
 
-Call `fortnox` with an API path (with autocomplete suggestions) to get a set of typed HTTP methods for that endpoint.
+Every response is a discriminated union of `{ error: null; data: T }` or `{ error: ErrorResponse; data: null }`. Once you handle (or narrow) the error branch, TypeScript automatically infers that `data` is non-null.
+
+There are two ways to call the API.
+
+### Resource-based API (recommended)
+
+Access resources by name and call operations by their ID. Both the resource name and operation ID are autocompleted by TypeScript.
+
+> **Note:** The operation names (e.g. `getList`, `create`, `bookkeep`) are **manually curated** and are not derived from the official Fortnox OpenAPI specification. The official spec uses operation ids that are inconsistent and ambiguous across endpoints. The names used here follow a consistent, human-readable convention defined in [`overrides/operation-ids.json`](overrides/operation-ids.json).
 
 ```ts
-const { data, error } = await fortnox("/3/invoices").get();
+const { data, error } = await fortnox.invoices.getList();
 
 if (error) {
   console.error(error.ErrorInformation.message);
-  // or handle the error some other way
 } else {
   // data is non-null here — TypeScript knows this after the error check
   console.log(data.Invoices);
 }
 ```
 
-Every response is a discriminated union of `{ error: null; data: T }` or `{ error: ErrorResponse; data: null }`. Once you handle (or narrow) the error branch, TypeScript automatically infers that `data` is non-null.
-
-### With query parameters
+#### With query parameters
 
 ```ts
-const { data, error } = await fortnox("/3/invoices").get({
+const { data, error } = await fortnox.invoices.getList({
   query: { fromdate: "2024-01-01", todate: "2024-12-31" },
 });
 
@@ -74,10 +79,10 @@ for (const invoice of data.Invoices) {
 }
 ```
 
-### Creating a resource
+#### Creating a resource
 
 ```ts
-const { data, error } = await fortnox("/3/invoices").post({
+const { data, error } = await fortnox.invoices.create({
   body: {
     Invoice: {
       CustomerNumber: "1",
@@ -93,16 +98,42 @@ if (error) throw error;
 console.log(data.Invoice.DocumentNumber);
 ```
 
-### Fetching a single resource by ID
+#### Fetching a single resource by ID
 
 ```ts
-const { data, error } = await fortnox("/3/invoices/{DocumentNumber}").get({
+const { data, error } = await fortnox.invoices.get({
   params: { DocumentNumber: "100" },
 });
 
 if (error) throw error;
 
 console.log(data.Invoice.CustomerName);
+```
+
+#### Calling an action on a resource
+
+```ts
+const { data, error } = await fortnox.invoices.bookkeep({
+  params: { DocumentNumber: "100" },
+});
+```
+
+### Path-based API
+
+If you want to access an endpoint directly by its raw path, use `fortnox.path()`. This is equivalent to the resource-based API under the hood. The path and all the parameters are fully typed.
+
+```ts
+const { data, error } = await fortnox.path("/3/invoices").get();
+
+if (error) throw error;
+
+console.log(data.Invoices);
+```
+
+```ts
+const { data, error } = await fortnox.path("/3/invoices/{DocumentNumber}").get({
+  params: { DocumentNumber: "100" },
+});
 ```
 
 ## Type definitions
