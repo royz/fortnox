@@ -1,0 +1,845 @@
+{
+  "/3/absencetransactions": {
+    "get": "AbsenceTransactionsController_doIndex",
+    "post": "AbsenceTransactionsController_doCreate"
+  },
+  "/3/absencetransactions/{id}": {
+    "get": "AbsenceTransactionsController_doShow",
+    "put": "AbsenceTransactionsController_doUpdate",
+    "delete": "AbsenceTransactionsController_doDelete"
+  },
+  "/3/absencetransactions/{id}/{Date}/{Code}": {
+    "get": "AbsenceTransactionsController_doListByIdDateCauseCode"
+  },
+  "/3/accountcharts": {
+    "get": "AccountChartController_doIndex"
+  },
+  "/3/accounts": {
+    "get": "AccountController_doIndex",
+    "post": "AccountController_doCreate"
+  },
+  "/3/accounts/{Number}": {
+    "get": "AccountController_doShow",
+    "put": "AccountController_doUpdate",
+    "delete": "AccountController_doDelete"
+  },
+  "/3/archive": {
+    "get": "ArchiveController_doIndex",
+    "post": "ArchiveController_doCreate",
+    "delete": "ArchiveController_doDeleteRoot"
+  },
+  "/3/archive/{id}": {
+    "get": "ArchiveController_doShow",
+    "delete": "ArchiveController_doDelete"
+  },
+  "/3/articlefileconnections": {
+    "get": "ArticleFileConnectionController_doIndex",
+    "post": "ArticleFileConnectionController_doCreate"
+  },
+  "/3/articlefileconnections/{FileId}": {
+    "get": "ArticleFileConnectionController_doShow",
+    "delete": "ArticleFileConnectionController_doDelete"
+  },
+  "/3/articles": {
+    "get": "ArticleController_doIndex",
+    "post": "ArticleController_doCreate"
+  },
+  "/3/articles/{ArticleNumber}": {
+    "get": "ArticleController_doShow",
+    "put": "ArticleController_doUpdate",
+    "delete": "ArticleController_doDelete"
+  },
+  "/3/articleurlconnections": {
+    "get": "ItemUrlConnectionController_doIndex",
+    "post": "ItemUrlConnectionController_doCreate"
+  },
+  "/3/articleurlconnections/{id}": {
+    "get": "ItemUrlConnectionController_doShow",
+    "put": "ItemUrlConnectionController_doUpdate",
+    "delete": "ItemUrlConnectionController_doDelete"
+  },
+  "/3/assetfileconnections": {
+    "get": "AssetFileConnectionController_doIndex",
+    "post": "AssetFileConnectionController_doCreate"
+  },
+  "/3/assetfileconnections/{FileId}": {
+    "delete": "AssetFileConnectionController_doDelete"
+  },
+  "/3/assets": {
+    "get": "AssetsController_doIndex",
+    "post": "AssetsController_doCreate"
+  },
+  "/3/assets/changeob/{Id}": {
+    "put": "AssetsController_doChangeob"
+  },
+  "/3/assets/depreciate": {
+    "post": "AssetsController_doDepreciate"
+  },
+  "/3/assets/depreciations/{ToDate}": {
+    "get": "AssetsController_doDepreciations"
+  },
+  "/3/assets/scrap/{Id}": {
+    "put": "AssetsController_doScrap"
+  },
+  "/3/assets/sell/{Id}": {
+    "put": "AssetsController_doSell"
+  },
+  "/3/assets/types": {
+    "get": "AssetsController_doTypesGet",
+    "post": "AssetsController_doTypesPost"
+  },
+  "/3/assets/types/{id}": {
+    "get": "AssetsController_doTypesGetWithId",
+    "put": "AssetsController_doTypesPutWithId",
+    "delete": "AssetsController_doTypesDeleteWithId"
+  },
+  "/3/assets/writedown/{Id}": {
+    "put": "AssetsController_doWritedown"
+  },
+  "/3/assets/writeup/{Id}": {
+    "put": "AssetsController_doWriteup"
+  },
+  "/3/assets/{Id}": {
+    "get": "AssetsController_doShow",
+    "put": "AssetsController_doUpdate",
+    "delete": "AssetsController_doDelete"
+  },
+  "/3/attendancetransactions": {
+    "get": "AttendanceTransactionsController_doIndex",
+    "post": "AttendanceTransactionsController_doCreate"
+  },
+  "/3/attendancetransactions/{id}": {
+    "get": "AttendanceTransactionsController_doShow",
+    "put": "AttendanceTransactionsController_doUpdate",
+    "delete": "AttendanceTransactionsController_doDelete"
+  },
+  "/3/attendancetransactions/{id}/{Date}/{Code}": {
+    "get": "AttendanceTransactionsController_doListByIdDateCauseCode"
+  },
+  "/3/companyinformation": {
+    "get": "CompanyInformationController_doIndex"
+  },
+  "/3/contractaccruals": {
+    "get": "ContractAccrualController_doIndex",
+    "post": "ContractAccrualController_doCreate"
+  },
+  "/3/contractaccruals/{DocumentNumber}": {
+    "get": "ContractAccrualController_doShow",
+    "put": "ContractAccrualController_doUpdate",
+    "delete": "ContractAccrualController_doDelete"
+  },
+  "/3/contracts": {
+    "get": "ContractController_doIndex",
+    "post": "ContractController_doCreate"
+  },
+  "/3/contracts/{DocumentNumber}": {
+    "get": "ContractController_doShow",
+    "put": "ContractController_doUpdate"
+  },
+  "/3/contracts/{DocumentNumber}/createinvoice": {
+    "put": "ContractController_doUpdateAndCreateInvoice"
+  },
+  "/3/contracts/{DocumentNumber}/finish": {
+    "put": "ContractController_doUpdateAndFinish"
+  },
+  "/3/contracts/{DocumentNumber}/increaseinvoicecount": {
+    "put": "ContractController_doUpdateAndIncreaseInvoiceCount"
+  },
+  "/3/contracttemplates": {
+    "get": "ContractTemplateController_doIndex",
+    "post": "ContractTemplateController_doCreate"
+  },
+  "/3/contracttemplates/{TemplateNumber}": {
+    "get": "ContractTemplateController_doShow",
+    "put": "ContractTemplateController_doUpdate"
+  },
+  "/3/costcenters": {
+    "get": "CostCenterController_doIndex",
+    "post": "CostCenterController_doCreate"
+  },
+  "/3/costcenters/{Code}": {
+    "get": "CostCenterController_doShow",
+    "put": "CostCenterController_doUpdate",
+    "delete": "CostCenterController_doDelete"
+  },
+  "/3/currencies": {
+    "get": "CurrencyController_doIndex",
+    "post": "CurrencyController_doCreate"
+  },
+  "/3/currencies/{Code}": {
+    "get": "CurrencyController_doShow",
+    "put": "CurrencyController_doUpdate",
+    "delete": "CurrencyController_doDelete"
+  },
+  "/3/customerreferences": {
+    "get": "CustomerReferenceController_doIndex",
+    "post": "CustomerReferenceController_doCreate"
+  },
+  "/3/customerreferences/{CustomerReferenceRowId}": {
+    "get": "CustomerReferenceController_doShow",
+    "put": "CustomerReferenceController_doUpdate",
+    "delete": "CustomerReferenceController_doDelete"
+  },
+  "/3/customers": {
+    "get": "CustomerController_doIndex",
+    "post": "CustomerController_doCreate"
+  },
+  "/3/customers/{CustomerNumber}": {
+    "get": "CustomerController_doShow",
+    "put": "CustomerController_doUpdate",
+    "delete": "CustomerController_doDelete"
+  },
+  "/3/emailsenders": {
+    "get": "EmailSenderController_doIndex"
+  },
+  "/3/emailsenders/trusted": {
+    "post": "EmailSenderController_doTrustedPostDefault"
+  },
+  "/3/emailsenders/trusted/{Id}": {
+    "delete": "EmailSenderController_doTrustedDeleteWithId"
+  },
+  "/3/employees": {
+    "get": "EmployeeController_doIndex",
+    "post": "EmployeeController_doCreate"
+  },
+  "/3/employees/{EmployeeId}": {
+    "get": "EmployeeController_doShow",
+    "put": "EmployeeController_doUpdate"
+  },
+  "/3/euvatlimitregulation": {
+    "get": "EUVatLimitRegulationController_doIndex"
+  },
+  "/3/expenses": {
+    "get": "ExpensesController_doIndex",
+    "post": "ExpensesController_doCreate"
+  },
+  "/3/expenses/{ExpenseCode}": {
+    "get": "ExpensesController_doShow"
+  },
+  "/3/financialyears": {
+    "get": "FinancialYearController_doIndex",
+    "post": "FinancialYearController_doCreate"
+  },
+  "/3/financialyears/{Id}": {
+    "get": "FinancialYearController_doShow"
+  },
+  "/3/inbox": {
+    "get": "InboxController_doIndex",
+    "post": "InboxController_doCreate"
+  },
+  "/3/inbox/{Id}": {
+    "get": "InboxController_doShow",
+    "delete": "InboxController_doDelete"
+  },
+  "/3/invoiceaccruals": {
+    "get": "InvoiceAccrualController_doIndex",
+    "post": "InvoiceAccrualController_doCreate"
+  },
+  "/3/invoiceaccruals/{InvoiceNumber}": {
+    "get": "InvoiceAccrualController_doShow",
+    "put": "InvoiceAccrualController_doUpdate",
+    "delete": "InvoiceAccrualController_doDelete"
+  },
+  "/3/invoicepayments": {
+    "get": "InvoicePaymentController_doIndex",
+    "post": "InvoicePaymentController_doCreate"
+  },
+  "/3/invoicepayments/{Number}": {
+    "get": "InvoicePaymentController_doShow",
+    "put": "InvoicePaymentController_doUpdate",
+    "delete": "InvoicePaymentController_doDelete"
+  },
+  "/3/invoicepayments/{Number}/bookkeep": {
+    "put": "InvoicePaymentController_doUpdateAndBookkeep"
+  },
+  "/3/invoices": {
+    "get": "InvoiceController_doIndex",
+    "post": "InvoiceController_doCreate"
+  },
+  "/3/invoices/{DocumentNumber}": {
+    "get": "InvoiceController_doShow",
+    "put": "InvoiceController_doUpdate"
+  },
+  "/3/invoices/{DocumentNumber}/bookkeep": {
+    "put": "InvoiceController_doUpdateAndBookkeep"
+  },
+  "/3/invoices/{DocumentNumber}/cancel": {
+    "put": "InvoiceController_doUpdateAndCancel"
+  },
+  "/3/invoices/{DocumentNumber}/credit": {
+    "put": "InvoiceController_doUpdateAndCredit"
+  },
+  "/3/invoices/{DocumentNumber}/einvoice": {
+    "get": "InvoiceController_doShowAndEinvoice"
+  },
+  "/3/invoices/{DocumentNumber}/email": {
+    "get": "InvoiceController_doShowAndEmail"
+  },
+  "/3/invoices/{DocumentNumber}/eprint": {
+    "get": "InvoiceController_doShowAndEprint"
+  },
+  "/3/invoices/{DocumentNumber}/externalprint": {
+    "put": "InvoiceController_doUpdateAndExternalPrint"
+  },
+  "/3/invoices/{DocumentNumber}/preview": {
+    "get": "InvoiceController_doShowAndPreview"
+  },
+  "/3/invoices/{DocumentNumber}/print": {
+    "get": "InvoiceController_doShowAndPrint"
+  },
+  "/3/invoices/{DocumentNumber}/printreminder": {
+    "get": "InvoiceController_doShowAndPrintReminder"
+  },
+  "/3/invoices/{DocumentNumber}/warehouseready": {
+    "put": "InvoiceController_doUpdateAndWarehouseReady"
+  },
+  "/3/labels": {
+    "get": "DocumentTagController_doIndex",
+    "post": "DocumentTagController_doCreate"
+  },
+  "/3/labels/{Id}": {
+    "put": "DocumentTagController_doUpdate",
+    "delete": "DocumentTagController_doDelete"
+  },
+  "/3/me": {
+    "get": "MeController_doIndex"
+  },
+  "/3/modesofpayments": {
+    "get": "ModeOfPaymentController_doIndex",
+    "post": "ModeOfPaymentController_doCreate"
+  },
+  "/3/modesofpayments/{Code}": {
+    "get": "ModeOfPaymentController_doShow",
+    "put": "ModeOfPaymentController_doUpdate",
+    "delete": "ModeOfPaymentController_doDelete"
+  },
+  "/3/noxfinansinvoices": {
+    "post": "NoxInvoiceController_doCreate"
+  },
+  "/3/noxfinansinvoices/{InvoiceNumber}": {
+    "get": "NoxInvoiceController_doShow"
+  },
+  "/3/noxfinansinvoices/{InvoiceNumber}/pause": {
+    "put": "NoxInvoiceController_doUpdateAndPause"
+  },
+  "/3/noxfinansinvoices/{InvoiceNumber}/report-payment": {
+    "put": "NoxInvoiceController_doUpdateAndRepostPayment"
+  },
+  "/3/noxfinansinvoices/{InvoiceNumber}/stop": {
+    "put": "NoxInvoiceController_doUpdateAndStop"
+  },
+  "/3/noxfinansinvoices/{InvoiceNumber}/take-fees": {
+    "put": "NoxInvoiceController_doUpdateAndTakeFees"
+  },
+  "/3/noxfinansinvoices/{InvoiceNumber}/unpause": {
+    "put": "NoxInvoiceController_doUpdateAndUnpause"
+  },
+  "/3/offers": {
+    "get": "OfferController_doIndex",
+    "post": "OfferController_doCreate"
+  },
+  "/3/offers/{DocumentNumber}": {
+    "get": "OfferController_doShow",
+    "put": "OfferController_doUpdate"
+  },
+  "/3/offers/{DocumentNumber}/cancel": {
+    "put": "OfferController_doUpdateAndCancel"
+  },
+  "/3/offers/{DocumentNumber}/createinvoice": {
+    "put": "OfferController_doUpdateAndCreateInvoice"
+  },
+  "/3/offers/{DocumentNumber}/createorder": {
+    "put": "OfferController_doUpdateAndCreateOrder"
+  },
+  "/3/offers/{DocumentNumber}/email": {
+    "get": "OfferController_doShowAndEmail"
+  },
+  "/3/offers/{DocumentNumber}/externalprint": {
+    "put": "OfferController_doUpdateAndExternalPrint"
+  },
+  "/3/offers/{DocumentNumber}/preview": {
+    "get": "OfferController_doShowAndPreview"
+  },
+  "/3/offers/{DocumentNumber}/print": {
+    "get": "OfferController_doShowAndPrint"
+  },
+  "/3/orders": {
+    "get": "OrderController_doIndex",
+    "post": "OrderController_doCreate"
+  },
+  "/3/orders/{DocumentNumber}": {
+    "get": "OrderController_doShow",
+    "put": "OrderController_doUpdate"
+  },
+  "/3/orders/{DocumentNumber}/cancel": {
+    "put": "OrderController_doUpdateAndCancel"
+  },
+  "/3/orders/{DocumentNumber}/createinvoice": {
+    "put": "OrderController_doUpdateAndCreateOrder"
+  },
+  "/3/orders/{DocumentNumber}/email": {
+    "get": "OrderController_doShowAndEmail"
+  },
+  "/3/orders/{DocumentNumber}/externalprint": {
+    "put": "OrderController_doUpdateAndExternalPrint"
+  },
+  "/3/orders/{DocumentNumber}/preview": {
+    "get": "OrderController_doShowAndPreview"
+  },
+  "/3/orders/{DocumentNumber}/print": {
+    "get": "OrderController_doShowAndPrint"
+  },
+  "/3/predefinedaccounts": {
+    "get": "PreDefinedAccountController_doIndex"
+  },
+  "/3/predefinedaccounts/{name}": {
+    "get": "PreDefinedAccountController_doShow",
+    "put": "PreDefinedAccountController_doUpdate"
+  },
+  "/3/predefinedvoucherseries": {
+    "get": "PreDefinedVoucherSeriesController_doIndex"
+  },
+  "/3/predefinedvoucherseries/{Name}": {
+    "get": "PreDefinedVoucherSeriesController_doShow",
+    "put": "PreDefinedVoucherSeriesController_doUpdate"
+  },
+  "/3/pricelists": {
+    "get": "PriceListController_doIndex",
+    "post": "PriceListController_doCreate"
+  },
+  "/3/pricelists/{Code}": {
+    "get": "PriceListController_doShow",
+    "put": "PriceListController_doUpdate"
+  },
+  "/3/prices": {
+    "get": "PriceController_doIndex",
+    "post": "PriceController_doCreate"
+  },
+  "/3/prices/sublist/{PriceList}/{ArticleNumber}": {
+    "get": "PriceController_doSublistWithTwoParams"
+  },
+  "/3/prices/{PriceList}/{ArticleNumber}": {
+    "get": "PriceController_doShow",
+    "put": "PriceController_doUpdate"
+  },
+  "/3/prices/{PriceList}/{ArticleNumber}/{FromQuantity}": {
+    "get": "PriceController_doShowWithId3",
+    "put": "PriceController_doUpdateWithId3",
+    "delete": "PriceController_doDeleteWithId3"
+  },
+  "/3/printtemplates": {
+    "get": "PrintTemplateController_doIndex"
+  },
+  "/3/projects": {
+    "get": "ProjectsController_doIndex",
+    "post": "ProjectsController_doCreate"
+  },
+  "/3/projects/{ProjectNumber}": {
+    "get": "ProjectsController_doShow",
+    "put": "ProjectsController_doUpdate",
+    "delete": "ProjectsController_doDelete"
+  },
+  "/3/salarytransactions": {
+    "get": "SalaryTransactionsController_doIndex",
+    "post": "SalaryTransactionsController_doCreate"
+  },
+  "/3/salarytransactions/{SalaryRow}": {
+    "get": "SalaryTransactionsController_doShow",
+    "put": "SalaryTransactionsController_doUpdate",
+    "delete": "SalaryTransactionsController_doDelete"
+  },
+  "/3/scheduletimes/{EmployeeId}/{Date}": {
+    "get": "ScheduleTimeController_doShow",
+    "put": "ScheduleTimeController_doUpdate"
+  },
+  "/3/scheduletimes/{EmployeeId}/{Date}/resetday": {
+    "put": "ScheduleTimeController_doUpdateAndResetDay"
+  },
+  "/3/settings/company": {
+    "get": "CompanySettingsController_doIndex"
+  },
+  "/3/settings/lockedperiod": {
+    "get": "LockedPeriodSettingsController_doShow"
+  },
+  "/3/sie/{Type}": {
+    "get": "SieController_doShow"
+  },
+  "/3/supplierinvoiceaccruals": {
+    "get": "SupplierInvoiceAccrualController_doIndex",
+    "post": "SupplierInvoiceAccrualController_doCreate"
+  },
+  "/3/supplierinvoiceaccruals/{SupplierInvoiceNumber}": {
+    "get": "SupplierInvoiceAccrualController_doShow",
+    "put": "SupplierInvoiceAccrualController_doUpdate",
+    "delete": "SupplierInvoiceAccrualController_doDelete"
+  },
+  "/3/supplierinvoiceexternalurlconnections": {
+    "post": "SinvoiceExternalUrlConnectionController_doCreate"
+  },
+  "/3/supplierinvoiceexternalurlconnections/{Id}": {
+    "get": "SinvoiceExternalUrlConnectionController_doShow",
+    "put": "SinvoiceExternalUrlConnectionController_doUpdate",
+    "delete": "SinvoiceExternalUrlConnectionController_doDelete"
+  },
+  "/3/supplierinvoicefileconnections": {
+    "get": "SupplierInvoiceFileConnectionController_doIndex",
+    "post": "SupplierInvoiceFileConnectionController_doCreate"
+  },
+  "/3/supplierinvoicefileconnections/{FileId}": {
+    "get": "SupplierInvoiceFileConnectionController_doShow",
+    "delete": "SupplierInvoiceFileConnectionController_doDelete"
+  },
+  "/3/supplierinvoicepayments": {
+    "get": "SupplierInvoicePaymentController_doIndex",
+    "post": "SupplierInvoicePaymentController_doCreate"
+  },
+  "/3/supplierinvoicepayments/{Number}": {
+    "get": "SupplierInvoicePaymentController_doShow",
+    "put": "SupplierInvoicePaymentController_doUpdate",
+    "delete": "SupplierInvoicePaymentController_doDelete"
+  },
+  "/3/supplierinvoicepayments/{Number}/bookkeep": {
+    "put": "SupplierInvoicePaymentController_doUpdateAndBookkeep"
+  },
+  "/3/supplierinvoices": {
+    "get": "SupplierInvoiceController_doIndex",
+    "post": "SupplierInvoiceController_doCreate"
+  },
+  "/3/supplierinvoices/{GivenNumber}": {
+    "get": "SupplierInvoiceController_doShow",
+    "put": "SupplierInvoiceController_doUpdate"
+  },
+  "/3/supplierinvoices/{GivenNumber}/approvalbookkeep": {
+    "put": "SupplierInvoiceController_doUpdateAndApprovalBookkeep"
+  },
+  "/3/supplierinvoices/{GivenNumber}/approvalpayment": {
+    "put": "SupplierInvoiceController_doUpdateAndApprovalPayment"
+  },
+  "/3/supplierinvoices/{GivenNumber}/bookkeep": {
+    "put": "SupplierInvoiceController_doUpdateAndBookkeep"
+  },
+  "/3/supplierinvoices/{GivenNumber}/cancel": {
+    "put": "SupplierInvoiceController_doUpdateAndCancel"
+  },
+  "/3/supplierinvoices/{GivenNumber}/credit": {
+    "put": "SupplierInvoiceController_doUpdateAndCredit"
+  },
+  "/3/suppliers": {
+    "get": "SupplierController_doIndex",
+    "post": "SupplierController_doCreate"
+  },
+  "/3/suppliers/{SupplierNumber}": {
+    "get": "SupplierController_doShow",
+    "put": "SupplierController_doUpdate"
+  },
+  "/3/taxreductions": {
+    "get": "TaxReductionController_doIndex",
+    "post": "TaxReductionController_doCreate"
+  },
+  "/3/taxreductions/{Id}": {
+    "get": "TaxReductionController_doShow",
+    "put": "TaxReductionController_doUpdate",
+    "delete": "TaxReductionController_doDelete"
+  },
+  "/3/termsofdeliveries": {
+    "get": "TermsOfDeliveryController_doIndex",
+    "post": "TermsOfDeliveryController_doCreate"
+  },
+  "/3/termsofdeliveries/{Code}": {
+    "get": "TermsOfDeliveryController_doShow",
+    "put": "TermsOfDeliveryController_doUpdate"
+  },
+  "/3/termsofpayments": {
+    "get": "TermsOfPaymentController_doIndex",
+    "post": "TermsOfPaymentController_doCreate"
+  },
+  "/3/termsofpayments/{Code}": {
+    "get": "TermsOfPaymentController_doShow",
+    "put": "TermsOfPaymentController_doUpdate",
+    "delete": "TermsOfPaymentController_doDelete"
+  },
+  "/3/units": {
+    "get": "UnitController_doIndex",
+    "post": "UnitController_doCreate"
+  },
+  "/3/units/{Code}": {
+    "get": "UnitController_doShow",
+    "put": "UnitController_doUpdate",
+    "delete": "UnitController_doDelete"
+  },
+  "/3/vacationdebtbasis/{Year}/{Month}": {
+    "get": "VacationDebtBasisController_doShow"
+  },
+  "/3/voucherfileconnections": {
+    "get": "VoucherFileConnectionController_doIndex",
+    "post": "VoucherFileConnectionController_doCreate"
+  },
+  "/3/voucherfileconnections/{FileId}": {
+    "get": "VoucherFileConnectionController_doShow",
+    "delete": "VoucherFileConnectionController_doDelete"
+  },
+  "/3/vouchers": {
+    "get": "VoucherController_doIndex",
+    "post": "VoucherController_doCreate"
+  },
+  "/3/vouchers/sublist": {
+    "get": "VoucherController_doSubList"
+  },
+  "/3/vouchers/sublist/{VoucherSeries}": {
+    "get": "VoucherController_doSublistWithParam"
+  },
+  "/3/vouchers/{VoucherSeries}/{VoucherNumber}": {
+    "get": "VoucherController_doShow"
+  },
+  "/3/voucherseries": {
+    "get": "VoucherSeriesController_doIndex",
+    "post": "VoucherSeriesController_doCreate"
+  },
+  "/3/voucherseries/{Code}": {
+    "get": "VoucherSeriesController_doShow",
+    "put": "VoucherSeriesController_doUpdate"
+  },
+  "/3/wayofdeliveries": {
+    "get": "WayOfDeliveryController_doIndex",
+    "post": "WayOfDeliveryController_doCreate"
+  },
+  "/3/wayofdeliveries/{Code}": {
+    "get": "WayOfDeliveryController_doShow",
+    "put": "WayOfDeliveryController_doUpdate",
+    "delete": "WayOfDeliveryController_doDelete"
+  },
+  "/api/fileattachments/attachments-v1": {
+    "get": "getAttachments",
+    "post": "attach"
+  },
+  "/api/fileattachments/attachments-v1/numberofattachments": {
+    "get": "getNumberOfAttachmentsForEntity"
+  },
+  "/api/fileattachments/attachments-v1/validateincludedonsend": {
+    "post": "validateIncludedOnSend"
+  },
+  "/api/fileattachments/attachments-v1/{attachmentId}": {
+    "put": "updateAttachment",
+    "delete": "detach"
+  },
+  "/api/integration-developer/ratings-v1": {
+    "get": "listRatings"
+  },
+  "/api/integration-developer/sales-v1/{integrationId}": {
+    "get": "getSalesForSingleIntegration"
+  },
+  "/api/integration-developer/users/users-v1/{integrationId}/{tenantId}": {
+    "get": "getUsersForSingleIntegrationAndTenant"
+  },
+  "/api/integration-partner/apps/sales-v1/{appId}": {
+    "get": "getAppSalesForSingleApp"
+  },
+  "/api/integration-partner/apps/sales-v1/{appId}/{tenantId}": {
+    "get": "getAppSalesForSingleAppAndTenant"
+  },
+  "/api/time/articles-v1": {
+    "get": "list_8"
+  },
+  "/api/time/registrations-v2": {
+    "get": "list_2"
+  },
+  "/api/warehouse/deliveries-v1": {
+    "get": "getAll"
+  },
+  "/api/warehouse/deliveries-v1/inbounddeliveries": {
+    "post": "create"
+  },
+  "/api/warehouse/deliveries-v1/inbounddeliveries/{id}": {
+    "get": "get",
+    "put": "update",
+    "patch": "updateNote"
+  },
+  "/api/warehouse/deliveries-v1/inbounddeliveries/{id}/release": {
+    "put": "release"
+  },
+  "/api/warehouse/deliveries-v1/inbounddeliveries/{id}/void": {
+    "put": "voidDocument"
+  },
+  "/api/warehouse/deliveries-v1/outbounddeliveries": {
+    "post": "create_1"
+  },
+  "/api/warehouse/deliveries-v1/outbounddeliveries/{id}": {
+    "get": "get_1",
+    "put": "update_1",
+    "patch": "updateNote_1"
+  },
+  "/api/warehouse/deliveries-v1/outbounddeliveries/{id}/release": {
+    "put": "release_1"
+  },
+  "/api/warehouse/deliveries-v1/outbounddeliveries/{id}/void": {
+    "put": "voidDocument_1"
+  },
+  "/api/warehouse/documentdeliveries/custom/documenttypes-v1": {
+    "get": "getAll_6",
+    "post": "create_8"
+  },
+  "/api/warehouse/documentdeliveries/custom/documenttypes-v1/{type}": {
+    "get": "get_11"
+  },
+  "/api/warehouse/documentdeliveries/custom/inbound-v1/{type}/{id}": {
+    "get": "get_12",
+    "put": "save"
+  },
+  "/api/warehouse/documentdeliveries/custom/inbound-v1/{type}/{id}/release": {
+    "put": "release_4"
+  },
+  "/api/warehouse/documentdeliveries/custom/inbound-v1/{type}/{id}/void": {
+    "put": "voidDocument_2"
+  },
+  "/api/warehouse/documentdeliveries/custom/outbound-v1/{type}/{id}": {
+    "get": "get_13",
+    "put": "save_1"
+  },
+  "/api/warehouse/documentdeliveries/custom/outbound-v1/{type}/{id}/release": {
+    "put": "release_5"
+  },
+  "/api/warehouse/documentdeliveries/custom/outbound-v1/{type}/{id}/void": {
+    "put": "voidDocument_3"
+  },
+  "/api/warehouse/incominggoods-v1": {
+    "get": "getAll_7",
+    "post": "create_9"
+  },
+  "/api/warehouse/incominggoods-v1/{id}": {
+    "get": "get_15",
+    "put": "save_2",
+    "patch": "patch"
+  },
+  "/api/warehouse/incominggoods-v1/{id}/completed": {
+    "put": "completed"
+  },
+  "/api/warehouse/incominggoods-v1/{id}/release": {
+    "put": "release_6"
+  },
+  "/api/warehouse/incominggoods-v1/{id}/void": {
+    "put": "voidDocument_4"
+  },
+  "/api/warehouse/productionorders-v1": {
+    "get": "getAll_8",
+    "post": "create_10"
+  },
+  "/api/warehouse/productionorders-v1/billofmaterials/{itemId}": {
+    "get": "getRequiredProductionParts"
+  },
+  "/api/warehouse/productionorders-v1/release/{id}": {
+    "put": "release_7"
+  },
+  "/api/warehouse/productionorders-v1/void/{id}": {
+    "put": "voidProductionOrder"
+  },
+  "/api/warehouse/productionorders-v1/{id}": {
+    "get": "get_16",
+    "put": "update_5",
+    "patch": "updateNote_2"
+  },
+  "/api/warehouse/purchaseorders-v1": {
+    "get": "getAll_9",
+    "post": "create_11"
+  },
+  "/api/warehouse/purchaseorders-v1/csv": {
+    "get": "getCsvReport"
+  },
+  "/api/warehouse/purchaseorders-v1/response": {
+    "put": "batchUpdateResponseState"
+  },
+  "/api/warehouse/purchaseorders-v1/sendpurchaseorders": {
+    "post": "sendPurchaseOrders"
+  },
+  "/api/warehouse/purchaseorders-v1/{id}": {
+    "get": "get_17",
+    "put": "update_6"
+  },
+  "/api/warehouse/purchaseorders-v1/{id}/complete": {
+    "put": "setManuallyCompleted"
+  },
+  "/api/warehouse/purchaseorders-v1/{id}/dropshipcomplete": {
+    "put": "setDropshipManuallyCompleted"
+  },
+  "/api/warehouse/purchaseorders-v1/{id}/matches": {
+    "get": "getMatchedDocuments_1"
+  },
+  "/api/warehouse/purchaseorders-v1/{id}/notes": {
+    "get": "getAttachedNotes"
+  },
+  "/api/warehouse/purchaseorders-v1/{id}/partial": {
+    "patch": "updatePartial"
+  },
+  "/api/warehouse/purchaseorders-v1/{id}/response": {
+    "put": "updateResponseState"
+  },
+  "/api/warehouse/purchaseorders-v1/{id}/send": {
+    "post": "sendPurchaseOrder"
+  },
+  "/api/warehouse/purchaseorders-v1/{id}/void": {
+    "put": "voidDocument_5"
+  },
+  "/api/warehouse/status-v1/stockbalance": {
+    "get": "getStockBalance"
+  },
+  "/api/warehouse/stockpoints-v1": {
+    "get": "getAll_2",
+    "post": "create_3"
+  },
+  "/api/warehouse/stockpoints-v1/multi": {
+    "get": "getMany_3"
+  },
+  "/api/warehouse/stockpoints-v1/{id}": {
+    "get": "getByAmbiguousId",
+    "post": "appendStockLocations",
+    "put": "update_3",
+    "delete": "delete"
+  },
+  "/api/warehouse/stockpoints-v1/{id}/stocklocations": {
+    "get": "getStockLocationsByAmbiguousId"
+  },
+  "/api/warehouse/stocktaking-v1": {
+    "get": "getAll_1",
+    "post": "create_2"
+  },
+  "/api/warehouse/stocktaking-v1/{id}": {
+    "get": "get_2",
+    "put": "update_2",
+    "delete": "deleteStockTaking"
+  },
+  "/api/warehouse/stocktaking-v1/{id}/addrows": {
+    "post": "addStockTakingRowsByFilter"
+  },
+  "/api/warehouse/stocktaking-v1/{id}/candidates": {
+    "get": "getCandidateRows"
+  },
+  "/api/warehouse/stocktaking-v1/{id}/release": {
+    "put": "release_2"
+  },
+  "/api/warehouse/stocktaking-v1/{id}/rows": {
+    "get": "getRows",
+    "post": "addStockTakingRows",
+    "delete": "deleteStockTakingRowByFilter"
+  },
+  "/api/warehouse/stocktaking-v1/{id}/rows/{rowId}": {
+    "delete": "deleteStockTakingRow"
+  },
+  "/api/warehouse/stocktaking-v1/{id}/void": {
+    "put": "voidStockTaking"
+  },
+  "/api/warehouse/stocktransfer-v1": {
+    "post": "create_5"
+  },
+  "/api/warehouse/stocktransfer-v1/{id}": {
+    "get": "get_4",
+    "put": "update_4"
+  },
+  "/api/warehouse/stocktransfer-v1/{id}/release": {
+    "put": "release_3"
+  },
+  "/api/warehouse/stocktransfer-v1/{id}/void": {
+    "put": "voidStockTransfer"
+  },
+  "/api/warehouse/tenants-v4": {
+    "get": "getTenant"
+  }
+}
