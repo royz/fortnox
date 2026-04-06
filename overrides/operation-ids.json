@@ -24,13 +24,13 @@
 		"delete": "delete"
 	},
 	"/3/archive": {
-		"get": "get",
+		"get": "getByPath",
 		"post": "upload",
-		"delete": "delete"
+		"delete": "deleteByPath"
 	},
 	"/3/archive/{id}": {
-		"get": "get",
-		"delete": "delete"
+		"get": "getById",
+		"delete": "deleteById"
 	},
 	"/3/articlefileconnections": {
 		"get": "getList",
@@ -276,10 +276,10 @@
 		"get": "sendEmail"
 	},
 	"/3/invoices/{DocumentNumber}/eprint": {
-		"get": "eprint"
+		"get": "sendEprint"
 	},
 	"/3/invoices/{DocumentNumber}/externalprint": {
-		"put": "externalPrint"
+		"put": "markAsSent"
 	},
 	"/3/invoices/{DocumentNumber}/preview": {
 		"get": "getPreview"
@@ -314,7 +314,7 @@
 		"delete": "delete"
 	},
 	"/3/noxfinansinvoices": {
-		"post": "create"
+		"post": "send"
 	},
 	"/3/noxfinansinvoices/{InvoiceNumber}": {
 		"get": "get"
@@ -355,7 +355,7 @@
 		"get": "sendEmail"
 	},
 	"/3/offers/{DocumentNumber}/externalprint": {
-		"put": "externalPrint"
+		"put": "markAsSent"
 	},
 	"/3/offers/{DocumentNumber}/preview": {
 		"get": "getPreview"
@@ -381,7 +381,7 @@
 		"get": "sendEmail"
 	},
 	"/3/orders/{DocumentNumber}/externalprint": {
-		"put": "externalPrint"
+		"put": "markAsSent"
 	},
 	"/3/orders/{DocumentNumber}/preview": {
 		"get": "getPreview"
@@ -623,7 +623,7 @@
 		"delete": "detach"
 	},
 	"/api/integration-developer/ratings-v1": {
-		"get": "getList"
+		"get": "listRatings"
 	},
 	"/api/integration-developer/sales-v1/{integrationId}": {
 		"get": "getSalesForIntegration"
@@ -840,6 +840,6 @@
 		"put": "voidStockTransfer"
 	},
 	"/api/warehouse/tenants-v4": {
-		"get": "getTenant"
+		"get": "getActivationStatus"
 	}
 }
