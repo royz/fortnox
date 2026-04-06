@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.1.0
+
+### Minor Changes
+
+- Define and export custom types for invoice list and single invoice
+
 ## 2.0.1
 
 ### Patch Changes
