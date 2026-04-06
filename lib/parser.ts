@@ -33,7 +33,6 @@ export class SchemasParser {
 		schema: OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject,
 	) {
 		const title = generateTypeNameFromRef(name);
-		console.log(`Parsing schema: ${title}`);
 		if (this.jsonSchemas.has(title)) {
 			return;
 		}
