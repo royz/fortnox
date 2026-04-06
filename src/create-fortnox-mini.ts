@@ -4,7 +4,14 @@ import {
 	METHODS,
 	request,
 } from "./request";
+import type { Routes as OfficialRoutes } from "./types/official-routes.gen";
+import type { Routes as PatchedRoutes } from "./types/patched-routes.gen";
 import type { OmitNever } from "./types/utility-types";
+
+export type RouteVariant = "official" | "patched";
+
+export type ResolveRoutes<TVariant extends RouteVariant> =
+	TVariant extends "official" ? OfficialRoutes : PatchedRoutes;
 
 export type FortnoxInput<
 	TRoutes extends object,
@@ -55,12 +62,16 @@ export type FortnoxPathClient<TRoutes extends object> = {
 	path: FortnoxPathFn<TRoutes>;
 };
 
-export function createInitFortnoxMini<TRoutes extends object>(): {
-	(options: { accessToken: string }): FortnoxPathClient<TRoutes>;
+export function createInitFortnoxMini<
+	TVariant extends RouteVariant = "patched",
+>(): {
+	(options: { accessToken: string }): FortnoxPathClient<ResolveRoutes<TVariant>>;
 	(options: {
 		proxy: { baseUrl: string; apiKey: string; tenantId: string };
-	}): FortnoxPathClient<TRoutes>;
+	}): FortnoxPathClient<ResolveRoutes<TVariant>>;
 } {
+	type TRoutes = ResolveRoutes<TVariant>;
+
 	function initFortnoxMini(options: {
 		accessToken: string;
 	}): FortnoxPathClient<TRoutes>;

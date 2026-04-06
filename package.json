@@ -47,13 +47,9 @@
 			"import": "./dist/index.mjs",
 			"require": "./dist/index.cjs"
 		},
-		"./official": {
-			"import": "./dist/official.mjs",
-			"require": "./dist/official.cjs"
-		},
-		"./patched": {
-			"import": "./dist/patched.mjs",
-			"require": "./dist/patched.cjs"
+		"./mini": {
+			"import": "./dist/mini.mjs",
+			"require": "./dist/mini.cjs"
 		},
 		"./types/custom": {
 			"import": "./dist/types/custom/index.mjs",

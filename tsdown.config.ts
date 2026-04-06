@@ -1,12 +1,7 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-	entry: [
-		"./src/index.ts",
-		"./src/official.ts",
-		"./src/patched.ts",
-		"./src/types/custom/index.ts",
-	],
+	entry: ["./src/index.ts", "./src/mini.ts", "./src/types/custom/index.ts"],
 	clean: true,
 	dts: true,
 	format: ["cjs", "esm"],

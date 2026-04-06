@@ -4,6 +4,8 @@ import type {
 	FortnoxOutput,
 	FortnoxPathFn,
 	FortnoxResult,
+	ResolveRoutes,
+	RouteVariant,
 } from "./create-fortnox-mini";
 import { type InitFortnoxOptions, METHODS, request } from "./request";
 import {
@@ -58,12 +60,14 @@ export type FortnoxClient<TRoutes extends object> =
 		path: FortnoxPathFn<TRoutes>;
 	};
 
-export function createInitFortnox<TRoutes extends object>(): {
-	(options: { accessToken: string }): FortnoxClient<TRoutes>;
+export function createInitFortnox<TVariant extends RouteVariant = "patched">(): {
+	(options: { accessToken: string }): FortnoxClient<ResolveRoutes<TVariant>>;
 	(options: {
 		proxy: { baseUrl: string; apiKey: string; tenantId: string };
-	}): FortnoxClient<TRoutes>;
+	}): FortnoxClient<ResolveRoutes<TVariant>>;
 } {
+	type TRoutes = ResolveRoutes<TVariant>;
+
 	function initFortnox(options: {
 		accessToken: string;
 	}): FortnoxClient<TRoutes>;
