@@ -3,7 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { OpenAPIV3 } from "openapi-types";
 import { OVERRIDES_DIR } from "../config";
-import { getSpecFromFile, HTTP_METHODS } from "../lib/utils";
+import { getSpecFromFile, HTTP_METHODS } from "./utils";
 
 const FILE_PATH = path.join(OVERRIDES_DIR, "operation-ids.json");
 
