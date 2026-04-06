@@ -5,6 +5,8 @@ import path from "node:path";
 import type { OpenAPIV3 } from "openapi-types";
 import { SPEC_DIR } from "../config";
 
+export const HTTP_METHODS = ["get", "post", "put", "delete", "patch"] as const;
+
 /** Get the OpenAPI specification (original or patched) from a file
  * @param type - "original" to get the original spec, "patched" to get the patched spec
  * @param bypassHashCheck - If true, will skip the hash check for the original spec file (useful for testing with modified spec files)

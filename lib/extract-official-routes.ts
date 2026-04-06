@@ -6,18 +6,9 @@ import { TYPES_DIR } from "../config";
 import {
 	generateTypeNameFromRef,
 	getSpecFromFile,
+	HTTP_METHODS,
 	isReferenceObject,
 } from "./utils";
-
-const HTTP_METHODS = [
-	"get",
-	"post",
-	"put",
-	"delete",
-	"patch",
-	"head",
-	"options",
-] as const;
 
 const OUT_FILE = path.join(TYPES_DIR, "official-routes.gen.ts");
 
