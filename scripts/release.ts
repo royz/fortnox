@@ -4,7 +4,10 @@ import path from "node:path";
 
 const run = (cmd: string) => execSync(cmd, { stdio: "inherit" });
 
-// 1. Bump versions + generate CHANGELOG
+// 1. Create a changeset interactively
+run("pnpm changeset");
+
+// 2. Bump versions + generate CHANGELOG
 run("pnpm changeset version");
 
 // 2. Read the new version
