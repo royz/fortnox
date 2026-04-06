@@ -3,9 +3,9 @@ export type Prettify<T> = {
 	[K in keyof T]: T[K];
 };
 
-/** Make specific properties of an object required */
+/** Make specific properties of an object required, all others optional */
 export type PartialRequired<Type, Key extends keyof Type> = Prettify<
-	Type & {
+	Partial<Type> & {
 		[K in Key]-?: Type[K];
 	}
 >;
