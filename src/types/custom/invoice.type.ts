@@ -173,6 +173,8 @@ export type Invoice = {
 	ZipCode: string;
 };
 
+export type InvoiceResponse = { Invoice: Invoice };
+
 type InvoiceListItem = Pick<
 	Invoice,
 	| "@url"

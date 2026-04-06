@@ -3,12 +3,19 @@ import path from "node:path";
 import { compile, type JSONSchema } from "json-schema-to-typescript";
 import type { OpenAPIV3 } from "openapi-types";
 import { TYPES_DIR } from "../config";
+import { typeOverrides } from "../overrides/type-overrides";
 import {
 	generateTypeNameFromRef,
 	getSpecFromFile,
 	HTTP_METHODS,
 	isReferenceObject,
 } from "./utils";
+
+type RouteOverrides = Record<
+	string,
+	| Record<string, { request?: string; response?: string } | undefined>
+	| undefined
+>;
 
 const OUT_FILE = path.join(TYPES_DIR, "patched-routes.gen.ts");
 
@@ -23,6 +30,7 @@ export async function extractPatchedRoutes() {
 
 	const pathProperties: Record<string, JSONSchema> = {};
 	const bodyTypeNames = new Set<string>();
+	const customTypeNames = new Set<string>();
 
 	for (const [path, pathItem] of Object.entries(paths)) {
 		const methodProperties: Record<string, JSONSchema> = {};
@@ -84,12 +92,16 @@ export async function extractPatchedRoutes() {
 					}
 				: { tsType: "never" };
 
+			const methodOverride = (typeOverrides as RouteOverrides)[path]?.[method];
+
 			// Request body → body
 			const requestBody = operation.requestBody as
 				| OpenAPIV3.RequestBodyObject
 				| undefined;
-			let bodyTypeName: string | null = null;
-			if (requestBody) {
+			let bodyTypeName: string | null = methodOverride?.request ?? null;
+			if (bodyTypeName) {
+				customTypeNames.add(bodyTypeName);
+			} else if (requestBody) {
 				const content = requestBody.content;
 				const mediaType =
 					content["application/json"] ??
@@ -109,8 +121,11 @@ export async function extractPatchedRoutes() {
 			const responseSchema200 = (
 				operation.responses?.["200"] as OpenAPIV3.ResponseObject | undefined
 			)?.content?.["application/json"]?.schema;
-			let responseBodyTypeName: string | null = null;
-			if (responseSchema200 && isReferenceObject(responseSchema200)) {
+			let responseBodyTypeName: string | null =
+				methodOverride?.response ?? null;
+			if (responseBodyTypeName) {
+				customTypeNames.add(responseBodyTypeName);
+			} else if (responseSchema200 && isReferenceObject(responseSchema200)) {
 				responseBodyTypeName = generateTypeNameFromRef(responseSchema200.$ref);
 				bodyTypeNames.add(responseBodyTypeName);
 			}
@@ -181,9 +196,17 @@ export async function extractPatchedRoutes() {
 	});
 
 	const importStatement =
-		bodyTypeNames.size > 0
-			? `import type { ${[...bodyTypeNames].sort().join(", ")} } from "./patched-schemas.gen";\n\n`
-			: "";
+		[
+			customTypeNames.size > 0
+				? `import type { ${[...customTypeNames].sort().join(", ")} } from "./custom";`
+				: "",
+			bodyTypeNames.size > 0
+				? `import type { ${[...bodyTypeNames].sort().join(", ")} } from "./patched-schemas.gen";`
+				: "",
+		]
+			.filter(Boolean)
+			.join("\n") +
+		(customTypeNames.size > 0 || bodyTypeNames.size > 0 ? "\n\n" : "");
 
 	await writeFile(OUT_FILE, importStatement + routesString);
 }

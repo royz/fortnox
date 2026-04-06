@@ -1,3 +1,4 @@
+import type { InvoiceListWrap, InvoiceResponse } from "./custom";
 import type {
 	FileattachmentsAttachment,
 	FileattachmentsNumberOfAttachments,
@@ -86,7 +87,6 @@ import type {
 	FortnoxKfInvoiceAccrualListItemWrap,
 	FortnoxKfInvoiceAccrualSingleItemWrap,
 	FortnoxKfInvoiceAccrualSinglePayloadItemWrap,
-	FortnoxKfInvoiceListResponseWrap,
 	FortnoxKfInvoicePaymentListItemWrap,
 	FortnoxKfInvoicePaymentSingleItemWrap,
 	FortnoxKfInvoicePaymentSinglePayloadItemWrap,
@@ -2386,7 +2386,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxKfInvoiceListResponseWrap;
+				body: InvoiceListWrap;
 			};
 		};
 		post: {
@@ -2413,7 +2413,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxKfInvoiceResponseWrap;
+				body: InvoiceResponse;
 			};
 		};
 		put: {
