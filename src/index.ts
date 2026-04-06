@@ -1,1 +1,1 @@
-export { initFortnox } from "./official";
+export { initFortnox, initFortnoxMini } from "./patched";

@@ -1,48 +1,16 @@
-import {
-	type ErrorResponse,
-	type InitFortnoxOptions,
-	METHODS,
-	request,
-} from "./request";
+import type {
+	FortnoxInputCleaned,
+	FortnoxMethods,
+	FortnoxOutput,
+	FortnoxPathFn,
+	FortnoxResult,
+} from "./create-fortnox-mini";
+import { type InitFortnoxOptions, METHODS, request } from "./request";
 import {
 	RESOURCE_OPERATIONS,
 	type ResourceOperations,
 } from "./types/resource-operations.gen";
 import type { OmitNever } from "./types/utility-types";
-
-type FortnoxInput<
-	TRoutes extends object,
-	TPath extends keyof TRoutes,
-	TMethod extends keyof TRoutes[TPath],
-> = TRoutes[TPath][TMethod] extends { request: infer R } ? R : never;
-
-type FortnoxInputCleaned<
-	TRoutes extends object,
-	TPath extends keyof TRoutes,
-	TMethod extends keyof TRoutes[TPath],
-> = OmitNever<FortnoxInput<TRoutes, TPath, TMethod>>;
-
-type FortnoxOutput<
-	TRoutes extends object,
-	TPath extends keyof TRoutes,
-	TMethod extends keyof TRoutes[TPath],
-> = TRoutes[TPath][TMethod] extends { response: { body: infer B } } ? B : never;
-
-type FortnoxResult<TData> = Promise<
-	{ error: ErrorResponse; data: null } | { error: null; data: TData }
->;
-
-type FortnoxMethods<TRoutes extends object, TPath extends keyof TRoutes> = {
-	[TMethod in keyof TRoutes[TPath]]: TRoutes[TPath][TMethod] extends {
-		request: { params: never; body: never };
-	}
-		? (
-				options?: FortnoxInputCleaned<TRoutes, TPath, TMethod>,
-			) => FortnoxResult<FortnoxOutput<TRoutes, TPath, TMethod>>
-		: (
-				options: FortnoxInputCleaned<TRoutes, TPath, TMethod>,
-			) => FortnoxResult<FortnoxOutput<TRoutes, TPath, TMethod>>;
-};
 
 /** Resolves the callable type for a single resource operation (path + method pair). */
 type FortnoxOpMethod<
@@ -84,13 +52,6 @@ type FortnoxResources<TRoutes extends object> = {
 	>;
 };
 
-/** Path-based accessor: fortnox.path("/3/invoices").get(...) */
-export type FortnoxPathFn<TRoutes extends object> = <
-	TPath extends keyof TRoutes,
->(
-	path: TPath,
-) => FortnoxMethods<TRoutes, TPath>;
-
 /** Full Fortnox client with both resource accessors and path-based fallback. */
 export type FortnoxClient<TRoutes extends object> =
 	FortnoxResources<TRoutes> & {
@@ -113,13 +74,13 @@ export function createInitFortnox<TRoutes extends object>(): {
 		initOptions: InitFortnoxOptions,
 	): FortnoxClient<TRoutes> {
 		const pathFn = <TPath extends keyof TRoutes>(
-			path: TPath,
+			p: TPath,
 		): FortnoxMethods<TRoutes, TPath> => {
 			return Object.fromEntries(
 				METHODS.map((method) => [
 					method,
 					(options: Record<string, unknown>) =>
-						request({ path: path as string, method, ...options }, initOptions),
+						request({ path: p as string, method, ...options }, initOptions),
 				]),
 			) as unknown as FortnoxMethods<TRoutes, TPath>;
 		};
@@ -143,5 +104,6 @@ export function createInitFortnox<TRoutes extends object>(): {
 
 		return client;
 	}
+
 	return initFortnox;
 }

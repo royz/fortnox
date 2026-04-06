@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.2.0
+
+### Minor Changes
+
+- Add new initializer - createFortnoxMini() which only exposes the .path() method. It still has full type safety but results in very small bundle size compared to initFortnox()
+
 ## 2.1.1
 
 ### Patch Changes
