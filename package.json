@@ -5,7 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"generate": "tsx scripts/generate.ts",
-		"postgenerate": "biome check --write ./src/types",
+		"postgenerate": "biome check --write ./src/types ./overrides",
 		"build": "tsdown",
 		"biome:check": "biome check --write",
 		"changeset": "changeset",
