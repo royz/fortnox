@@ -1,4 +1,9 @@
-import type { InvoiceListWrap, InvoiceResponse } from "./custom";
+import type {
+	InvoiceListResponse,
+	InvoiceResponse,
+	VoucherListResponse,
+	VoucherResponse,
+} from "./custom";
 import type {
 	FileattachmentsAttachment,
 	FileattachmentsNumberOfAttachments,
@@ -29,11 +34,9 @@ import type {
 	FortnoxBfPreDefinedVoucherSeriesListItemWrap,
 	FortnoxBfPreDefinedVoucherSeriesSingleItemWrap,
 	FortnoxBfPreDefinedVoucherSeriesSinglePayloadItemWrap,
-	FortnoxBfVoucherListItemWrap,
 	FortnoxBfVoucherSeriesListItemWrap,
 	FortnoxBfVoucherSeriesSingleItemWrap,
 	FortnoxBfVoucherSeriesSinglePayloadItemWrap,
-	FortnoxBfVoucherSingleItemWrap,
 	FortnoxBfVoucherSinglePayloadItemWrap,
 	FortnoxCompanyCompanySettingsResponseWrap,
 	FortnoxCompanyInformationSingleItemWrap,
@@ -2386,7 +2389,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: InvoiceListWrap;
+				body: InvoiceListResponse;
 			};
 		};
 		post: {
@@ -4920,7 +4923,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxBfVoucherListItemWrap;
+				body: VoucherListResponse;
 			};
 		};
 		post: {
@@ -4968,7 +4971,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxBfVoucherListItemWrap;
+				body: VoucherListResponse;
 			};
 		};
 	};
@@ -5006,7 +5009,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxBfVoucherListItemWrap;
+				body: VoucherListResponse;
 			};
 		};
 	};
@@ -5032,7 +5035,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxBfVoucherSingleItemWrap;
+				body: VoucherResponse;
 			};
 		};
 	};

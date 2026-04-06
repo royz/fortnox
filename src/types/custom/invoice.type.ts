@@ -206,4 +206,4 @@ type InvoiceListItem = Pick<
 	| "FinalPayDate"
 >;
 
-export type InvoiceListWrap = FortnoxListWrap<"Invoices", InvoiceListItem>;
+export type InvoiceListResponse = FortnoxListWrap<"Invoices", InvoiceListItem>;

@@ -3,7 +3,7 @@ import path from "node:path";
 import { compile, type JSONSchema } from "json-schema-to-typescript";
 import type { OpenAPIV3 } from "openapi-types";
 import { TYPES_DIR } from "../config";
-import { typeOverrides } from "../overrides/type-overrides";
+import { flattenedTypeOverrides } from "../overrides/type-overrides";
 import {
 	generateTypeNameFromRef,
 	getSpecFromFile,
@@ -92,7 +92,9 @@ export async function extractPatchedRoutes() {
 					}
 				: { tsType: "never" };
 
-			const methodOverride = (typeOverrides as RouteOverrides)[path]?.[method];
+			const methodOverride = (flattenedTypeOverrides as RouteOverrides)[path]?.[
+				method
+			];
 
 			// Request body → body
 			const requestBody = operation.requestBody as
