@@ -56,3 +56,7 @@ export async function extractResourceOperations(): Promise<void> {
 
 	await writeFile(OUT_FILE, out, "utf-8");
 }
+
+if (import.meta.filename === process.argv[1]) {
+	await extractResourceOperations();
+}
