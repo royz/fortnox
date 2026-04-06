@@ -14,9 +14,28 @@ pnpm add @unifetch/fortnox
 
 ## Initialization
 
-There are two ways to initialize the client.
+There are two clients to choose from, each with two ways to initialize.
 
-### 1. Access token
+### `initFortnox` — full client
+
+Includes the resource-based API (`fortnox.invoices.getList()`) and the path-based API (`fortnox.path()`). This is the right choice for most server-side applications where bundle size is not a concern.
+
+### `initFortnoxMini` — minimal client
+
+Includes **only** the path-based API (`fortnox.path()`). The entire resource-based layer — including the map of all routes and operation IDs — is absent from this client, which means a bundler can **tree-shake it away entirely**. Use this when bundle size is a hard constraint, such as in [Cloudflare Workers](https://workers.cloudflare.com/) (1 MB compressed limit), Vercel Edge Functions, or any other edge runtime.
+
+```ts
+import { initFortnoxMini } from "@unifetch/fortnox";
+
+const fortnox = initFortnoxMini({ accessToken: "your-access-token" });
+
+// Only .path() is available — resource accessors like fortnox.invoices are not
+const { data, error } = await fortnox.path("/3/invoices").get();
+```
+
+---
+
+### Authentication option 1 — Access token
 
 Use this if you manage your own oAuth flow and already have a Fortnox access token.
 
@@ -28,7 +47,17 @@ const fortnox = initFortnox({
 });
 ```
 
-### 2. Proxy via unifetch.dev
+The same option is available on `initFortnoxMini`:
+
+```ts
+import { initFortnoxMini } from "@unifetch/fortnox";
+
+const fortnox = initFortnoxMini({
+  accessToken: "your-access-token",
+});
+```
+
+### Authentication option 2 — Proxy via unifetch.dev
 
 [unifetch.dev](https://unifetch.dev) acts as a proxy layer that internally handles OAuth and token rotation, removing the need to manage credentials yourself.
 
@@ -44,11 +73,25 @@ const fortnox = initFortnox({
 });
 ```
 
+The same option is available on `initFortnoxMini`:
+
+```ts
+import { initFortnoxMini } from "@unifetch/fortnox";
+
+const fortnox = initFortnoxMini({
+  proxy: {
+    baseUrl: "https://proxy.unifetch.dev/fortnox",
+    apiKey: "your-api-key",
+    tenantId: "your-tenant-id",
+  },
+});
+```
+
 ## Usage
 
 Every response is a discriminated union of `{ error: null; data: T }` or `{ error: ErrorResponse; data: null }`. Once you handle (or narrow) the error branch, TypeScript automatically infers that `data` is non-null.
 
-There are two ways to call the API.
+There are two ways to call the API. `initFortnox` supports both. `initFortnoxMini` supports only the path-based API.
 
 ### Resource-based API (recommended)
 
@@ -145,9 +188,9 @@ const { data, error } = await fortnox.path("/3/invoices/{DocumentNumber}").get({
 The default import uses **patched type definitions**. Fortnox's official OpenAPI spec has a number of incorrect or missing type constraints (e.g. response wrapper properties marked as optional when they are always present). This package fixes those issues so the types accurately reflect real API behavior. But some of the "patched" types can still be incorrect since we do not have clear documentation.
 
 ```ts
-import { initFortnox } from "@unifetch/fortnox";
+import { initFortnox, initFortnoxMini } from "@unifetch/fortnox";
 // or equivalently:
-import { initFortnox } from "@unifetch/fortnox/patched";
+import { initFortnox, initFortnoxMini } from "@unifetch/fortnox/patched";
 ```
 
 ### `@unifetch/fortnox/official` — unmodified types
@@ -155,7 +198,7 @@ import { initFortnox } from "@unifetch/fortnox/patched";
 If you need the raw types exactly as they appear in Fortnox's official OpenAPI specification, import from the `/official` subpath.
 
 ```ts
-import { initFortnox } from "@unifetch/fortnox/official";
+import { initFortnox, initFortnoxMini } from "@unifetch/fortnox/official";
 ```
 
 > **Note:** The official types may include inaccuracies inherited from the upstream spec. Prefer the default (patched) import unless you have a specific reason to use the unmodified types.
