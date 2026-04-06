@@ -53,6 +53,10 @@
 		"./patched": {
 			"import": "./dist/patched.mjs",
 			"require": "./dist/patched.cjs"
+		},
+		"./types/custom": {
+			"import": "./dist/types/custom/index.mjs",
+			"require": "./dist/types/custom/index.cjs"
 		}
 	},
 	"main": "./dist/index.cjs",
