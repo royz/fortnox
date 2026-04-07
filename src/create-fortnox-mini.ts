@@ -64,20 +64,11 @@ export type FortnoxPathClient<TRoutes extends object> = {
 
 export function createInitFortnoxMini<
 	TVariant extends RouteVariant = "patched",
->(): {
-	(options: { accessToken: string }): FortnoxPathClient<ResolveRoutes<TVariant>>;
-	(options: {
-		proxy: { baseUrl: string; apiKey: string; tenantId: string };
-	}): FortnoxPathClient<ResolveRoutes<TVariant>>;
-} {
+>(): (
+	options: InitFortnoxOptions,
+) => FortnoxPathClient<ResolveRoutes<TVariant>> {
 	type TRoutes = ResolveRoutes<TVariant>;
 
-	function initFortnoxMini(options: {
-		accessToken: string;
-	}): FortnoxPathClient<TRoutes>;
-	function initFortnoxMini(options: {
-		proxy: { baseUrl: string; apiKey: string; tenantId: string };
-	}): FortnoxPathClient<TRoutes>;
 	function initFortnoxMini(
 		initOptions: InitFortnoxOptions,
 	): FortnoxPathClient<TRoutes> {

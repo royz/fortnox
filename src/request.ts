@@ -28,8 +28,11 @@ export type ErrorResponse = {
 };
 
 export type InitFortnoxOptions =
-	| { accessToken: string }
-	| { proxy: { baseUrl: string; apiKey: string; tenantId: string } };
+	| { accessToken: string; proxy?: never }
+	| {
+			proxy: { baseUrl: string; apiKey: string; tenantId: string };
+			accessToken?: never;
+	  };
 
 export async function request(
 	reqOptions: RequestOptions,
