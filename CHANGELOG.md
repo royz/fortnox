@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.5.1
+
+### Patch Changes
+
+- Fix: autocomplete suggestion for discriminated options of initFortnox and initFortnoxMini
+
 ## 2.5.0
 
 ### Minor Changes
