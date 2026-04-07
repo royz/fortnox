@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.6.0
+
+### Minor Changes
+
+- Three new type-only sub-path exports have been added: `./custom-types`, `./official-schemas`, and `./patched-schemas`, allowing consumers to import schema and custom types directly without going through the main entry point.
+
 ## 2.5.1
 
 ### Patch Changes
