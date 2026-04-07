@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.5.0
+
+### Minor Changes
+
+- Add global query params wher applicable - lastmodified, financialyear, financialyeardate, fromdate, todate, limit, offset, page, sortorder
+
 ## 2.4.0
 
 ### Minor Changes
