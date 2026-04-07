@@ -126,12 +126,40 @@ export async function extractPatchedRoutes() {
 				? { tsType: responseBodyTypeName }
 				: { tsType: "never" };
 
-			// Inject pagination params for list GET responses
+			// Inject pagination and global search params for list GET responses
 			if (method === "get" && responseBodyTypeName?.includes("List")) {
 				for (const param of ["limit", "offset", "page"] as const) {
 					if (!queryProperties[param]) {
 						queryProperties[param] = { type: "integer" };
 					}
+				}
+				queryProperties.lastmodified = {
+					type: "string",
+					description:
+						"Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).",
+				};
+				queryProperties.financialyear = {
+					type: "integer",
+					description: "Filter by financial year (numeric form).",
+				};
+				queryProperties.financialyeardate = {
+					type: "string",
+					description:
+						"Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.",
+				};
+				const isDateFilterPath =
+					/\/(invoices|orders|offers|vouchers|supplierinvoices)\b/.test(path);
+				if (isDateFilterPath) {
+					queryProperties.fromdate = {
+						type: "string",
+						description:
+							"Defines a selection based on a start date (`YYYY-MM-DD`).",
+					};
+					queryProperties.todate = {
+						type: "string",
+						description:
+							"Defines a selection based on an end date (`YYYY-MM-DD`).",
+					};
 				}
 			}
 

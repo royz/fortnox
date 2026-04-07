@@ -220,6 +220,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -328,6 +340,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -344,6 +368,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -362,7 +398,7 @@ export interface Routes {
 					 */
 					sortby?: "number";
 					/**
-					 * Lastmodified of accounts to list
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					/**
@@ -372,6 +408,14 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 					sortorder?: "ascending" | "descending";
 				};
 				body: never;
@@ -561,6 +605,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -657,12 +713,20 @@ export interface Routes {
 					 */
 					webshop?: string;
 					/**
-					 * filter by lastmodified
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 					sortorder?: "ascending" | "descending";
 				};
 				body: never;
@@ -741,6 +805,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -818,6 +894,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -871,12 +959,20 @@ export interface Routes {
 					 */
 					type?: string;
 					/**
-					 * Filter on last modified date
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -937,6 +1033,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -987,6 +1095,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -1149,6 +1269,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -1261,6 +1393,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -1289,6 +1433,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -1388,12 +1544,20 @@ export interface Routes {
 					 */
 					invoicesremaining?: number;
 					/**
-					 * Filter contracts by last modified date
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -1508,6 +1672,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -1566,6 +1742,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -1639,6 +1827,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -1828,12 +2028,20 @@ export interface Routes {
 					 */
 					glndelivery?: string;
 					/**
-					 * filter by last modified
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 					sortorder?: "ascending" | "descending";
 				};
 				body: never;
@@ -1949,6 +2157,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -2024,6 +2244,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -2071,6 +2303,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -2177,6 +2421,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -2256,12 +2512,20 @@ export interface Routes {
 					 */
 					invoicenumber?: number;
 					/**
-					 * filter by last modified
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 					sortorder?: "ascending" | "descending";
 				};
 				body: never;
@@ -2398,15 +2662,15 @@ export interface Routes {
 					 */
 					documentnumber?: string;
 					/**
-					 * Fromdate of invoices to list
+					 * Defines a selection based on a start date (`YYYY-MM-DD`).
 					 */
 					fromdate?: string;
 					/**
-					 * Todate of invoices to list
+					 * Defines a selection based on an end date (`YYYY-MM-DD`).
 					 */
 					todate?: string;
 					/**
-					 * Lastmodified of invoices to list
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					/**
@@ -2476,6 +2740,14 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 					sortorder?: "ascending" | "descending";
 				};
 				body: never;
@@ -2722,6 +2994,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -2792,6 +3076,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -2977,11 +3273,11 @@ export interface Routes {
 				params: never;
 				query?: {
 					/**
-					 * filter by to date
+					 * Defines a selection based on an end date (`YYYY-MM-DD`).
 					 */
 					todate?: string;
 					/**
-					 * filter by from date
+					 * Defines a selection based on a start date (`YYYY-MM-DD`).
 					 */
 					fromdate?: string;
 					/**
@@ -3039,12 +3335,20 @@ export interface Routes {
 					 */
 					yourreference?: string;
 					/**
-					 * filter by last modified
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 					sortorder?: "ascending" | "descending";
 				};
 				body: never;
@@ -3221,11 +3525,11 @@ export interface Routes {
 				params: never;
 				query?: {
 					/**
-					 * filter by to date
+					 * Defines a selection based on an end date (`YYYY-MM-DD`).
 					 */
 					todate?: string;
 					/**
-					 * filter by from date
+					 * Defines a selection based on a start date (`YYYY-MM-DD`).
 					 */
 					fromdate?: string;
 					/**
@@ -3294,7 +3598,7 @@ export interface Routes {
 					 */
 					yourreference?: string;
 					/**
-					 * filter by lastmodified
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					/**
@@ -3304,6 +3608,14 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 					sortorder?: "ascending" | "descending";
 				};
 				body: never;
@@ -3465,6 +3777,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -3513,6 +3837,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -3561,6 +3897,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -3592,6 +3940,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -3663,6 +4023,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -3799,6 +4171,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -3823,6 +4207,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -3904,6 +4300,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -4100,6 +4508,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -4236,6 +4656,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -4296,12 +4728,20 @@ export interface Routes {
 					 */
 					invoicenumber?: number;
 					/**
-					 * Filter payments by last modified date
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -4409,7 +4849,7 @@ export interface Routes {
 						| "pendingpayment"
 						| "authorizepending";
 					/**
-					 * Filter supplier invoices by last modified date
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					/**
@@ -4449,16 +4889,24 @@ export interface Routes {
 					 */
 					yourreference?: string;
 					/**
-					 * Filter supplier invoices by from date
+					 * Defines a selection based on a start date (`YYYY-MM-DD`).
 					 */
 					fromdate?: string;
 					/**
-					 * Filter supplier invoices by to date
+					 * Defines a selection based on an end date (`YYYY-MM-DD`).
 					 */
 					todate?: string;
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -4628,12 +5076,20 @@ export interface Routes {
 					 */
 					email?: string;
 					/**
-					 * filter on last modified date
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -4696,6 +5152,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -4769,6 +5237,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -4827,6 +5307,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -4900,6 +5392,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -5010,6 +5514,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -5070,15 +5586,15 @@ export interface Routes {
 					 */
 					costcenter?: string;
 					/**
-					 * filter on last modified date
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					/**
-					 * filter on from date
+					 * Defines a selection based on a start date (`YYYY-MM-DD`).
 					 */
 					fromdate?: string;
 					/**
-					 * filter on to date
+					 * Defines a selection based on an end date (`YYYY-MM-DD`).
 					 */
 					todate?: string;
 					/**
@@ -5086,12 +5602,16 @@ export interface Routes {
 					 */
 					voucherseries?: string;
 					/**
-					 * filter on financial year
+					 * Filter by financial year (numeric form).
 					 */
 					financialyear?: number;
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -5125,15 +5645,15 @@ export interface Routes {
 					 */
 					costcenter?: string;
 					/**
-					 * filter on last modified date
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					/**
-					 * filter on from date
+					 * Defines a selection based on a start date (`YYYY-MM-DD`).
 					 */
 					fromdate?: string;
 					/**
-					 * filter on to date
+					 * Defines a selection based on an end date (`YYYY-MM-DD`).
 					 */
 					todate?: string;
 					/**
@@ -5143,6 +5663,14 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -5166,24 +5694,28 @@ export interface Routes {
 					 */
 					costcenter?: string;
 					/**
-					 * filter on last modified date
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
 					 */
 					lastmodified?: string;
 					/**
-					 * filter on from date
+					 * Defines a selection based on a start date (`YYYY-MM-DD`).
 					 */
 					fromdate?: string;
 					/**
-					 * filter on to date
+					 * Defines a selection based on an end date (`YYYY-MM-DD`).
 					 */
 					todate?: string;
 					/**
-					 * filter on financial year
+					 * Filter by financial year (numeric form).
 					 */
 					financialyear?: number;
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -5226,6 +5758,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
@@ -5284,6 +5828,18 @@ export interface Routes {
 					limit?: number;
 					offset?: number;
 					page?: number;
+					/**
+					 * Retrieves all records modified after the provided timestamp (Format: `YYYY-MM-DD HH:mm`).
+					 */
+					lastmodified?: string;
+					/**
+					 * Filter by financial year (numeric form).
+					 */
+					financialyear?: number;
+					/**
+					 * Filter by financial year (`YYYY-MM-DD` form). Any date within a financial year range will work.
+					 */
+					financialyeardate?: string;
 				};
 				body: never;
 			};
