@@ -43,16 +43,48 @@
 	},
 	"exports": {
 		".": {
-			"import": "./dist/index.mjs",
-			"require": "./dist/index.cjs"
+			"import": {
+				"types": "./dist/index.d.mts",
+				"default": "./dist/index.mjs"
+			},
+			"require": {
+				"types": "./dist/index.d.cts",
+				"default": "./dist/index.cjs"
+			}
 		},
 		"./mini": {
-			"import": "./dist/mini.mjs",
-			"require": "./dist/mini.cjs"
+			"import": {
+				"types": "./dist/mini.d.mts",
+				"default": "./dist/mini.mjs"
+			},
+			"require": {
+				"types": "./dist/mini.d.cts",
+				"default": "./dist/mini.cjs"
+			}
 		},
-		"./types/custom": {
-			"import": "./dist/types/custom/index.mjs",
-			"require": "./dist/types/custom/index.cjs"
+		"./custom-types": {
+			"import": {
+				"types": "./dist/types/custom/index.d.mts"
+			},
+			"require": {
+				"types": "./dist/types/custom/index.d.cts"
+			}
+		},
+		"./official-schemas": {
+			"import": {
+				"types": "./dist/types/official-schemas.gen.d.mts"
+			},
+			"require": {
+				"types": "./dist/types/official-schemas.gen.d.cts"
+			}
+		},
+		"./patched-schemas": {
+			"import": {
+				"types": "./dist/types/patched-schemas.gen.d.mts"
+			},
+			"require": {
+				"types": "./dist/types/patched-schemas.gen.d.cts"
+			}
 		}
 	},
 	"main": "./dist/index.cjs",
