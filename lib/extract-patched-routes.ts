@@ -83,15 +83,6 @@ export async function extractPatchedRoutes() {
 				};
 			}
 
-			const hasQuery = queryParams.length > 0;
-			const querySchema: JSONSchema = hasQuery
-				? {
-						type: "object",
-						additionalProperties: false,
-						properties: queryProperties,
-					}
-				: { tsType: "never" };
-
 			const methodOverride = (flattenedTypeOverrides as RouteOverrides)[path]?.[
 				method
 			];
@@ -133,6 +124,32 @@ export async function extractPatchedRoutes() {
 			}
 			const responseBodySchema: JSONSchema = responseBodyTypeName
 				? { tsType: responseBodyTypeName }
+				: { tsType: "never" };
+
+			// Inject pagination params for list GET responses
+			if (method === "get" && responseBodyTypeName?.includes("List")) {
+				for (const param of ["limit", "offset", "page"] as const) {
+					if (!queryProperties[param]) {
+						queryProperties[param] = { type: "integer" };
+					}
+				}
+			}
+
+			// Inject sortorder when sortby is present
+			if (queryProperties.sortby) {
+				queryProperties.sortorder = {
+					type: "string",
+					enum: ["ascending", "descending"],
+				};
+			}
+
+			const hasQuery = Object.keys(queryProperties).length > 0;
+			const querySchema: JSONSchema = hasQuery
+				? {
+						type: "object",
+						additionalProperties: false,
+						properties: queryProperties,
+					}
 				: { tsType: "never" };
 
 			const required: string[] = ["params", "body"];

@@ -217,6 +217,9 @@ export interface Routes {
 					 * filter by date
 					 */
 					date?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -321,7 +324,11 @@ export interface Routes {
 						| "UTB"
 						| "VAB";
 				};
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -333,7 +340,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -358,6 +369,10 @@ export interface Routes {
 					 * Sru of accounts to list
 					 */
 					sru?: number;
+					limit?: number;
+					offset?: number;
+					page?: number;
+					sortorder?: "ascending" | "descending";
 				};
 				body: never;
 			};
@@ -543,6 +558,9 @@ export interface Routes {
 					 * Articlenumber of file connections to list
 					 */
 					articlenumber?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -642,6 +660,10 @@ export interface Routes {
 					 * filter by lastmodified
 					 */
 					lastmodified?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
+					sortorder?: "ascending" | "descending";
 				};
 				body: never;
 			};
@@ -716,6 +738,9 @@ export interface Routes {
 					 * identifies the article
 					 */
 					articlenumber?: number;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -790,6 +815,9 @@ export interface Routes {
 					 * Assetid of asset file connections to list
 					 */
 					assetid?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -846,6 +874,9 @@ export interface Routes {
 					 * Filter on last modified date
 					 */
 					lastmodified?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -902,7 +933,11 @@ export interface Routes {
 					 */
 					ToDate: string;
 				};
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -948,7 +983,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -1107,6 +1146,9 @@ export interface Routes {
 					 * filter by date
 					 */
 					date?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -1215,7 +1257,11 @@ export interface Routes {
 						| "RES"
 						| "TID";
 				};
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -1239,7 +1285,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -1341,6 +1391,9 @@ export interface Routes {
 					 * Filter contracts by last modified date
 					 */
 					lastmodified?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -1451,7 +1504,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -1505,7 +1562,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -1574,7 +1635,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -1766,6 +1831,10 @@ export interface Routes {
 					 * filter by last modified
 					 */
 					lastmodified?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
+					sortorder?: "ascending" | "descending";
 				};
 				body: never;
 			};
@@ -1876,7 +1945,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -1947,7 +2020,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -1991,6 +2068,9 @@ export interface Routes {
 					 * date to filter on, for example 2020-06-30
 					 */
 					Date?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -2093,7 +2173,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -2175,6 +2259,10 @@ export interface Routes {
 					 * filter by last modified
 					 */
 					lastmodified?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
+					sortorder?: "ascending" | "descending";
 				};
 				body: never;
 			};
@@ -2385,6 +2473,10 @@ export interface Routes {
 					 * Credit of invoices to list
 					 */
 					credit?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
+					sortorder?: "ascending" | "descending";
 				};
 				body: never;
 			};
@@ -2626,7 +2718,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -2692,7 +2788,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -2942,6 +3042,10 @@ export interface Routes {
 					 * filter by last modified
 					 */
 					lastmodified?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
+					sortorder?: "ascending" | "descending";
 				};
 				body: never;
 			};
@@ -3197,6 +3301,10 @@ export interface Routes {
 					 * filter by order type
 					 */
 					ordertype?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
+					sortorder?: "ascending" | "descending";
 				};
 				body: never;
 			};
@@ -3353,7 +3461,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -3397,7 +3509,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -3441,7 +3557,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -3468,7 +3588,11 @@ export interface Routes {
 					 */
 					Code: string;
 				};
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -3536,6 +3660,9 @@ export interface Routes {
 					 * Filter prices by from quantity
 					 */
 					fromquantity?: number;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -3669,6 +3796,9 @@ export interface Routes {
 					 * Filters the list of print templates by type
 					 */
 					type?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -3690,6 +3820,9 @@ export interface Routes {
 					 * filter on project leader
 					 */
 					projectleader?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -3768,6 +3901,9 @@ export interface Routes {
 					 * filter on employeeId
 					 */
 					employeeId?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -3960,7 +4096,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -4093,6 +4233,9 @@ export interface Routes {
 					 * Filter file connections by supplier invoice number
 					 */
 					supplierinvoicenumber?: number;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -4156,6 +4299,9 @@ export interface Routes {
 					 * Filter payments by last modified date
 					 */
 					lastmodified?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -4310,6 +4456,9 @@ export interface Routes {
 					 * Filter supplier invoices by to date
 					 */
 					todate?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -4482,6 +4631,9 @@ export interface Routes {
 					 * filter on last modified date
 					 */
 					lastmodified?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -4541,6 +4693,9 @@ export interface Routes {
 					 * possibility to filter tax reductions
 					 */
 					filter?: "invoices" | "orders" | "offers";
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -4610,7 +4765,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -4664,7 +4823,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -4733,7 +4896,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -4840,6 +5007,9 @@ export interface Routes {
 					 * Voucherseries of voucher file connections to list
 					 */
 					voucherseries?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -4919,6 +5089,9 @@ export interface Routes {
 					 * filter on financial year
 					 */
 					financialyear?: number;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -4967,6 +5140,9 @@ export interface Routes {
 					 * filter on voucher series
 					 */
 					voucherseries?: string;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -5005,6 +5181,9 @@ export interface Routes {
 					 * filter on financial year
 					 */
 					financialyear?: number;
+					limit?: number;
+					offset?: number;
+					page?: number;
 				};
 				body: never;
 			};
@@ -5043,7 +5222,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
@@ -5097,7 +5280,11 @@ export interface Routes {
 		get: {
 			request: {
 				params: never;
-				query: never;
+				query?: {
+					limit?: number;
+					offset?: number;
+					page?: number;
+				};
 				body: never;
 			};
 			response: {
