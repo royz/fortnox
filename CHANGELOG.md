@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.7.0
+
+### Minor Changes
+
+- Add custom type overrirdes for Invoice, Invoicepayment, Voucher, Taxreduction, Article
+
 ## 2.6.1
 
 ### Patch Changes
