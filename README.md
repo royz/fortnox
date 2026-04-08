@@ -228,6 +228,69 @@ const { data, error } = await fortnox.path("/3/invoices").get();
 
 ---
 
+## File downloads and uploads
+
+### Binary responses (Archive & Inbox)
+
+Some routes — particularly under the **Archive** and **Inbox** sections of the Fortnox API — can return either a JSON response containing folder/file metadata, or the raw binary content of a file, depending on the resource requested. These endpoints are typed to return a **union** of both possibilities.
+
+Use the `isBinaryResponse()` type guard, importable from `@unifetch/fortnox/utils`, to discriminate between the two at runtime:
+
+```ts
+import { isBinaryResponse } from "@unifetch/fortnox/utils";
+
+const { data, error } = await fortnox.path("/3/archive/{id}").get({
+  params: { id: "abc123" },
+});
+
+if (error) throw error;
+
+if (isBinaryResponse(data)) {
+  // data is { file: ArrayBuffer; filename: string; mimetype: string }
+  console.log(data.filename, data.mimetype);
+  // e.g. write data.file to disk or return it as a download response
+} else {
+  // data is the JSON folder/file metadata object
+  console.log(data.Folder);
+}
+```
+
+When the Fortnox API returns a binary response, the library reads the raw response body into an `ArrayBuffer` and wraps it in the following shape:
+
+```ts
+type BinaryResponse = {
+  file: ArrayBuffer;
+  filename: string;  // derived from the Content-Disposition header
+  mimetype: string;  // derived from the Content-Type header
+};
+```
+
+### File uploads
+
+Routes that accept a file upload (e.g. uploading a document to the Archive or Inbox) expect the following shape as the request body:
+
+```ts
+{
+  file: Buffer<ArrayBuffer>;
+  filename: string;
+}
+```
+
+The library handles the multipart encoding internally — it constructs a `FormData` request body automatically. You do not need to set any headers or build the form yourself:
+
+```ts
+import { readFile } from "node:fs/promises";
+
+const { data, error } = await fortnox.archive.upload({
+  body: {
+    file: await readFile("./invoice.pdf"),
+    filename: "invoice.pdf",
+  },
+});
+```
+
+---
+
 ## Error handling
 
 The error object has the following shape:
