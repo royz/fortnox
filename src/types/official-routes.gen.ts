@@ -2564,7 +2564,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: ArrayBuffer;
 			};
 		};
 	};
@@ -2581,7 +2581,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: ArrayBuffer;
 			};
 		};
 	};
@@ -2598,7 +2598,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: ArrayBuffer;
 			};
 		};
 	};
@@ -3087,7 +3087,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: ArrayBuffer;
 			};
 		};
 	};
@@ -3104,7 +3104,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: ArrayBuffer;
 			};
 		};
 	};
@@ -3325,7 +3325,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: ArrayBuffer;
 			};
 		};
 	};
@@ -3342,7 +3342,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: ArrayBuffer;
 			};
 		};
 	};

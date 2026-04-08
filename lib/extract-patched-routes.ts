@@ -53,6 +53,7 @@ export async function extractPatchedRoutes() {
 	const pathProperties: Record<string, JSONSchema> = {};
 	const bodyTypeNames = new Set<string>();
 	const customTypeNames = new Set<string>();
+	let hasBinaryResponse = false;
 
 	for (const [path, pathItem] of Object.entries(paths)) {
 		const methodProperties: Record<string, JSONSchema> = {};
@@ -133,9 +134,13 @@ export async function extractPatchedRoutes() {
 				: { tsType: "never" };
 
 			// Response body → response.body
-			const responseSchema200 = (
-				operation.responses?.["200"] as OpenAPIV3.ResponseObject | undefined
-			)?.content?.["application/json"]?.schema;
+			const response200 = operation.responses?.["200"] as
+				| OpenAPIV3.ResponseObject
+				| undefined;
+			const responseSchema200 =
+				response200?.content?.["application/json"]?.schema;
+			const isPdfResponse =
+				!responseSchema200 && !!response200?.content?.["application/pdf"];
 			let responseBodyTypeName: string | null =
 				methodOverride?.response ?? null;
 			if (responseBodyTypeName) {
@@ -146,7 +151,10 @@ export async function extractPatchedRoutes() {
 			}
 			const responseBodySchema: JSONSchema = responseBodyTypeName
 				? { tsType: responseBodyTypeName }
-				: { tsType: "never" };
+				: isPdfResponse
+					? { tsType: "BinaryResponse" }
+					: { tsType: "never" };
+			if (isPdfResponse) hasBinaryResponse = true;
 
 			// Inject pagination and global search params for list GET responses
 			if (method === "get" && responseBodyTypeName?.includes("List")) {
@@ -277,6 +285,9 @@ export async function extractPatchedRoutes() {
 
 	const importStatement =
 		[
+			hasBinaryResponse
+				? `import type { BinaryResponse } from "../request";`
+				: "",
 			customTypeNames.size > 0
 				? `import type { ${[...customTypeNames].sort().join(", ")} } from "./custom";`
 				: "",
@@ -286,7 +297,9 @@ export async function extractPatchedRoutes() {
 		]
 			.filter(Boolean)
 			.join("\n") +
-		(customTypeNames.size > 0 || bodyTypeNames.size > 0 ? "\n\n" : "");
+		(hasBinaryResponse || customTypeNames.size > 0 || bodyTypeNames.size > 0
+			? "\n\n"
+			: "");
 
 	await writeFile(OUT_FILE, importStatement + routesString);
 }

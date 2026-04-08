@@ -1,3 +1,4 @@
+import type { BinaryResponse } from "../request";
 import type {
 	ArticleListResponse,
 	ArticleResponse,
@@ -2932,7 +2933,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: BinaryResponse;
 			};
 		};
 	};
@@ -2949,7 +2950,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: BinaryResponse;
 			};
 		};
 	};
@@ -2966,7 +2967,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: BinaryResponse;
 			};
 		};
 	};
@@ -3499,7 +3500,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: BinaryResponse;
 			};
 		};
 	};
@@ -3516,7 +3517,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: BinaryResponse;
 			};
 		};
 	};
@@ -3749,7 +3750,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: BinaryResponse;
 			};
 		};
 	};
@@ -3766,7 +3767,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: BinaryResponse;
 			};
 		};
 	};

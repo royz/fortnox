@@ -106,9 +106,13 @@ export async function extractOfficialRoutes() {
 				: { tsType: "never" };
 
 			// Response body → response.body
-			const responseSchema200 = (
-				operation.responses?.["200"] as OpenAPIV3.ResponseObject | undefined
-			)?.content?.["application/json"]?.schema;
+			const response200 = operation.responses?.["200"] as
+				| OpenAPIV3.ResponseObject
+				| undefined;
+			const responseSchema200 =
+				response200?.content?.["application/json"]?.schema;
+			const isPdfResponse =
+				!responseSchema200 && !!response200?.content?.["application/pdf"];
 			let responseBodyTypeName: string | null = null;
 			if (responseSchema200 && isReferenceObject(responseSchema200)) {
 				responseBodyTypeName = generateTypeNameFromRef(responseSchema200.$ref);
@@ -116,7 +120,9 @@ export async function extractOfficialRoutes() {
 			}
 			const responseBodySchema: JSONSchema = responseBodyTypeName
 				? { tsType: responseBodyTypeName }
-				: { tsType: "never" };
+				: isPdfResponse
+					? { tsType: "ArrayBuffer" }
+					: { tsType: "never" };
 
 			const required: string[] = ["params", "body"];
 			if (!hasQuery) required.push("query");

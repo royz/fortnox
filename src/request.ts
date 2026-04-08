@@ -27,6 +27,12 @@ export type ErrorResponse = {
 	};
 };
 
+export type BinaryResponse = {
+	file: ArrayBuffer;
+	filename?: string;
+	mimetype?: string;
+};
+
 export type InitFortnoxOptions =
 	| { accessToken: string; proxy?: never }
 	| {
@@ -77,11 +83,22 @@ export async function request(
 			headers,
 		});
 
-		const responseData = await response.json();
+		const contentTransferEncoding =
+			response.headers.get("content-transfer-encoding") ?? "";
 
 		if (response.status < 300) {
+			if (contentTransferEncoding === "binary") {
+				const file = await response.arrayBuffer();
+				const mimetype = response.headers.get("content-type");
+				const disposition = response.headers.get("content-disposition") ?? "";
+				const filenameMatch = disposition.match(/filename=([^;]+)/);
+				const filename = filenameMatch?.at(1)?.trim();
+				return { error: null, data: { file, filename, mimetype } };
+			}
+			const responseData = await response.json();
 			return { error: null, data: responseData };
 		} else {
+			const responseData = await response.json();
 			return {
 				error: {
 					ErrorSource: "fortnox" as const,
