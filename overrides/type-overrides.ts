@@ -97,6 +97,12 @@ typeOverrides.set(["/3/inbox"], {
 typeOverrides.set(["/3/inbox/{Id}"], {
 	get: { response: "InboxFolderResponse | BinaryResponse" },
 });
+typeOverrides.set(["/3/inbox"], {
+	post: {
+		response: "InboxFileJsonResponse",
+		request: { body: "FileUploadBody" },
+	},
+});
 
 export const flattenedTypeOverrides: {
 	[key in Route]?: {

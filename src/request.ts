@@ -71,9 +71,28 @@ export async function request(
 
 		const url = `${baseUrl}${path}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`;
 
+		let fetchBody: BodyInit | null = null;
+		if (
+			reqOptions.body !== null &&
+			typeof reqOptions.body === "object" &&
+			"file" in reqOptions.body &&
+			(reqOptions.body as { file: unknown }).file instanceof Buffer
+		) {
+			const { file, filename } = reqOptions.body as {
+				file: Buffer<ArrayBuffer>;
+				filename: string;
+			};
+			const formData = new FormData();
+			formData.set("file", new Blob([file]), filename);
+			fetchBody = formData;
+		} else if (reqOptions.body) {
+			fetchBody = JSON.stringify(reqOptions.body);
+			headers["Content-Type"] = "application/json";
+		}
+
 		const response = await fetch(url, {
 			method: reqOptions.method.toUpperCase(),
-			body: reqOptions.body ? JSON.stringify(reqOptions.body) : null,
+			body: fetchBody,
 			headers,
 		});
 

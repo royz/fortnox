@@ -17,3 +17,9 @@ export type BinaryResponse = {
 	filename?: string;
 	mimetype?: string;
 };
+
+export type FileUploadBody = {
+	file: Buffer<ArrayBuffer>;
+	/** Name of the file including extension (eg. `invoice.pdf`)*/
+	filename: string;
+};

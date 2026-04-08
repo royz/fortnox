@@ -10,13 +10,13 @@ type FolderId =
 	| "inbox_of"
 	| (string & {});
 
-type FolderListItem = {
+export type FolderListItem = {
 	"@url": string;
 	Id: FolderId;
 	Name: string;
 };
 
-type FileListItem = {
+export type FileListItem = {
 	"@url": string;
 	Comments: string | null;
 	/** Id to access the file using `"/3/inbox/<Id>"`*/
@@ -40,4 +40,8 @@ export type InboxFolderResponse = {
 		Files: FileListItem[];
 		Folders: FolderListItem[];
 	};
+};
+
+export type InboxFileJsonResponse = {
+	File: FileListItem;
 };

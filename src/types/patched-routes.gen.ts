@@ -2,6 +2,8 @@ import type {
 	ArticleListResponse,
 	ArticleResponse,
 	BinaryResponse,
+	FileUploadBody,
+	InboxFileJsonResponse,
 	InboxFolderResponse,
 	InvoiceListResponse,
 	InvoicePaymentListResponse,
@@ -2376,10 +2378,10 @@ export interface Routes {
 					 */
 					path?: string;
 				};
-				body: never;
+				body: FileUploadBody;
 			};
 			response: {
-				body: never;
+				body: InboxFileJsonResponse;
 			};
 		};
 	};
