@@ -8,7 +8,16 @@ type CustomType = string;
 
 const typeOverrides = new Map<
 	Route[],
-	{ [key in Method]?: { request?: CustomType; response?: CustomType } }
+	{
+		[key in Method]?: {
+			request?: {
+				query?: CustomType;
+				params?: CustomType;
+				body?: CustomType;
+			};
+			response?: CustomType;
+		};
+	}
 >();
 
 // Invoices
@@ -81,10 +90,22 @@ typeOverrides.set(["/3/taxreductions/{Id}"], {
 	put: { response: "TaxReductionResponse" },
 });
 
+// Inbox
+typeOverrides.set(["/3/inbox"], {
+	get: { response: "InboxFolderResponse" },
+});
+typeOverrides.set(["/3/inbox/{Id}"], {
+	get: { response: "InboxFileOrFolderResponse" },
+});
+
 export const flattenedTypeOverrides: {
 	[key in Route]?: {
 		[key in Method]?: {
-			request?: CustomType;
+			request?: {
+				query?: CustomType;
+				params?: CustomType;
+				body?: CustomType;
+			};
 			response?: CustomType;
 		};
 	};
@@ -99,6 +120,15 @@ export const flattenedTypeOverrides: {
 		},
 		{} as Record<
 			string,
-			{ [key in Method]?: { request?: CustomType; response?: CustomType } }
+			{
+				[key in Method]?: {
+					request?: {
+						query?: CustomType;
+						params?: CustomType;
+						body?: CustomType;
+					};
+					response?: CustomType;
+				};
+			}
 		>,
 	);

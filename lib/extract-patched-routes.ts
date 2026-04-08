@@ -13,7 +13,14 @@ import {
 
 type RouteOverrides = Record<
 	string,
-	| Record<string, { request?: string; response?: string } | undefined>
+	| Record<
+			string,
+			| {
+					request?: { query?: string; params?: string; body?: string };
+					response?: string;
+			  }
+			| undefined
+	  >
 	| undefined
 >;
 
@@ -114,7 +121,7 @@ export async function extractPatchedRoutes() {
 			const requestBody = operation.requestBody as
 				| OpenAPIV3.RequestBodyObject
 				| undefined;
-			let bodyTypeName: string | null = methodOverride?.request ?? null;
+			let bodyTypeName: string | null = methodOverride?.request?.body ?? null;
 			if (bodyTypeName) {
 				customTypeNames.add(bodyTypeName);
 			} else if (requestBody) {
@@ -202,22 +209,32 @@ export async function extractPatchedRoutes() {
 			}
 
 			const hasQuery = Object.keys(queryProperties).length > 0;
-			const querySchema: JSONSchema = hasQuery
-				? {
-						type: "object",
-						additionalProperties: false,
-						properties: queryProperties,
-					}
-				: { tsType: "never" };
+			const queryOverride = methodOverride?.request?.query ?? null;
+			if (queryOverride) customTypeNames.add(queryOverride);
+			const querySchema: JSONSchema = queryOverride
+				? { tsType: queryOverride }
+				: hasQuery
+					? {
+							type: "object",
+							additionalProperties: false,
+							properties: queryProperties,
+						}
+					: { tsType: "never" };
+
+			const paramsOverride = methodOverride?.request?.params ?? null;
+			if (paramsOverride) customTypeNames.add(paramsOverride);
+			const finalParamsSchema: JSONSchema = paramsOverride
+				? { tsType: paramsOverride }
+				: paramsSchema;
 
 			const required: string[] = ["params", "body"];
-			if (!hasQuery) required.push("query");
+			if (!hasQuery && !queryOverride) required.push("query");
 
 			const requestSchema: JSONSchema = {
 				type: "object",
 				additionalProperties: false,
 				properties: {
-					params: paramsSchema,
+					params: finalParamsSchema,
 					query: querySchema,
 					body: bodySchema,
 				},
