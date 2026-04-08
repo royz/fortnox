@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.6.1
+
+### Patch Changes
+
+- Export MetaInformation type
+
 ## 2.6.0
 
 ### Minor Changes
