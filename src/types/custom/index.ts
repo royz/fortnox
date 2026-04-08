@@ -10,3 +10,9 @@ export type MetaInformation = {
 	"@TotalPages": number;
 	"@TotalResources": number;
 };
+
+export type BinaryResponse = {
+	file: ArrayBuffer;
+	filename?: string;
+	mimetype?: string;
+};

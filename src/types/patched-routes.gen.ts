@@ -1,7 +1,7 @@
-import type { BinaryResponse } from "../request";
 import type {
 	ArticleListResponse,
 	ArticleResponse,
+	BinaryResponse,
 	InvoiceListResponse,
 	InvoicePaymentListResponse,
 	InvoicePaymentResponse,

@@ -27,12 +27,6 @@ export type ErrorResponse = {
 	};
 };
 
-export type BinaryResponse = {
-	file: ArrayBuffer;
-	filename?: string;
-	mimetype?: string;
-};
-
 export type InitFortnoxOptions =
 	| { accessToken: string; proxy?: never }
 	| {

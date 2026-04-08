@@ -285,11 +285,8 @@ export async function extractPatchedRoutes() {
 
 	const importStatement =
 		[
-			hasBinaryResponse
-				? `import type { BinaryResponse } from "../request";`
-				: "",
-			customTypeNames.size > 0
-				? `import type { ${[...customTypeNames].sort().join(", ")} } from "./custom";`
+			customTypeNames.size > 0 || hasBinaryResponse
+				? `import type { ${[...customTypeNames, "BinaryResponse"].sort().join(", ")} } from "./custom";`
 				: "",
 			bodyTypeNames.size > 0
 				? `import type { ${[...bodyTypeNames].sort().join(", ")} } from "./patched-schemas.gen";`
