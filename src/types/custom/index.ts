@@ -1,4 +1,5 @@
 export type * from "./article.types";
+export type * from "./inbox.types";
 export type * from "./invoice.types";
 export type * from "./invoicepayment.types";
 export type * from "./taxreduction.types";
