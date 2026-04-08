@@ -4,6 +4,18 @@ TypeScript SDK for the [Fortnox API](https://api.fortnox.se/apidocs), fully type
 
 Zero dependencies. Fully compatible with edge runtimes such as [Cloudflare Workers](https://workers.cloudflare.com/) and Vercel Edge Functions.
 
+---
+
+> ### 💼 Need a Custom Fortnox Integration?
+>
+> Whether you're building a bespoke ERP workflow, automating invoicing, or connecting Fortnox to your own platform — I can help.
+>
+> **Get in touch:** [rajorshi.me@gmail.com](mailto:rajorshi.me@gmail.com)
+>
+> _Professional consulting · Fast turnaround · Production-ready code_
+
+---
+
 ## Installation
 
 ```bash
