@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.9.2
+
+### Patch Changes
+
+- Add readme regarding file upload and downloads.
+
 ## 2.9.1
 
 ### Patch Changes
