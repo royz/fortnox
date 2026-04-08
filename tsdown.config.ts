@@ -4,6 +4,7 @@ export default defineConfig({
 	entry: [
 		"./src/index.ts",
 		"./src/mini.ts",
+		"./src/exported-utils.ts",
 		"./src/types/custom/index.ts",
 		"./src/types/official-schemas.gen.ts",
 		"./src/types/patched-schemas.gen.ts",

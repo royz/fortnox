@@ -62,6 +62,16 @@
 				"default": "./dist/mini.cjs"
 			}
 		},
+		"./utils": {
+			"import": {
+				"types": "./dist/exported-utils.d.mts",
+				"default": "./dist/exported-utils.mjs"
+			},
+			"require": {
+				"types": "./dist/exported-utils.d.cts",
+				"default": "./dist/exported-utils.cjs"
+			}
+		},
 		"./custom-types": {
 			"import": {
 				"types": "./dist/types/custom/index.d.mts"
