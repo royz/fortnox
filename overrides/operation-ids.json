@@ -24,9 +24,9 @@
 		"delete": "delete"
 	},
 	"/3/archive": {
-		"get": "getByPath",
+		"get": "get",
 		"post": "upload",
-		"delete": "deleteByPath"
+		"delete": "delete"
 	},
 	"/3/archive/{id}": {
 		"get": "getById",
