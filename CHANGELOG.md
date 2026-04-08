@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.8.0
+
+### Minor Changes
+
+- Add custom type overrides for "inbox". Expose "/utils" subpath with helpful utility functions.
+
 ## 2.7.0
 
 ### Minor Changes
