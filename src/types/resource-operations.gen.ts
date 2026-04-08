@@ -42,9 +42,9 @@ export const RESOURCE_OPERATIONS = {
 		},
 	},
 	archive: {
-		getByPath: { path: "/3/archive" as const, method: "get" as const },
+		get: { path: "/3/archive" as const, method: "get" as const },
 		upload: { path: "/3/archive" as const, method: "post" as const },
-		deleteByPath: { path: "/3/archive" as const, method: "delete" as const },
+		delete: { path: "/3/archive" as const, method: "delete" as const },
 		getById: { path: "/3/archive/{id}" as const, method: "get" as const },
 		deleteById: { path: "/3/archive/{id}" as const, method: "delete" as const },
 	},

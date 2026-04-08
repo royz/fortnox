@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.9.0
+
+### Minor Changes
+
+- Renamed methods under fortnox.archive.\* . Add custom type overrides for Archive and Inbox
+
 ## 2.8.0
 
 ### Minor Changes
