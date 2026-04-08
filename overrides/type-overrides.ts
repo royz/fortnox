@@ -94,10 +94,13 @@ typeOverrides.set(["/3/taxreductions/{Id}"], {
 typeOverrides.set(["/3/inbox"], {
 	get: { response: "InboxFolderResponse" },
 });
-typeOverrides.set(["/3/inbox/{Id}"], {
+typeOverrides.set(["/3/inbox/{Id}", "/3/archive"], {
 	get: { response: "InboxFolderResponse | BinaryResponse" },
 });
-typeOverrides.set(["/3/inbox"], {
+typeOverrides.set(["/3/archive/{id}"], {
+	get: { response: "BinaryResponse" },
+});
+typeOverrides.set(["/3/inbox", "/3/archive"], {
 	post: {
 		response: "InboxFileJsonResponse",
 		request: { body: "FileUploadBody" },

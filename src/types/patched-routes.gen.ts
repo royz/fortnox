@@ -86,7 +86,6 @@ import type {
 	FortnoxDocumentTagSingleItemWrap,
 	FortnoxDocumentTagSinglePayloadItemWrap,
 	FortnoxEUVatLimitRegulationResponseWrap,
-	FortnoxFileStorageFolderSingleItemWrap,
 	FortnoxItemUrlConnectionListItemWrap,
 	FortnoxItemUrlConnectionSingleItemWrap,
 	FortnoxItemUrlConnectionSinglePayloadItemWrap,
@@ -513,7 +512,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxFileStorageFolderSingleItemWrap;
+				body: InboxFolderResponse | BinaryResponse;
 			};
 		};
 		post: {
@@ -529,10 +528,10 @@ export interface Routes {
 					 */
 					path?: string;
 				};
-				body: never;
+				body: FileUploadBody;
 			};
 			response: {
-				body: never;
+				body: InboxFileJsonResponse;
 			};
 		};
 		delete: {
@@ -573,7 +572,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: BinaryResponse;
 			};
 		};
 		delete: {
