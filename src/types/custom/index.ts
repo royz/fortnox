@@ -14,8 +14,8 @@ export type MetaInformation = {
 
 export type BinaryResponse = {
 	file: ArrayBuffer;
-	filename?: string;
-	mimetype?: string;
+	filename: string;
+	mimetype: string;
 };
 
 export type FileUploadBody = {

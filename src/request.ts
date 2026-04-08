@@ -102,10 +102,10 @@ export async function request(
 		if (response.status < 300) {
 			if (contentTransferEncoding === "binary") {
 				const file = await response.arrayBuffer();
-				const mimetype = response.headers.get("content-type");
+				const mimetype = response.headers.get("content-type") || "";
 				const disposition = response.headers.get("content-disposition") ?? "";
 				const filenameMatch = disposition.match(/filename=([^;]+)/);
-				const filename = filenameMatch?.at(1)?.trim();
+				const filename = filenameMatch?.at(1)?.trim() || "unknown-filename";
 				return { error: null, data: { file, filename, mimetype } };
 			}
 			const responseData = await response.json();
