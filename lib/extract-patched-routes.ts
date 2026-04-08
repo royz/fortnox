@@ -26,6 +26,14 @@ type RouteOverrides = Record<
 
 const OUT_FILE = path.join(TYPES_DIR, "patched-routes.gen.ts");
 
+/** Extract individual type identifiers from a potentially union type string, e.g. "Foo | Bar" → ["Foo", "Bar"] */
+function parseTypeNames(typeStr: string): string[] {
+	return typeStr
+		.split("|")
+		.map((s) => s.trim())
+		.filter(Boolean);
+}
+
 async function getCustomExportedTypeNames(): Promise<string[]> {
 	const customDir = path.join(TYPES_DIR, "custom");
 	const indexSource = await readFile(path.join(customDir, "index.ts"), "utf-8");
@@ -59,7 +67,7 @@ export async function extractPatchedRoutes() {
 
 	const pathProperties: Record<string, JSONSchema> = {};
 	const bodyTypeNames = new Set<string>();
-	const customTypeNames = new Set<string>();
+	const customTypeNames = new Set<string>(["BinaryResponse"]);
 	let hasBinaryResponse = false;
 
 	for (const [path, pathItem] of Object.entries(paths)) {
@@ -123,7 +131,7 @@ export async function extractPatchedRoutes() {
 				| undefined;
 			let bodyTypeName: string | null = methodOverride?.request?.body ?? null;
 			if (bodyTypeName) {
-				customTypeNames.add(bodyTypeName);
+				for (const t of parseTypeNames(bodyTypeName)) customTypeNames.add(t);
 			} else if (requestBody) {
 				const content = requestBody.content;
 				const mediaType =
@@ -151,7 +159,8 @@ export async function extractPatchedRoutes() {
 			let responseBodyTypeName: string | null =
 				methodOverride?.response ?? null;
 			if (responseBodyTypeName) {
-				customTypeNames.add(responseBodyTypeName);
+				for (const t of parseTypeNames(responseBodyTypeName))
+					customTypeNames.add(t);
 			} else if (responseSchema200 && isReferenceObject(responseSchema200)) {
 				responseBodyTypeName = generateTypeNameFromRef(responseSchema200.$ref);
 				bodyTypeNames.add(responseBodyTypeName);
@@ -210,7 +219,8 @@ export async function extractPatchedRoutes() {
 
 			const hasQuery = Object.keys(queryProperties).length > 0;
 			const queryOverride = methodOverride?.request?.query ?? null;
-			if (queryOverride) customTypeNames.add(queryOverride);
+			if (queryOverride)
+				for (const t of parseTypeNames(queryOverride)) customTypeNames.add(t);
 			const querySchema: JSONSchema = queryOverride
 				? { tsType: queryOverride }
 				: hasQuery
@@ -222,7 +232,8 @@ export async function extractPatchedRoutes() {
 					: { tsType: "never" };
 
 			const paramsOverride = methodOverride?.request?.params ?? null;
-			if (paramsOverride) customTypeNames.add(paramsOverride);
+			if (paramsOverride)
+				for (const t of parseTypeNames(paramsOverride)) customTypeNames.add(t);
 			const finalParamsSchema: JSONSchema = paramsOverride
 				? { tsType: paramsOverride }
 				: paramsSchema;
@@ -303,7 +314,7 @@ export async function extractPatchedRoutes() {
 	const importStatement =
 		[
 			customTypeNames.size > 0 || hasBinaryResponse
-				? `import type { ${[...customTypeNames, "BinaryResponse"].sort().join(", ")} } from "./custom";`
+				? `import type { ${[...customTypeNames].sort().join(", ")} } from "./custom";`
 				: "",
 			bodyTypeNames.size > 0
 				? `import type { ${[...bodyTypeNames].sort().join(", ")} } from "./patched-schemas.gen";`

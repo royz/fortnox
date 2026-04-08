@@ -1,5 +1,3 @@
-import type { BinaryResponse } from ".";
-
 type FolderId =
 	| "inbox_a"
 	| "inbox_d"
@@ -43,5 +41,3 @@ export type InboxFolderResponse = {
 		Folders: FolderListItem[];
 	};
 };
-
-export type InboxFileOrFolderResponse = InboxFolderResponse | BinaryResponse;

@@ -2,6 +2,7 @@ import type {
 	ArticleListResponse,
 	ArticleResponse,
 	BinaryResponse,
+	InboxFolderResponse,
 	InvoiceListResponse,
 	InvoicePaymentListResponse,
 	InvoicePaymentResponse,
@@ -72,7 +73,6 @@ import type {
 	FortnoxDaAssetFileConnectionListItemWrap,
 	FortnoxDaEmailSendersWrap,
 	FortnoxDaEmailSenderTrustedWrap,
-	FortnoxDaInboxFolderResponseWrap,
 	FortnoxDaSupplierInvoiceFileConnectionListItemWrap,
 	FortnoxDaSupplierInvoiceFileConnectionSingleItemWrap,
 	FortnoxDaSupplierInvoiceFileConnectionSinglePayloadItemWrap,
@@ -2360,7 +2360,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxDaInboxFolderResponseWrap;
+				body: InboxFolderResponse;
 			};
 		};
 		post: {
@@ -2396,7 +2396,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: InboxFolderResponse | BinaryResponse;
 			};
 		};
 		delete: {

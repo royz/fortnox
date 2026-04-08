@@ -95,7 +95,7 @@ typeOverrides.set(["/3/inbox"], {
 	get: { response: "InboxFolderResponse" },
 });
 typeOverrides.set(["/3/inbox/{Id}"], {
-	get: { response: "InboxFileOrFolderResponse" },
+	get: { response: "InboxFolderResponse | BinaryResponse" },
 });
 
 export const flattenedTypeOverrides: {
