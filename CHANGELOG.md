@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.9.3
+
+### Patch Changes
+
+- Cleanup instructions
+
 ## 2.9.2
 
 ### Patch Changes
