@@ -54,14 +54,14 @@ export type InvoiceRow = {
 	Project: string;
 	RowId: number;
 	StockPointCode: string | null;
-	Total: number;
+	Total: number | null;
 	TotalExcludingVAT: number;
 	Unit: string;
 	VAT: number;
 	VATCode: string;
 };
 
-type EDIInformation = {
+export type EDIInformation = {
 	EDIGlobalLocationNumber: string;
 	EDIGlobalLocationNumberDelivery: string;
 	EDIInvoiceExtra1: string;
@@ -71,7 +71,7 @@ type EDIInformation = {
 	EDIYourElectronicReference: string;
 };
 
-type EmailInformation = {
+export type EmailInformation = {
 	EmailAddressBCC: string;
 	EmailAddressCC: string;
 	EmailAddressFrom: string | null;
@@ -175,35 +175,34 @@ export type Invoice = {
 
 export type InvoiceResponse = { Invoice: Invoice };
 
-type InvoiceListItem = Pick<
-	Invoice,
-	| "@url"
-	| "Balance"
-	| "Booked"
-	| "Cancelled"
-	| "CostCenter"
-	| "Currency"
-	| "CurrencyRate"
-	| "CurrencyUnit"
-	| "CustomerName"
-	| "CustomerNumber"
-	| "DocumentNumber"
-	| "DueDate"
-	| "ExternalInvoiceReference1"
-	| "ExternalInvoiceReference2"
-	| "InvoiceDate"
-	| "InvoiceType"
-	| "NoxFinans"
-	| "OCR"
-	| "VoucherNumber"
-	| "VoucherSeries"
-	| "VoucherYear"
-	| "WayOfDelivery"
-	| "TermsOfPayment"
-	| "Project"
-	| "Sent"
-	| "Total"
-	| "FinalPayDate"
->;
+export type InvoiceListItem = {
+	"@url": string;
+	Balance: number;
+	Booked: boolean;
+	Cancelled: boolean;
+	CostCenter: string;
+	Currency: string;
+	CurrencyRate: string;
+	CurrencyUnit: number;
+	CustomerName: string;
+	CustomerNumber: string;
+	DocumentNumber: string;
+	DueDate: string;
+	ExternalInvoiceReference1: string;
+	ExternalInvoiceReference2: string;
+	FinalPayDate: string | null;
+	InvoiceDate: string;
+	InvoiceType: InvoiceType;
+	NoxFinans: boolean;
+	OCR: string;
+	Project: string;
+	Sent: boolean;
+	TermsOfPayment: string;
+	Total: number;
+	VoucherNumber: number | null;
+	VoucherSeries: string | null;
+	VoucherYear: number | null;
+	WayOfDelivery: string;
+};
 
 export type InvoiceListResponse = FortnoxListWrap<"Invoices", InvoiceListItem>;
