@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.9.1
+
+### Patch Changes
+
+- Add contact info in readme.
+
 ## 2.9.0
 
 ### Minor Changes
