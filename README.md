@@ -1,6 +1,6 @@
 # @unifetch/fortnox
 
-TypeScript SDK for the [Fortnox API](https://api.fortnox.se/apidocs), fully typed from the official OpenAPI specification — with corrections applied where the spec has incorrect or overly permissive types.
+TypeScript SDK for the [Fortnox API](https://api.fortnox.se/apidocs), fully typed from the official OpenAPI specification - with corrections applied where the spec has incorrect or overly permissive types.
 
 Zero dependencies. Fully compatible with edge runtimes such as [Cloudflare Workers](https://workers.cloudflare.com/) and Vercel Edge Functions.
 
@@ -8,11 +8,10 @@ Zero dependencies. Fully compatible with edge runtimes such as [Cloudflare Worke
 
 > ### 💼 Need a Custom Fortnox Integration?
 >
-> Whether you're building a bespoke ERP workflow, automating invoicing, or connecting Fortnox to your own platform — I can help.
+> Whether you're building a bespoke ERP workflow, automating invoicing, or connecting Fortnox to your own platform - I can help.
 >
 > **Get in touch:** [rajorshi.me@gmail.com](mailto:rajorshi.me@gmail.com)
 >
-> _Professional consulting · Fast turnaround · Production-ready code_
 
 ---
 
@@ -30,7 +29,7 @@ pnpm add @unifetch/fortnox
 
 There are two clients to choose from.
 
-### `initFortnox` — full client
+### `initFortnox` - full client
 
 Includes both the resource-based API (`fortnox.invoices.getList()`) and the path-based API (`fortnox.path()`). This is the right choice for most server-side applications where bundle size is not a concern.
 
@@ -38,9 +37,9 @@ Includes both the resource-based API (`fortnox.invoices.getList()`) and the path
 import { initFortnox } from "@unifetch/fortnox";
 ```
 
-### `initFortnoxMini` — minimal client
+### `initFortnoxMini` - minimal client
 
-Includes **only** the path-based API (`fortnox.path()`). The entire resource-based layer — including the map of all routes and operation IDs — is absent from this client, which means a bundler can **tree-shake it away entirely**. Use this when bundle size is a hard constraint, such as in [Cloudflare Workers](https://workers.cloudflare.com/) or Vercel Edge Functions.
+Includes **only** the path-based API (`fortnox.path()`). The entire resource-based layer - including the map of all routes and operation IDs - is absent from this client, which means a bundler can **tree-shake it away entirely**. Use this when bundle size is a hard constraint, such as in [Cloudflare Workers](https://workers.cloudflare.com/) or Vercel Edge Functions.
 
 ```ts
 import { initFortnoxMini } from "@unifetch/fortnox/mini";
@@ -64,11 +63,11 @@ Both clients accept an optional `"official" | "patched"` generic that controls w
 
 | Variant | Description |
 |---|---|
-| `"patched"` *(default)* | Corrected types — fixes inaccuracies in Fortnox's official spec (e.g. response wrapper properties incorrectly marked as optional). Recommended for most projects. |
+| `"patched"` *(default)* | Corrected types - fixes inaccuracies in Fortnox's official spec (e.g. response wrapper properties incorrectly marked as optional). Recommended for most projects. |
 | `"official"` | Raw, unmodified types exactly as they appear in Fortnox's official OpenAPI specification. |
 
 ```ts
-// "patched" is the default — no generic needed
+// "patched" is the default - no generic needed
 const fortnox = initFortnox({ accessToken: "..." });
 
 // Explicitly patched
@@ -92,7 +91,7 @@ const fortnox = initFortnoxMini<"official">({ accessToken: "..." });
 
 Both clients support two authentication options.
 
-### Option 1 — Access token
+### Option 1 - Access token
 
 Use this if you manage your own OAuth flow and already have a Fortnox access token.
 
@@ -102,7 +101,7 @@ import { initFortnox } from "@unifetch/fortnox";
 const fortnox = initFortnox({ accessToken: "your-access-token" });
 ```
 
-### Option 2 — Proxy via unifetch.dev
+### Option 2 - Proxy via unifetch.dev
 
 [unifetch.dev](https://unifetch.dev) acts as a proxy layer that internally handles OAuth and token rotation, removing the complecity of managing credentials yourself.
 
@@ -140,7 +139,7 @@ const { data, error } = await fortnox.invoices.getList();
 if (error) {
   console.error(error.ErrorInformation.message);
 } else {
-  // data is non-null here — TypeScript knows this after the error check
+  // data is non-null here - TypeScript knows this after the error check
   console.log(data.Invoices);
 }
 ```
@@ -232,7 +231,7 @@ const { data, error } = await fortnox.path("/3/invoices").get();
 
 ### Binary responses (Archive & Inbox)
 
-Some routes — particularly under the **Archive** and **Inbox** sections of the Fortnox API — can return either a JSON response containing folder/file metadata, or the raw binary content of a file, depending on the resource requested. These endpoints are typed to return a **union** of both possibilities.
+Some routes - particularly under the **Archive** and **Inbox** sections of the Fortnox API - can return either a JSON response containing folder/file metadata, or the raw binary content of a file, depending on the resource requested. These endpoints are typed to return a **union** of both possibilities.
 
 Use the `isBinaryResponse()` type guard, importable from `@unifetch/fortnox/utils`, to discriminate between the two at runtime:
 
@@ -276,7 +275,7 @@ Routes that accept a file upload (e.g. uploading a document to the Archive or In
 }
 ```
 
-The library handles the multipart encoding internally — it constructs a `FormData` request body automatically. You do not need to set any headers or build the form yourself:
+The library handles the multipart encoding internally - it constructs a `FormData` request body automatically. You do not need to set any headers or build the form yourself:
 
 ```ts
 import { readFile } from "node:fs/promises";
@@ -306,8 +305,8 @@ type ErrorResponse = {
 };
 ```
 
-- `ErrorSource: "fortnox"` — the Fortnox API returned a non-2xx response.
-- `ErrorSource: "unknown"` — a network or unexpected error occurred.
+- `ErrorSource: "fortnox"` - the Fortnox API returned a non-2xx response.
+- `ErrorSource: "unknown"` - a network or unexpected error occurred.
 
 ---
 
