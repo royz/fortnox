@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { compile, type JSONSchema } from "json-schema-to-typescript";
 import type { OpenAPIV3 } from "openapi-types";
@@ -19,7 +19,29 @@ type RouteOverrides = Record<
 
 const OUT_FILE = path.join(TYPES_DIR, "patched-routes.gen.ts");
 
+async function getCustomExportedTypeNames(): Promise<string[]> {
+	const customDir = path.join(TYPES_DIR, "custom");
+	const indexSource = await readFile(path.join(customDir, "index.ts"), "utf-8");
+
+	const sources = [indexSource];
+	for (const match of indexSource.matchAll(
+		/export\s+(?:type\s+)?\*\s+from\s+"([^"]+)"/g,
+	)) {
+		const reExportedFile = path.join(customDir, `${match[1]}.ts`);
+		sources.push(await readFile(reExportedFile, "utf-8"));
+	}
+
+	return sources.flatMap(
+		(src) =>
+			[...src.matchAll(/export\s+(?:type|interface)\s+(\w+)/g)]
+				.map((m) => m[1])
+				.filter(Boolean) as string[],
+	);
+}
+
 export async function extractPatchedRoutes() {
+	const customExportedTypeNames = new Set(await getCustomExportedTypeNames());
+
 	const spec = await getSpecFromFile();
 	const paths = spec.paths;
 	if (!paths) throw new Error("No paths found in the OpenAPI specification.");
@@ -236,6 +258,17 @@ export async function extractPatchedRoutes() {
 		properties: pathProperties,
 		required: Object.keys(pathProperties),
 	};
+
+	if (customTypeNames.size > 0) {
+		const missingTypes = [...customTypeNames].filter(
+			(name) => !customExportedTypeNames.has(name),
+		);
+		if (missingTypes.length > 0) {
+			throw new Error(
+				`Custom type override(s) not defined in src/types/custom: ${missingTypes.join(", ")}`,
+			);
+		}
+	}
 
 	const routesString = await compile(routes, "Routes", {
 		additionalProperties: false,

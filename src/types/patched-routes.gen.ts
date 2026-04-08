@@ -1,6 +1,12 @@
 import type {
+	ArticleListResponse,
+	ArticleResponse,
 	InvoiceListResponse,
+	InvoicePaymentListResponse,
+	InvoicePaymentResponse,
 	InvoiceResponse,
+	TaxReductionListResponse,
+	TaxReductionResponse,
 	VoucherListResponse,
 	VoucherResponse,
 } from "./custom";
@@ -21,7 +27,6 @@ import type {
 	FortnoxAnlScrapAssetWrap,
 	FortnoxAnlSellAssetWrap,
 	FortnoxAnlUpdateAssetTypeWrap,
-	FortnoxArticleListItemWrap,
 	FortnoxArticleSingleItemWrap,
 	FortnoxArticleSinglePayloadItemWrap,
 	FortnoxBfAccountChartListItemWrap,
@@ -90,10 +95,8 @@ import type {
 	FortnoxKfInvoiceAccrualListItemWrap,
 	FortnoxKfInvoiceAccrualSingleItemWrap,
 	FortnoxKfInvoiceAccrualSinglePayloadItemWrap,
-	FortnoxKfInvoicePaymentListItemWrap,
 	FortnoxKfInvoicePaymentSingleItemWrap,
 	FortnoxKfInvoicePaymentSinglePayloadItemWrap,
-	FortnoxKfInvoiceResponseWrap,
 	FortnoxKfInvoiceSinglePayloadItemWrap,
 	FortnoxKfNoxInvoiceCreatePayloadWrap,
 	FortnoxKfNoxInvoiceSingleItemWrap,
@@ -162,8 +165,6 @@ import type {
 	FortnoxSinvoiceExternalUrlConnectionSingleItemWrap,
 	FortnoxSinvoiceExternalUrlConnectionSinglePayloadItem,
 	FortnoxTaxReductionCreatePayloadWrap,
-	FortnoxTaxReductionListItemWrap,
-	FortnoxTaxReductionSingleItemWrap,
 	FortnoxTaxReductionUpdatePayloadWrap,
 	FortnoxTermsOfPaymentListItemWrap,
 	FortnoxTermsOfPaymentSingleItemWrap,
@@ -732,7 +733,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxArticleListItemWrap;
+				body: ArticleListResponse;
 			};
 		};
 		post: {
@@ -759,7 +760,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxArticleSingleItemWrap;
+				body: ArticleResponse;
 			};
 		};
 		put: {
@@ -2531,7 +2532,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxKfInvoicePaymentListItemWrap;
+				body: InvoicePaymentListResponse;
 			};
 		};
 		post: {
@@ -2558,7 +2559,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxKfInvoicePaymentSingleItemWrap;
+				body: InvoicePaymentResponse;
 			};
 		};
 		put: {
@@ -2605,7 +2606,7 @@ export interface Routes {
 				body: FortnoxKfInvoicePaymentSinglePayloadItemWrap;
 			};
 			response: {
-				body: FortnoxKfInvoicePaymentSingleItemWrap;
+				body: InvoicePaymentResponse;
 			};
 		};
 	};
@@ -2795,7 +2796,7 @@ export interface Routes {
 				body: FortnoxKfInvoiceSinglePayloadItemWrap;
 			};
 			response: {
-				body: FortnoxKfInvoiceResponseWrap;
+				body: InvoiceResponse;
 			};
 		};
 	};
@@ -2812,7 +2813,7 @@ export interface Routes {
 				body: FortnoxKfInvoiceSinglePayloadItemWrap;
 			};
 			response: {
-				body: FortnoxKfInvoiceResponseWrap;
+				body: InvoiceResponse;
 			};
 		};
 	};
@@ -2829,7 +2830,7 @@ export interface Routes {
 				body: FortnoxKfInvoiceSinglePayloadItemWrap;
 			};
 			response: {
-				body: FortnoxKfInvoiceResponseWrap;
+				body: InvoiceResponse;
 			};
 		};
 	};
@@ -2846,7 +2847,7 @@ export interface Routes {
 				body: FortnoxKfInvoiceSinglePayloadItemWrap;
 			};
 			response: {
-				body: FortnoxKfInvoiceResponseWrap;
+				body: InvoiceResponse;
 			};
 		};
 	};
@@ -2863,7 +2864,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxKfInvoiceResponseWrap;
+				body: InvoiceResponse;
 			};
 		};
 	};
@@ -2880,7 +2881,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxKfInvoiceResponseWrap;
+				body: InvoiceResponse;
 			};
 		};
 	};
@@ -2897,7 +2898,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxKfInvoiceResponseWrap;
+				body: InvoiceResponse;
 			};
 		};
 	};
@@ -2914,7 +2915,7 @@ export interface Routes {
 				body: FortnoxKfInvoiceSinglePayloadItemWrap;
 			};
 			response: {
-				body: FortnoxKfInvoiceResponseWrap;
+				body: InvoiceResponse;
 			};
 		};
 	};
@@ -2982,7 +2983,7 @@ export interface Routes {
 				body: FortnoxKfInvoiceSinglePayloadItemWrap;
 			};
 			response: {
-				body: FortnoxKfInvoiceResponseWrap;
+				body: InvoiceResponse;
 			};
 		};
 	};
@@ -5168,7 +5169,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxTaxReductionListItemWrap;
+				body: TaxReductionListResponse;
 			};
 		};
 		post: {
@@ -5195,7 +5196,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxTaxReductionSingleItemWrap;
+				body: TaxReductionResponse;
 			};
 		};
 		put: {
@@ -5210,7 +5211,7 @@ export interface Routes {
 				body: FortnoxTaxReductionUpdatePayloadWrap;
 			};
 			response: {
-				body: FortnoxTaxReductionSingleItemWrap;
+				body: TaxReductionResponse;
 			};
 		};
 		delete: {
