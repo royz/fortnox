@@ -20,10 +20,6 @@
 		"sdk"
 	],
 	"author": "Rajorshi Roy",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/royz/fortnox"
-	},
 	"license": "ISC",
 	"files": [
 		"dist",
