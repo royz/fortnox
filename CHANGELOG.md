@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.10.0
+
+### Minor Changes
+
+- Minify the dist package
+
 ## 2.9.3
 
 ### Patch Changes
