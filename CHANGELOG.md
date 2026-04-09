@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.10.1
+
+### Patch Changes
+
+- Add back the link to git repo which got unintentionally removed from last build
+
 ## 2.10.0
 
 ### Minor Changes
