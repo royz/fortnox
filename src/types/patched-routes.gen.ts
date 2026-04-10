@@ -2,6 +2,8 @@ import type {
 	ArticleListResponse,
 	ArticleResponse,
 	BinaryResponse,
+	CustomerListResponse,
+	CustomerResponse,
 	FileUploadBody,
 	InboxFileJsonResponse,
 	InboxFolderResponse,
@@ -91,10 +93,8 @@ import type {
 	FortnoxItemUrlConnectionListItemWrap,
 	FortnoxItemUrlConnectionSingleItemWrap,
 	FortnoxItemUrlConnectionSinglePayloadItemWrap,
-	FortnoxKfCustomerListItemWrap,
 	FortnoxKfCustomerReferenceRowRowWrap,
 	FortnoxKfCustomerReferenceSingleItemWrap,
-	FortnoxKfCustomerSingleItemWrap,
 	FortnoxKfCustomerSinglePayloadItemWrap,
 	FortnoxKfInvoiceAccrualListItemWrap,
 	FortnoxKfInvoiceAccrualSingleItemWrap,
@@ -2054,7 +2054,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxKfCustomerListItemWrap;
+				body: CustomerListResponse;
 			};
 		};
 		post: {
@@ -2064,7 +2064,7 @@ export interface Routes {
 				body: FortnoxKfCustomerSinglePayloadItemWrap;
 			};
 			response: {
-				body: FortnoxKfCustomerSingleItemWrap;
+				body: CustomerResponse;
 			};
 		};
 	};
@@ -2081,7 +2081,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: FortnoxKfCustomerSingleItemWrap;
+				body: CustomerResponse;
 			};
 		};
 		put: {
@@ -2096,7 +2096,7 @@ export interface Routes {
 				body: FortnoxKfCustomerSinglePayloadItemWrap;
 			};
 			response: {
-				body: FortnoxKfCustomerSingleItemWrap;
+				body: CustomerResponse;
 			};
 		};
 		delete: {

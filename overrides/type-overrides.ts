@@ -107,6 +107,16 @@ typeOverrides.set(["/3/inbox", "/3/archive"], {
 	},
 });
 
+// Customers
+typeOverrides.set(["/3/customers"], {
+	get: { response: "CustomerListResponse" },
+	post: { response: "CustomerResponse" },
+});
+typeOverrides.set(["/3/customers/{CustomerNumber}"], {
+	get: { response: "CustomerResponse" },
+	put: { response: "CustomerResponse" },
+});
+
 export const flattenedTypeOverrides: {
 	[key in Route]?: {
 		[key in Method]?: {
