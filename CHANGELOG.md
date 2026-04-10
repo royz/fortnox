@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.11.0
+
+### Minor Changes
+
+- Fix return types of all create endpoints (response 201). Previously responses with 201 status used to be `never`.
+
 ## 2.10.1
 
 ### Patch Changes

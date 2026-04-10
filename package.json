@@ -1,6 +1,6 @@
 {
 	"name": "@unifetch/fortnox",
-	"version": "2.10.1",
+	"version": "2.11.0",
 	"description": "TypeScript SDK for the Fortnox API, with full type safety generated from the official OpenAPI specification.",
 	"type": "module",
 	"scripts": {
