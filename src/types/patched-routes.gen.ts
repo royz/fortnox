@@ -46,6 +46,7 @@ import type {
 	FortnoxBfVoucherSeriesListItemWrap,
 	FortnoxBfVoucherSeriesSingleItemWrap,
 	FortnoxBfVoucherSeriesSinglePayloadItemWrap,
+	FortnoxBfVoucherSingleItemWrap,
 	FortnoxBfVoucherSinglePayloadItemWrap,
 	FortnoxCompanyCompanySettingsResponseWrap,
 	FortnoxCompanyInformationSingleItemWrap,
@@ -73,6 +74,7 @@ import type {
 	FortnoxDaArticleFileConnectionSinglePayloadItemWrap,
 	FortnoxDaAssetFileConnectionCreatePayload,
 	FortnoxDaAssetFileConnectionListItemWrap,
+	FortnoxDaAssetFileConnectionSingleItem,
 	FortnoxDaEmailSendersWrap,
 	FortnoxDaEmailSenderTrustedWrap,
 	FortnoxDaSupplierInvoiceFileConnectionListItemWrap,
@@ -99,6 +101,7 @@ import type {
 	FortnoxKfInvoiceAccrualSinglePayloadItemWrap,
 	FortnoxKfInvoicePaymentSingleItemWrap,
 	FortnoxKfInvoicePaymentSinglePayloadItemWrap,
+	FortnoxKfInvoiceResponseWrap,
 	FortnoxKfInvoiceSinglePayloadItemWrap,
 	FortnoxKfNoxInvoiceCreatePayloadWrap,
 	FortnoxKfNoxInvoiceSingleItemWrap,
@@ -167,6 +170,7 @@ import type {
 	FortnoxSinvoiceExternalUrlConnectionSingleItemWrap,
 	FortnoxSinvoiceExternalUrlConnectionSinglePayloadItem,
 	FortnoxTaxReductionCreatePayloadWrap,
+	FortnoxTaxReductionSingleItemWrap,
 	FortnoxTaxReductionUpdatePayloadWrap,
 	FortnoxTermsOfPaymentListItemWrap,
 	FortnoxTermsOfPaymentSingleItemWrap,
@@ -439,7 +443,7 @@ export interface Routes {
 				body: FortnoxBfAccountSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxBfAccountSingleItemWrap;
 			};
 		};
 	};
@@ -634,7 +638,7 @@ export interface Routes {
 				body: FortnoxDaArticleFileConnectionSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxDaArticleFileConnectionSingleItemWrap;
 			};
 		};
 	};
@@ -745,7 +749,7 @@ export interface Routes {
 				body: FortnoxArticleSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxArticleSingleItemWrap;
 			};
 		};
 	};
@@ -834,7 +838,7 @@ export interface Routes {
 				body: FortnoxItemUrlConnectionSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxItemUrlConnectionSingleItemWrap;
 			};
 		};
 	};
@@ -923,7 +927,7 @@ export interface Routes {
 				body: FortnoxDaAssetFileConnectionCreatePayload;
 			};
 			response: {
-				body: never;
+				body: FortnoxDaAssetFileConnectionSingleItem;
 			};
 		};
 	};
@@ -1462,7 +1466,7 @@ export interface Routes {
 				body: FortnoxContractInvoiceContractAccrualSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxContractInvoiceContractAccrualSingleItemWrap;
 			};
 		};
 	};
@@ -1575,7 +1579,7 @@ export interface Routes {
 				body: FortnoxContractInvoiceContractCreatePayloadWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxContractInvoiceContractResponseWrap;
 			};
 		};
 	};
@@ -1701,7 +1705,7 @@ export interface Routes {
 				body: FortnoxContractInvoiceContractTemplateSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxContractInvoiceContractTemplateResponseWrap;
 			};
 		};
 	};
@@ -1771,7 +1775,7 @@ export interface Routes {
 				body: FortnoxCostCenterSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxCostCenterSingleItemWrap;
 			};
 		};
 	};
@@ -1856,7 +1860,7 @@ export interface Routes {
 				body: FortnoxCurrencySinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxCurrencySingleItemWrap;
 			};
 		};
 	};
@@ -1930,7 +1934,7 @@ export interface Routes {
 				body: FortnoxKfCustomerReferenceRowRowWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxKfCustomerReferenceSingleItemWrap;
 			};
 		};
 	};
@@ -2060,7 +2064,7 @@ export interface Routes {
 				body: FortnoxKfCustomerSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxKfCustomerSingleItemWrap;
 			};
 		};
 	};
@@ -2131,7 +2135,7 @@ export interface Routes {
 				body: FortnoxDaEmailSenderTrustedWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxDaEmailSenderTrustedWrap;
 			};
 		};
 	};
@@ -2332,7 +2336,7 @@ export interface Routes {
 				body: FortnoxBfFinancialYearSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxBfFinancialYearSingleItemWrap;
 			};
 		};
 	};
@@ -2450,7 +2454,7 @@ export interface Routes {
 				body: FortnoxKfInvoiceAccrualSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxKfInvoiceAccrualSingleItemWrap;
 			};
 		};
 	};
@@ -2544,7 +2548,7 @@ export interface Routes {
 				body: FortnoxKfInvoicePaymentSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxKfInvoicePaymentSingleItemWrap;
 			};
 		};
 	};
@@ -2766,7 +2770,7 @@ export interface Routes {
 				body: FortnoxKfInvoiceSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxKfInvoiceResponseWrap;
 			};
 		};
 	};
@@ -3023,7 +3027,7 @@ export interface Routes {
 				body: FortnoxDocumentTagSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxDocumentTagSingleItemWrap;
 			};
 		};
 	};
@@ -3105,7 +3109,7 @@ export interface Routes {
 				body: FortnoxModeOfPaymentSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxModeOfPaymentSingleItemWrap;
 			};
 		};
 	};
@@ -3367,7 +3371,7 @@ export interface Routes {
 				body: FortnoxOfferOfferSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxOfferOfferResponseWrap;
 			};
 		};
 	};
@@ -3634,7 +3638,7 @@ export interface Routes {
 				body: FortnoxOrderOrderSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxOrderOrderResponseWrap;
 			};
 		};
 	};
@@ -3926,7 +3930,7 @@ export interface Routes {
 				body: FortnoxPriceListSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxPriceListSingleItemWrap;
 			};
 		};
 	};
@@ -4001,7 +4005,7 @@ export interface Routes {
 				body: FortnoxPriceSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxPriceSingleItemWrap;
 			};
 		};
 	};
@@ -4236,7 +4240,7 @@ export interface Routes {
 				body: FortnoxProjectProjectSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxProjectProjectSingleItemWrap;
 			};
 		};
 	};
@@ -4537,7 +4541,7 @@ export interface Routes {
 				body: FortnoxLfSupplierInvoiceAccrualSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxLfSupplierInvoiceAccrualSingleItemWrap;
 			};
 		};
 	};
@@ -4596,7 +4600,7 @@ export interface Routes {
 				body: FortnoxSinvoiceExternalUrlConnectionSinglePayloadItem;
 			};
 			response: {
-				body: never;
+				body: FortnoxSinvoiceExternalUrlConnectionSingleItemWrap;
 			};
 		};
 	};
@@ -4685,7 +4689,7 @@ export interface Routes {
 				body: FortnoxDaSupplierInvoiceFileConnectionSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxDaSupplierInvoiceFileConnectionSingleItemWrap;
 			};
 		};
 	};
@@ -4759,7 +4763,7 @@ export interface Routes {
 				body: FortnoxLfSupplierInvoicePaymentSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxLfSupplierInvoicePaymentSingleItemWrap;
 			};
 		};
 	};
@@ -4924,7 +4928,7 @@ export interface Routes {
 				body: FortnoxLfSupplierInvoiceSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxLfSupplierInvoiceSingleItemWrap;
 			};
 		};
 	};
@@ -5107,7 +5111,7 @@ export interface Routes {
 				body: FortnoxLfSupplierSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxLfSupplierSingleItemWrap;
 			};
 		};
 	};
@@ -5181,7 +5185,7 @@ export interface Routes {
 				body: FortnoxTaxReductionCreatePayloadWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxTaxReductionSingleItemWrap;
 			};
 		};
 	};
@@ -5266,7 +5270,7 @@ export interface Routes {
 				body: FortnoxKfTermsOfDeliverySinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxKfTermsOfDeliverySingleItemWrap;
 			};
 		};
 	};
@@ -5336,7 +5340,7 @@ export interface Routes {
 				body: FortnoxTermsOfPaymentSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxTermsOfPaymentSingleItemWrap;
 			};
 		};
 	};
@@ -5421,7 +5425,7 @@ export interface Routes {
 				body: FortnoxUnitSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxUnitSingleItemWrap;
 			};
 		};
 	};
@@ -5543,7 +5547,7 @@ export interface Routes {
 				body: FortnoxDaVoucherFileConnectionSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxDaVoucherFileConnectionSingleItemWrap;
 			};
 		};
 	};
@@ -5634,7 +5638,7 @@ export interface Routes {
 				body: FortnoxBfVoucherSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxBfVoucherSingleItemWrap;
 			};
 		};
 	};
@@ -5787,7 +5791,7 @@ export interface Routes {
 				body: FortnoxBfVoucherSeriesSinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxBfVoucherSeriesSingleItemWrap;
 			};
 		};
 	};
@@ -5857,7 +5861,7 @@ export interface Routes {
 				body: FortnoxWayOfDeliverySinglePayloadItemWrap;
 			};
 			response: {
-				body: never;
+				body: FortnoxWayOfDeliverySingleItemWrap;
 			};
 		};
 	};
@@ -5935,7 +5939,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: FileattachmentsAttachment;
 			};
 		};
 	};
@@ -6268,7 +6272,7 @@ export interface Routes {
 				body: WarehouseManualInboundDocument;
 			};
 			response: {
-				body: never;
+				body: WarehouseManualInboundDocument;
 			};
 		};
 	};
@@ -6370,7 +6374,7 @@ export interface Routes {
 				body: WarehouseManualOutboundDocument;
 			};
 			response: {
-				body: never;
+				body: WarehouseManualOutboundDocument;
 			};
 		};
 	};
@@ -6733,7 +6737,7 @@ export interface Routes {
 				body: WarehouseIncomingGoods;
 			};
 			response: {
-				body: never;
+				body: WarehouseIncomingGoods;
 			};
 		};
 	};
@@ -6869,7 +6873,7 @@ export interface Routes {
 				body: WarehouseProductionOrder;
 			};
 			response: {
-				body: never;
+				body: WarehouseProductionOrder;
 			};
 		};
 	};
@@ -7040,7 +7044,7 @@ export interface Routes {
 				body: WarehousePurchaseOrder;
 			};
 			response: {
-				body: never;
+				body: WarehousePurchaseOrder;
 			};
 		};
 	};
@@ -7347,7 +7351,7 @@ export interface Routes {
 				body: WarehouseStockPoint;
 			};
 			response: {
-				body: never;
+				body: WarehouseStockPoint;
 			};
 		};
 	};
@@ -7400,7 +7404,7 @@ export interface Routes {
 				body: never;
 			};
 			response: {
-				body: never;
+				body: WarehouseStockLocation;
 			};
 		};
 		put: {
@@ -7483,7 +7487,7 @@ export interface Routes {
 				body: WarehouseStockTaking;
 			};
 			response: {
-				body: never;
+				body: WarehouseStockTaking;
 			};
 		};
 	};
@@ -7740,7 +7744,7 @@ export interface Routes {
 				body: WarehouseStockTransferDocument;
 			};
 			response: {
-				body: never;
+				body: WarehouseStockTransferDocument;
 			};
 		};
 	};
