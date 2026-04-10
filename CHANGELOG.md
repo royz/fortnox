@@ -1,5 +1,11 @@
 # @unifetch/fortnox
 
+## 2.12.0
+
+### Minor Changes
+
+- Add custom types for customers
+
 ## 2.11.0
 
 ### Minor Changes
